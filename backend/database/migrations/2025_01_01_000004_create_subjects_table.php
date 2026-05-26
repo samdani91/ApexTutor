@@ -1,0 +1,17 @@
+<?php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up(): void {
+        Schema::create('subjects', function (Blueprint $table) {
+            $table->smallIncrements('id');
+            $table->string('name', 150);
+            $table->string('name_bn', 150)->nullable();
+            $table->string('class_level', 50)->nullable();
+            $table->string('medium', 50)->nullable();
+        });
+    }
+    public function down(): void { Schema::dropIfExists('subjects'); }
+};
