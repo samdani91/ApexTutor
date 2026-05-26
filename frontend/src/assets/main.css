@@ -1,0 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    @apply bg-paper-100 text-navy-900 font-body;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 bg-navy-700 text-white font-display font-semibold px-5 py-3 rounded-md hover:bg-navy-600 active:bg-navy-800 transition-colors duration-150 focus:outline-none focus:ring-0 disabled:opacity-55 disabled:cursor-not-allowed disabled:hover:bg-navy-700;
+    box-shadow: 0 0 0 0 rgba(244,185,66,0);
+  }
+  .btn-primary:focus {
+    box-shadow: 0 0 0 4px rgba(244,185,66,0.35);
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 border border-navy-200 bg-white text-navy-700 font-display font-semibold px-5 py-3 rounded-md hover:bg-navy-50 hover:border-navy-300 active:bg-navy-100 transition-colors duration-150 focus:outline-none focus:ring-0 disabled:opacity-55 disabled:cursor-not-allowed;
+  }
+  .btn-outline:focus {
+    box-shadow: 0 0 0 4px rgba(244,185,66,0.28);
+  }
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 bg-gold-400 text-navy-900 font-display font-semibold px-5 py-3 rounded-md hover:bg-gold-500 active:bg-gold-600 transition-colors duration-150 focus:outline-none focus:ring-0 disabled:opacity-55 disabled:cursor-not-allowed;
+  }
+  .btn-gold:focus {
+    box-shadow: 0 0 0 4px rgba(15,46,92,0.18);
+  }
+  .card {
+    @apply bg-white border border-paper-200 rounded-sm shadow-sm p-5 md:p-6;
+  }
+  .input {
+    @apply w-full min-h-[44px] border border-paper-300 rounded-sm bg-white px-4 py-2.5 font-body text-navy-900 placeholder-paper-400 shadow-xs hover:border-paper-400 focus:outline-none focus:border-gold-400 disabled:bg-paper-100 disabled:text-paper-500 disabled:cursor-not-allowed transition-colors;
+  }
+  .input:focus {
+    box-shadow: 0 0 0 4px rgba(244,185,66,0.26);
+  }
+  select.input,
+  select.form-select {
+    @apply cursor-pointer pr-10;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%236B6248' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1.1rem;
+  }
+  .input-compact {
+    @apply min-h-[34px] px-3 py-1.5 text-xs rounded-sm;
+  }
+  .field-label {
+    @apply block text-xs font-semibold font-display text-navy-700 mb-1.5;
+  }
+  .choice-btn {
+    @apply inline-flex items-center justify-center min-h-[34px] px-3 py-1.5 rounded-pill text-sm font-semibold font-display border transition-colors cursor-pointer focus:outline-none;
+  }
+  .choice-btn:focus {
+    box-shadow: 0 0 0 4px rgba(244,185,66,0.24);
+  }
+  .choice-btn-idle {
+    @apply bg-white border-paper-300 text-navy-700 hover:bg-navy-50 hover:border-navy-200;
+  }
+  .choice-btn-active {
+    @apply bg-navy-700 text-white border-navy-700 hover:bg-navy-600;
+  }
+  .status-select {
+    @apply w-full min-h-[34px] border border-paper-300 rounded-sm bg-white px-3 py-1.5 pr-9 text-xs font-body text-navy-900 shadow-xs hover:border-paper-400 focus:outline-none focus:border-gold-400 disabled:bg-paper-100 disabled:text-paper-500 disabled:cursor-not-allowed transition-colors cursor-pointer;
+    min-width: 9.5rem;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 7.5L10 12.5L15 7.5' stroke='%236B6248' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-position: right 0.65rem center;
+    background-repeat: no-repeat;
+    background-size: 1rem;
+  }
+  .status-select:focus {
+    box-shadow: 0 0 0 4px rgba(244,185,66,0.22);
+  }
+  .card table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .card th {
+    @apply bg-paper-50/70;
+  }
+  .card tbody tr {
+    @apply transition-colors;
+  }
+  .badge-verified {
+    @apply inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-semibold px-2 py-0.5 rounded-pill;
+  }
+  .badge-pending {
+    @apply inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-100 text-xs font-semibold px-2 py-0.5 rounded-pill;
+  }
+}
