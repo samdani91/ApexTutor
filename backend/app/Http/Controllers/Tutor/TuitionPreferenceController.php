@@ -24,7 +24,6 @@ class TuitionPreferenceController extends Controller
             'tutoring_styles'     => 'nullable|array',
             'preferred_curricula' => 'nullable|array',
             'preferred_classes'   => 'nullable|array',
-            'city'                => 'nullable|string|max:100',
             'district_id'         => 'nullable|integer|exists:districts,id',
             'expected_salary_min' => 'nullable|integer|min:0',
             'expected_salary_max' => 'nullable|integer|min:0',
@@ -41,11 +40,20 @@ class TuitionPreferenceController extends Controller
             'days.*.day'          => 'required|in:sat,sun,mon,tue,wed,thu,fri',
             'days.*.time_from'    => 'nullable|date_format:H:i',
             'days.*.time_to'      => 'nullable|date_format:H:i',
-            'locations'           => 'nullable|array',
-            'locations.*.area_name' => 'required|string|max:150',
+            'location_ids'   => 'nullable|array',
+            'location_ids.*' => 'integer|exists:areas,id',
         ]);
 
         $profile = $request->user()->tutorProfile;
+
+        if ($profile->is_verified) {
+            $pending = $profile->pending_changes ?? [];
+            $pending['preferences']   = $data;
+            $pending['submitted_at']  = now()->toISOString();
+            $profile->update(['pending_changes' => $pending, 'pending_note' => null]);
+            return response()->json(['success' => true, 'pending' => true, 'message' => 'Preferences saved — pending admin review.']);
+        }
+
         $pref = TuitionPreference::updateOrCreate(
             ['tutor_profile_id' => $profile->id],
             collect($data)->except(['subject_ids','days','locations'])->toArray()
@@ -60,10 +68,10 @@ class TuitionPreferenceController extends Controller
                 TuitionPreferenceDay::create(['tuition_preference_id' => $pref->id] + $day);
             }
         }
-        if (isset($data['locations'])) {
+        if (isset($data['location_ids'])) {
             $pref->locations()->delete();
-            foreach ($data['locations'] as $loc) {
-                TuitionPreferenceLocation::create(['tuition_preference_id' => $pref->id, 'area_name' => $loc['area_name']]);
+            foreach ($data['location_ids'] as $areaId) {
+                TuitionPreferenceLocation::create(['tuition_preference_id' => $pref->id, 'area_id' => $areaId]);
             }
         }
 

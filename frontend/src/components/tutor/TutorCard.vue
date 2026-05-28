@@ -13,9 +13,6 @@
         <div class="flex items-start justify-between gap-2">
           <div class="min-w-0">
             <h3 class="font-display font-semibold text-navy-900 text-sm md:text-base truncate">{{ tutor.user?.name }}</h3>
-            <p class="text-xs md:text-sm text-paper-500 truncate">
-              {{ tutor.tuition_preference?.city || '—' }}<template v-if="districtName">, {{ districtName }}</template>
-            </p>
             <span v-if="tutor.tutor_id"
               class="text-xs font-semibold font-display text-navy-600 bg-navy-50 border border-navy-200 px-1.5 py-0.5 rounded-pill">
               {{ tutor.tutor_id }}
@@ -35,6 +32,14 @@
           <span v-if="extraClassCount > 0"
             class="text-xs bg-paper-100 text-paper-500 px-2 py-0.5 rounded-pill font-semibold">
             +{{ extraClassCount }}
+          </span>
+        </div>
+
+        <!-- Place of tutoring -->
+        <div v-if="placeTags.length" class="mt-1.5 flex flex-wrap gap-1">
+          <span v-for="p in placeTags" :key="p.value"
+            class="text-xs font-semibold font-display text-navy-700 bg-navy-50 border border-navy-200 px-2 py-0.5 rounded-pill">
+            {{ p.label }}
           </span>
         </div>
 
@@ -61,10 +66,16 @@ import { getInitials, formatSalaryRange } from '@/utils/helpers.js'
 
 const props = defineProps({ tutor: { type: Object, required: true } })
 const initials = computed(() => getInitials(props.tutor.user?.name))
-const districtName = computed(() => props.tutor.tuition_preference?.district?.name || '')
 
 const allClasses = computed(() => (props.tutor.tuition_preference?.preferred_classes || [])
   .map(c => c.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())))
 const classTags = computed(() => allClasses.value.slice(0, 3))
 const extraClassCount = computed(() => Math.max(0, allClasses.value.length - 3))
+
+const PLACE_LABELS = { student_home: "Student's home", tutor_home: "Tutor's home", online: 'Online' }
+const placeTags = computed(() =>
+  (props.tutor.tuition_preference?.place_of_tutoring || [])
+    .filter(v => PLACE_LABELS[v])
+    .map(v => ({ value: v, label: PLACE_LABELS[v] }))
+)
 </script>

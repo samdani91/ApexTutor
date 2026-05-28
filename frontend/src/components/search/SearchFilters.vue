@@ -9,45 +9,31 @@
       </button>
     </div>
 
-    <!-- Medium — dropdown -->
+    <!-- Medium -->
     <FilterSection label="Medium">
-      <select v-model="filters.medium" class="input text-sm">
-        <option value="">Any medium</option>
-        <option v-for="m in MEDIUMS" :key="m.value" :value="m.value">{{ m.label }}</option>
-      </select>
+      <DropSelect v-model="filters.medium" :options="mediumOpts" placeholder="Any medium" />
     </FilterSection>
 
     <!-- Class level -->
     <FilterSection label="Class">
-      <select v-model="filters.class_level" class="input text-sm">
-        <option value="">Any class</option>
-        <option v-for="c in CLASS_LEVELS" :key="c.value" :value="c.value">{{ c.label }}</option>
-      </select>
+      <DropSelect v-model="filters.class_level" :options="classOpts" placeholder="Any class" />
     </FilterSection>
 
     <!-- District -->
     <FilterSection label="District">
-      <select v-model="filters.district_id" class="input text-sm">
-        <option value="">Any district</option>
-        <option v-for="d in searchStore.districts" :key="d.id" :value="d.id">{{ d.name }}</option>
-      </select>
+      <DropSelect v-model="filters.district_id" :options="districtOpts" placeholder="Any district"
+        @update:modelValue="onDistrictChange" />
     </FilterSection>
 
-    <!-- City / Area -->
-    <FilterSection label="City / Area">
-      <input v-model="filters.city" type="text" placeholder="e.g. Mirpur, Dhanmondi"
-        class="input text-sm mb-2" />
-      <input v-model="filters.area" type="text" placeholder="Specific area (optional)"
-        class="input text-sm" />
+    <!-- Area — only shown when a district is selected -->
+    <FilterSection v-if="filters.district_id" label="Area">
+      <div v-if="areasLoading" class="text-xs text-paper-400 font-body py-2">Loading areas…</div>
+      <DropSelect v-else v-model="filters.area_id" :options="areaOpts" placeholder="Any area" />
     </FilterSection>
 
     <!-- Tutor gender -->
     <FilterSection label="Tutor gender">
-      <select v-model="filters.tutor_gender" class="input text-sm">
-        <option value="">No preference</option>
-        <option value="male">Male</option>
-        <option value="female">Female</option>
-      </select>
+      <DropSelect v-model="filters.tutor_gender" :options="genderOpts" placeholder="No preference" />
     </FilterSection>
 
     <!-- Days per week -->
@@ -56,13 +42,10 @@
         <button type="button" v-for="d in [1,2,3,4,5,6,7]" :key="d"
           @click="toggleNum('days_per_week', d)"
           class="w-9 h-9 rounded-sm text-sm font-semibold font-display border transition-colors focus:outline-none"
-          :class="filters.days_per_week === d
-            ? 'choice-btn-active'
-            : 'choice-btn-idle'">
+          :class="filters.days_per_week === d ? 'choice-btn-active' : 'choice-btn-idle'">
           {{ d }}
         </button>
       </div>
-      <p class="text-xs text-paper-400 mt-1.5 font-body">Tutors available ≥ chosen days/week</p>
     </FilterSection>
 
     <!-- Hours per session -->
@@ -143,20 +126,12 @@
 
     <!-- Sort -->
     <FilterSection label="Sort by">
-      <select v-model="filters.sort" class="input text-sm">
-        <option value="relevance">Best match</option>
-        <option value="rating">Highest rated</option>
-        <option value="newest">Newest</option>
-        <option value="salary_asc">Salary: low to high</option>
-        <option value="salary_desc">Salary: high to low</option>
-      </select>
+      <DropSelect v-model="filters.sort" :options="sortOpts" placeholder="Best match" />
     </FilterSection>
 
     <!-- CTA -->
     <div class="pt-1 space-y-2">
-      <button @click="applyFilters" class="btn-primary w-full py-3">
-        Search tutors
-      </button>
+      <button @click="applyFilters" class="btn-primary w-full py-3">Search tutors</button>
       <button v-if="activeCount > 0" @click="clearFilters"
         class="w-full text-sm font-semibold font-display text-paper-500 hover:text-navy-700 transition-colors py-1.5">
         Clear all filters
@@ -166,10 +141,12 @@
 </template>
 
 <script setup>
-import { reactive, computed } from 'vue'
+import { reactive, ref, computed } from 'vue'
 import { useSearchStore } from '@/stores/search.js'
+import { searchApi } from '@/api/search.js'
 import { MEDIUMS, CLASS_LEVELS, PLACE_OF_TUTORING, TUTORING_STYLES } from '@/utils/constants.js'
 import FilterSection from './FilterSection.vue'
+import DropSelect from './DropSelect.vue'
 
 const emit = defineEmits(['search'])
 const searchStore = useSearchStore()
@@ -180,21 +157,43 @@ const HOURS = [
   { value: 2, label: '2 hr' },
   { value: 3, label: '3 hr' },
 ]
-const PLACE_OPTIONS = PLACE_OF_TUTORING
-const STYLE_OPTIONS = TUTORING_STYLES
+const PLACE_OPTIONS  = PLACE_OF_TUTORING
+const STYLE_OPTIONS  = TUTORING_STYLES
 const BUDGET_PRESETS = [2000, 3000, 5000, 8000]
 const RATING_OPTIONS = [
-  { value: 3, label: '3+ ★' },
-  { value: 4, label: '4+ ★' },
+  { value: 3,   label: '3+ ★' },
+  { value: 4,   label: '4+ ★' },
   { value: 4.5, label: '4.5+ ★' },
 ]
+
+const allAreas     = ref([])
+const areasLoading = ref(false)
+
+// ── Option arrays for DropSelect ────────────────────────────────────────────
+const mediumOpts   = [{ value: '', label: 'Any medium' }, ...MEDIUMS.map(m => ({ value: m.value, label: m.label }))]
+const classOpts    = [{ value: '', label: 'Any class'  }, ...CLASS_LEVELS.map(c => ({ value: c.value, label: c.label }))]
+const genderOpts   = [{ value: '', label: 'No preference' }, { value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }]
+const sortOpts     = [
+  { value: 'relevance', label: 'Best match' },
+  { value: 'rating',    label: 'Highest rated' },
+  { value: 'newest',    label: 'Newest' },
+  { value: 'salary_asc',  label: 'Salary: low to high' },
+  { value: 'salary_desc', label: 'Salary: high to low' },
+]
+const districtOpts = computed(() => [
+  { value: '', label: 'Any district' },
+  ...searchStore.districts.map(d => ({ value: d.id, label: d.name })),
+])
+const areaOpts = computed(() => [
+  { value: null, label: 'Any area' },
+  ...allAreas.value.map(a => ({ value: a.id, label: a.name })),
+])
 
 const filters = reactive({
   medium: '',
   class_level: '',
   district_id: '',
-  city: '',
-  area: '',
+  area_id: null,
   tutor_gender: '',
   days_per_week: null,
   hours_per_day: null,
@@ -206,13 +205,27 @@ const filters = reactive({
   sort: 'relevance',
 })
 
+async function onDistrictChange(newId) {
+  filters.district_id = newId
+  filters.area_id     = null
+  allAreas.value      = []
+  if (!newId) return
+  areasLoading.value  = true
+  try {
+    const { data } = await searchApi.areas(newId)
+    allAreas.value = data.data || []
+  } finally {
+    areasLoading.value = false
+  }
+}
+
 const activeCount = computed(() => {
   const singles = [
-    filters.medium, filters.class_level, filters.district_id, filters.city,
-    filters.area, filters.tutor_gender, filters.days_per_week, filters.hours_per_day,
+    filters.medium, filters.class_level, filters.district_id, filters.area_id,
+    filters.tutor_gender, filters.days_per_week, filters.hours_per_day,
     filters.salary_max, filters.min_rating,
   ].filter(v => v !== '' && v !== null).length
-  const bools = filters.verified_only ? 1 : 0
+  const bools  = filters.verified_only ? 1 : 0
   const arrays = filters.place_of_tutoring.length + filters.tutoring_styles.length
   return singles + bools + arrays
 })
@@ -229,11 +242,12 @@ function toggleMulti(key, val) {
 
 function clearFilters() {
   Object.assign(filters, {
-    medium: '', class_level: '', district_id: '', city: '', area: '',
+    medium: '', class_level: '', district_id: '', area_id: null,
     tutor_gender: '', days_per_week: null, hours_per_day: null,
     place_of_tutoring: [], tutoring_styles: [], salary_max: '',
     min_rating: null, verified_only: false, sort: 'relevance',
   })
+  allAreas.value = []
   emit('search', {})
 }
 
@@ -247,17 +261,14 @@ function applyFilters() {
   emit('search', payload)
 }
 
-// expose so parent can read activeCount
-defineExpose({ activeCount, filters })
+defineExpose({ activeCount, filters, allAreas, areaOpts, applyFilters })
 </script>
 
 <style scoped>
 .pill-btn {
   @apply inline-flex items-center justify-center min-h-[34px] px-3 py-1.5 rounded-pill text-sm font-semibold font-display border transition-colors cursor-pointer focus:outline-none;
 }
-.pill-btn:focus {
-  box-shadow: 0 0 0 4px rgba(244,185,66,0.24);
-}
-.pill-btn-idle  { @apply bg-white border-paper-300 text-navy-700 hover:bg-navy-50 hover:border-navy-200; }
+.pill-btn:focus { box-shadow: 0 0 0 4px rgba(244,185,66,0.24); }
+.pill-btn-idle   { @apply bg-white border-paper-300 text-navy-700 hover:bg-navy-50 hover:border-navy-200; }
 .pill-btn-active { @apply bg-navy-700 text-white border-navy-700 hover:bg-navy-600; }
 </style>

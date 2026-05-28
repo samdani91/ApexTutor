@@ -47,7 +47,7 @@
       <div class="flex gap-7">
 
         <!-- Desktop sidebar -->
-        <aside class="w-72 shrink-0 hidden lg:block">
+        <aside class="w-80 shrink-0 hidden lg:block">
           <div class="bg-white border border-paper-200 rounded-sm shadow-sm p-5 sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
             <SearchFilters ref="filtersRef" @search="handleSearch" />
           </div>
@@ -206,7 +206,10 @@ const activeChips = computed(() => {
   if (f.medium) chips.push({ key: 'medium', label: MEDIUMS.find(m => m.value === f.medium)?.label || f.medium })
   if (f.class_level) chips.push({ key: 'class_level', label: CLASS_LEVELS.find(c => c.value === f.class_level)?.label || f.class_level })
   if (f.district_id) chips.push({ key: 'district_id', label: searchStore.districts.find(d => d.id === f.district_id)?.name || 'District' })
-  if (f.city) chips.push({ key: 'city', label: f.city })
+  if (f.area_id) {
+    const areaName = (filtersRef.value?.allAreas || mobileFiltersRef.value?.allAreas || []).find(a => a.id === f.area_id)?.name || 'Area'
+    chips.push({ key: 'area_id', label: areaName })
+  }
   if (f.tutor_gender) chips.push({ key: 'tutor_gender', label: f.tutor_gender === 'male' ? 'Male tutor' : 'Female tutor' })
   if (f.days_per_week) chips.push({ key: 'days_per_week', label: `${f.days_per_week}d/wk` })
   if (f.salary_max) chips.push({ key: 'salary_max', label: `≤ ৳${Number(f.salary_max).toLocaleString()}` })
@@ -217,7 +220,7 @@ const activeChips = computed(() => {
 function removeChip(key) {
   const updated = { ...lastFilters.value }
   if (key === 'verified_only') updated[key] = false
-  else if (key === 'days_per_week' || key === 'salary_max') updated[key] = null
+  else if (key === 'days_per_week' || key === 'salary_max' || key === 'area_id') updated[key] = null
   else updated[key] = ''
   handleSearch(updated)
 }

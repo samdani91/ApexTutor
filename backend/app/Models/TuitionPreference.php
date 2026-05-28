@@ -12,7 +12,7 @@ class TuitionPreference extends Model
     use HasFactory;
     protected $fillable = [
         'tutor_profile_id','tutoring_methods','place_of_tutoring','tutoring_styles',
-        'preferred_curricula','preferred_classes','city','district_id',
+        'preferred_curricula','preferred_classes','district_id',
         'expected_salary_min','expected_salary_max','total_experience_years','experience_details',
         'days_per_week','hours_per_day','preferred_time','tutoring_method_description',
     ];

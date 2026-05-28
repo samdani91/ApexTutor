@@ -58,137 +58,62 @@
       </div>
     </div>
 
-    <!-- Verification / lock card -->
+    <!-- Profile status card -->
     <div v-if="!loading" class="card">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-        <h2 class="font-display font-semibold text-navy-700 text-lg">Verification status</h2>
-        <div class="flex items-center gap-2 flex-wrap">
-          <span v-if="stats.is_verified"
-            class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-pill bg-amber-50 text-amber-700 border border-amber-200">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
-            </svg>
-            Profile locked
-          </span>
-          <span v-if="stats.verification_status" :class="verificationBadgeClass" class="text-xs font-semibold px-3 py-1 rounded-pill capitalize">
-            {{ stats.verification_status === 'under_review' ? 'Under review' : stats.verification_status }}
-          </span>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+        <h2 class="font-display font-semibold text-navy-700 text-lg">Profile status</h2>
+        <span v-if="stats.verification_status" :class="verificationBadgeClass"
+          class="text-xs font-semibold px-3 py-1 rounded-pill capitalize self-start sm:self-auto">
+          {{ stats.verification_status === 'under_review' ? 'Under review' : stats.verification_status?.replace(/_/g, ' ') }}
+        </span>
+      </div>
+
+      <!-- Pending changes notice -->
+      <div v-if="stats.has_pending_changes"
+        class="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-4">
+        <svg class="w-5 h-5 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div>
+          <p class="font-display font-semibold text-blue-800 text-sm">Profile update pending review</p>
+          <p class="text-xs text-blue-700 font-body mt-0.5 leading-relaxed">
+            Your recent edits have been saved and are awaiting admin approval. They'll go live once reviewed.
+          </p>
         </div>
       </div>
 
-      <!-- ── State: Profile verified & locked ── -->
-      <template v-if="stats.is_verified">
-        <p class="text-sm text-paper-500 font-body mb-4">
-          Your profile is verified and visible to students. All sections are locked — submit a change request below to make edits.
-        </p>
-
-        <!-- Existing pending/rejected request card -->
-        <div v-if="changeRequest && ['pending','rejected'].includes(changeRequest.status)"
-          class="rounded-lg border p-3 mb-4 text-sm font-body"
-          :class="{
-            'border-amber-200 bg-amber-50 text-amber-800': changeRequest.status === 'pending',
-            'border-red-200 bg-red-50 text-red-700':       changeRequest.status === 'rejected',
-          }">
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <p class="font-semibold font-display mb-0.5">
-                Change request: <span class="capitalize">{{ changeRequest.status }}</span>
-              </p>
-              <p class="text-xs opacity-80">{{ changeRequest.reason }}</p>
-              <p v-if="changeRequest.admin_note" class="text-xs mt-1 italic opacity-70">
-                Admin note: {{ changeRequest.admin_note }}
-              </p>
-            </div>
-            <button v-if="changeRequest.status === 'pending'"
-              @click="showCancelDialog = true"
-              class="shrink-0 text-xs font-semibold font-display bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg transition-colors">
-              Cancel request
-            </button>
-          </div>
+      <!-- Rejection note from previous pending changes -->
+      <div v-if="stats.pending_note && !stats.has_pending_changes"
+        class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4">
+        <svg class="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+        </svg>
+        <div>
+          <p class="font-display font-semibold text-red-800 text-sm">Previous changes not approved</p>
+          <p class="text-xs text-red-700 font-body mt-0.5">{{ stats.pending_note }}</p>
         </div>
+      </div>
 
-        <!-- Submit form: show when there is no actively-pending request -->
-        <div v-if="!changeRequest || changeRequest.status !== 'pending'">
-          <p class="text-xs text-paper-400 font-body mb-1.5">Describe what you need to change and why:</p>
-          <textarea v-model="changeReason"
-            placeholder="e.g. I need to update my education details and add new subjects…"
-            rows="3"
-            class="input text-sm w-full mb-3 resize-none"
-          />
-          <button @click="submitChangeRequest"
-            :disabled="submittingRequest"
-            class="btn-primary text-sm py-2.5 px-5 w-full sm:w-auto">
-            {{ submittingRequest ? 'Submitting…' : 'Request profile unlock' }}
-          </button>
-        </div>
-      </template>
+      <!-- Status description -->
+      <p class="text-sm text-paper-500 font-body mb-4">
+        <template v-if="stats.is_verified">
+          Your profile is verified and visible to students. You can edit your profile anytime — changes will be reviewed by the admin before going live.
+        </template>
+        <template v-else-if="stats.verification_status === 'pending'">
+          Your profile is awaiting review. Complete all steps to speed up the process.
+        </template>
+        <template v-else-if="stats.verification_status === 'rejected'">
+          Your profile was not approved. Update your information and documents, then resubmit.
+        </template>
+        <template v-else>
+          Your profile is being reviewed by our team.
+        </template>
+      </p>
 
-      <!-- ── State: Unlocked — tutor can edit ── -->
-      <template v-else-if="changeRequest?.status === 'approved'">
-        <p class="text-sm text-paper-500 font-body mb-4">
-          Your profile has been unlocked. Make your changes and click <strong class="text-navy-700">Done editing</strong> when you're finished so we can re-review and re-verify your profile.
-        </p>
-        <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 mb-4 text-sm font-body text-emerald-800">
-          <p class="font-semibold font-display mb-0.5">Profile unlocked for editing</p>
-          <p class="text-xs opacity-80">{{ changeRequest.reason }}</p>
-        </div>
-        <div class="flex flex-col sm:flex-row gap-3">
-          <RouterLink to="/tutor/profile"
-            class="btn-primary text-sm py-2.5 px-5 text-center">
-            Edit profile
-          </RouterLink>
-          <button @click="showDoneDialog = true"
-            class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold font-display py-2.5 px-5 rounded-md transition-colors">
-            Done editing
-          </button>
-        </div>
-      </template>
-
-      <!-- ── State: Submitted for re-review ── -->
-      <template v-else-if="changeRequest?.status === 'review_pending'">
-        <p class="text-sm text-paper-500 font-body mb-4">
-          Your updated profile has been submitted for review. You'll be re-verified once the admin approves.
-        </p>
-        <div class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm font-body text-blue-800">
-          <p class="font-semibold font-display mb-0.5">Under re-review</p>
-          <p class="text-xs opacity-80">Waiting for admin to review your updated profile.</p>
-        </div>
-      </template>
-
-      <!-- ── State: Not verified, no active change request ── -->
-      <template v-else>
-        <p class="text-sm text-paper-500 font-body mb-4">
-          <template v-if="stats.verification_status === 'pending'">Your profile is awaiting review. Complete all steps to speed up the process.</template>
-          <template v-else-if="stats.verification_status === 'rejected'">Your profile was not approved. Update your information and documents.</template>
-          <template v-else>Your profile is being reviewed by our team.</template>
-        </p>
-        <RouterLink to="/tutor/profile"
-          class="btn-outline block sm:inline-block text-sm py-2 px-4 text-center sm:text-left">
-          Edit profile
-        </RouterLink>
-      </template>
+      <RouterLink to="/tutor/profile" class="btn-primary text-sm py-2.5 px-5 inline-block">
+        Edit profile
+      </RouterLink>
     </div>
-
-    <!-- Cancel change request confirm -->
-    <ConfirmDialog
-      :show="showCancelDialog"
-      title="Cancel change request?"
-      message="Are you sure you want to cancel your pending profile unlock request? You can submit a new one anytime."
-      confirm-label="Yes, cancel it"
-      danger
-      @confirm="confirmCancel"
-      @cancel="showCancelDialog = false"
-    />
-
-    <!-- Done editing confirm -->
-    <ConfirmDialog
-      :show="showDoneDialog"
-      title="Submit for re-review?"
-      message="This will notify the admin to review your updated profile. You won't be able to make further edits until it's approved."
-      confirm-label="Yes, submit"
-      @confirm="confirmDoneEditing"
-      @cancel="showDoneDialog = false"
-    />
   </div>
 </template>
 
@@ -199,19 +124,12 @@ import { tutorApi } from '@/api/tutor.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { getInitials } from '@/utils/helpers.js'
 import { toast } from 'vue-sonner'
-import ConfirmDialog from '@/components/admin/AdminConfirmDialog.vue'
 
 const auth = useAuthStore()
 
-const stats             = ref({})
-const loading           = ref(true)
-const uploadingAvatar   = ref(false)
-const changeRequest     = ref(null)
-const changeReason      = ref('')
-const submittingRequest = ref(false)
-const cancellingRequest = ref(false)
-const showCancelDialog  = ref(false)
-const showDoneDialog    = ref(false)
+const stats           = ref({})
+const loading         = ref(true)
+const uploadingAvatar = ref(false)
 
 const initials  = computed(() => getInitials(auth.user?.name))
 const avatarUrl = computed(() => auth.user?.avatar_url || null)
@@ -227,12 +145,8 @@ const verificationBadgeClass = computed(() => {
 
 onMounted(async () => {
   try {
-    const [dashRes, crRes] = await Promise.all([
-      tutorApi.getDashboard(),
-      tutorApi.getChangeRequest(),
-    ])
-    stats.value         = dashRes.data.data
-    changeRequest.value = crRes.data.data
+    const { data } = await tutorApi.getDashboard()
+    stats.value = data.data
   } finally {
     loading.value = false
   }
@@ -252,52 +166,6 @@ async function uploadAvatar(e) {
     toast.error('Upload failed. Max 2 MB, JPG/PNG/WebP.')
   } finally {
     uploadingAvatar.value = false
-  }
-}
-
-async function confirmCancel() {
-  showCancelDialog.value  = false
-  cancellingRequest.value = true
-  try {
-    await tutorApi.cancelChangeRequest()
-    changeRequest.value = null
-    toast.success('Change request cancelled.')
-  } catch (e) {
-    toast.error(e.response?.data?.message || 'Failed to cancel request.')
-  } finally {
-    cancellingRequest.value = false
-  }
-}
-
-async function submitChangeRequest() {
-  if (!changeReason.value.trim()) {
-    toast.error('Please describe what you need to change before submitting.')
-    return
-  }
-  submittingRequest.value = true
-  try {
-    const { data } = await tutorApi.submitChangeRequest({ reason: changeReason.value })
-    changeRequest.value = data.data
-    changeReason.value  = ''
-    // Also refresh stats so verification badges stay in sync
-    const dashRes = await tutorApi.getDashboard()
-    stats.value = dashRes.data.data
-    toast.success('Change request submitted.')
-  } catch (e) {
-    toast.error(e.response?.data?.message || 'Failed to submit request.')
-  } finally {
-    submittingRequest.value = false
-  }
-}
-
-async function confirmDoneEditing() {
-  showDoneDialog.value = false
-  try {
-    const { data } = await tutorApi.doneEditing()
-    changeRequest.value = data.data
-    toast.success('Profile submitted for re-review.')
-  } catch (e) {
-    toast.error(e.response?.data?.message || 'Failed to submit for review.')
   }
 }
 </script>

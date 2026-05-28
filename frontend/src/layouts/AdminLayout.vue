@@ -172,7 +172,7 @@ const navItems = [
   { to: '/admin/users',           label: 'Users',               icon: 'users'  },
   { to: '/admin/verifications',   label: 'Verifications',       icon: 'check'  },
   { to: '/admin/connections',     label: 'Connections',         icon: 'link'   },
-  { to: '/admin/change-requests', label: 'Change Requests',     icon: 'unlock' },
+  { to: '/admin/pending-changes', label: 'Pending Changes',      icon: 'unlock' },
   { to: '/admin/notifications',   label: 'Shortlist Requests',  icon: 'heart', badge: true },
 ]
 

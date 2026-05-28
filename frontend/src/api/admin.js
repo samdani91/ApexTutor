@@ -24,10 +24,10 @@ export const adminApi = {
   getConnections: (params) => http.get('/admin/connections', { params }),
   updateConnectionStatus: (id, data) => http.put(`/admin/connections/${id}/status`, data),
 
-  // Change requests
-  getChangeRequests: () => http.get('/admin/change-requests'),
-  approveChangeRequest: (id) => http.put(`/admin/change-requests/${id}/approve`),
-  rejectChangeRequest: (id, data) => http.put(`/admin/change-requests/${id}/reject`, data),
+  // Pending profile changes
+  getPendingChanges: () => http.get('/admin/pending-changes'),
+  approvePendingChange: (id) => http.put(`/admin/pending-changes/${id}/approve`),
+  rejectPendingChange: (id, data) => http.put(`/admin/pending-changes/${id}/reject`, data),
 
   // Reviews
   getPendingReviews: () => http.get('/admin/reviews/pending'),

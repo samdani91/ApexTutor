@@ -41,7 +41,7 @@ const routes = [
       { path: 'admins/:id', component: () => import('@/views/admin/AdminUserDetail.vue'), name: 'admin-user-detail' },
       { path: 'verifications', component: () => import('@/views/admin/TutorVerification.vue'), name: 'admin-verifications' },
       { path: 'connections', component: () => import('@/views/admin/ConnectionManagement.vue'), name: 'admin-connections' },
-      { path: 'change-requests', component: () => import('@/views/admin/ChangeRequests.vue'), name: 'admin-change-requests' },
+      { path: 'pending-changes', component: () => import('@/views/admin/AdminPendingChanges.vue'), name: 'admin-pending-changes' },
       { path: 'notifications', component: () => import('@/views/admin/AdminNotifications.vue'), name: 'admin-notifications' },
       { path: 'settings', component: () => import('@/views/admin/AdminSettings.vue'), name: 'admin-settings' },
     ]

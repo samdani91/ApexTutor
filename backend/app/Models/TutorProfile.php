@@ -15,7 +15,7 @@ class TutorProfile extends Model
     protected $fillable = [
         'user_id','tutor_id','public_id','profile_completion_percent','is_verified','verification_status',
         'verified_at','verified_by','rejection_reason','status','rating',
-        'review_count','profile_view_count','bio',
+        'review_count','profile_view_count','bio','pending_changes','pending_note',
     ];
 
     protected static function booted(): void
@@ -34,9 +34,10 @@ class TutorProfile extends Model
     }
 
     protected $casts = [
-        'is_verified' => 'boolean',
-        'verified_at' => 'datetime',
-        'rating' => 'decimal:2',
+        'is_verified'     => 'boolean',
+        'verified_at'     => 'datetime',
+        'rating'          => 'decimal:2',
+        'pending_changes' => 'array',
     ];
 
     public function user(): BelongsTo { return $this->belongsTo(User::class); }

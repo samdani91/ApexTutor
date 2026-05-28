@@ -22,9 +22,9 @@
         <RouterLink to="/admin/users" class="text-xs text-navy-700 font-semibold hover:underline mt-1 block">Manage</RouterLink>
       </div>
       <div class="card text-center">
-        <p class="font-display font-bold text-3xl text-amber-600">{{ stats.pending_change_requests ?? 0 }}</p>
-        <p class="text-sm text-paper-500 font-body mt-1">Unlock requests</p>
-        <RouterLink to="/admin/change-requests" class="text-xs text-navy-700 font-semibold hover:underline mt-1 block">Review</RouterLink>
+        <p class="font-display font-bold text-3xl text-amber-600">{{ stats.pending_profile_changes ?? 0 }}</p>
+        <p class="text-sm text-paper-500 font-body mt-1">Pending changes</p>
+        <RouterLink to="/admin/pending-changes" class="text-xs text-navy-700 font-semibold hover:underline mt-1 block">Review</RouterLink>
       </div>
     </div>
   </div>

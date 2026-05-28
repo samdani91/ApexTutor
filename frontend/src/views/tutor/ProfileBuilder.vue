@@ -26,39 +26,22 @@
       </button>
     </div>
 
-    <!-- Lock banner -->
-    <div v-if="isLocked"
-      class="flex items-start gap-3 rounded-lg px-4 py-3 mb-4"
-      :class="lockReason === 'review_pending' ? 'bg-blue-50 border border-blue-200' : 'bg-amber-50 border border-amber-200'">
-      <svg class="w-5 h-5 shrink-0 mt-0.5"
-        :class="lockReason === 'review_pending' ? 'text-blue-600' : 'text-amber-600'"
-        fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
+    <!-- Pending changes notice (verified profiles) -->
+    <div v-if="hasPendingChanges"
+      class="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-5">
+      <svg class="w-5 h-5 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
       </svg>
       <div>
-        <template v-if="lockReason === 'review_pending'">
-          <p class="font-display font-semibold text-blue-800 text-sm">Profile submitted for re-review</p>
-          <p class="text-xs text-blue-700 font-body mt-0.5">
-            Your updated profile is awaiting admin approval. You cannot make further edits until it is approved.
-            Go to your <RouterLink to="/tutor/dashboard" class="underline font-semibold">dashboard</RouterLink> to check the status.
-          </p>
-        </template>
-        <template v-else>
-          <p class="font-display font-semibold text-amber-800 text-sm">Profile is verified and locked</p>
-          <p class="text-xs text-amber-700 font-body mt-0.5">
-            You can view your information below but cannot make changes.
-            Go to your <RouterLink to="/tutor/dashboard" class="underline font-semibold">dashboard</RouterLink> to submit a change request.
-          </p>
-        </template>
+        <p class="font-display font-semibold text-blue-800 text-sm">Changes pending admin review</p>
+        <p class="text-xs text-blue-700 font-body mt-0.5">
+          Your latest edits are staged for review. The form shows your currently live profile. New saves will update your pending submission.
+        </p>
       </div>
     </div>
 
     <!-- Step content -->
-    <div class="card relative">
-      <div v-if="isLocked"
-        class="absolute inset-0 z-10 rounded-lg cursor-not-allowed"
-        style="background: rgba(255,255,255,0.55);"
-        @click.prevent @keydown.prevent />
+    <div class="card">
       <component :is="steps[currentStep].component" @saved="onSaved" />
     </div>
 
@@ -77,8 +60,7 @@
 </template>
 
 <script setup>
-import { ref, computed, markRaw, onMounted, provide } from 'vue'
-import { RouterLink } from 'vue-router'
+import { ref, markRaw, onMounted } from 'vue'
 import { tutorApi } from '@/api/tutor.js'
 import { toast } from 'vue-sonner'
 import Step1Education from './steps/Step1Education.vue'
@@ -87,40 +69,30 @@ import Step3PersonalInfo from './steps/Step3PersonalInfo.vue'
 import Step4Documents from './steps/Step4Documents.vue'
 import Step5TeachingVideo from './steps/Step5TeachingVideo.vue'
 
-const currentStep = ref(0)
-const isLocked    = ref(false)
-const lockReason  = ref('verified') // 'verified' | 'review_pending'
-
-provide('profileLocked', isLocked)
+const currentStep     = ref(0)
+const hasPendingChanges = ref(false)
 
 const steps = [
-  { key: 'education',   label: 'Education',            component: markRaw(Step1Education) },
-  { key: 'preferences', label: 'Tuition Preferences',  component: markRaw(Step2TuitionPrefs) },
-  { key: 'personal',    label: 'Personal Information',  component: markRaw(Step3PersonalInfo) },
-  { key: 'documents',   label: 'Documents',             component: markRaw(Step4Documents) },
-  { key: 'video',       label: 'Teaching Video',        component: markRaw(Step5TeachingVideo) },
+  { key: 'education',   label: 'Education',           component: markRaw(Step1Education) },
+  { key: 'preferences', label: 'Tuition Preferences', component: markRaw(Step2TuitionPrefs) },
+  { key: 'personal',    label: 'Personal Information', component: markRaw(Step3PersonalInfo) },
+  { key: 'documents',   label: 'Documents',            component: markRaw(Step4Documents) },
+  { key: 'video',       label: 'Teaching Video',       component: markRaw(Step5TeachingVideo) },
 ]
 
 onMounted(async () => {
   try {
-    const [dashRes, crRes] = await Promise.all([
-      tutorApi.getDashboard(),
-      tutorApi.getChangeRequest(),
-    ])
-    const verified      = dashRes.data.data.is_verified === true
-    const reviewPending = crRes.data.data?.status === 'review_pending'
-    if (verified) {
-      isLocked.value   = true
-      lockReason.value = 'verified'
-    } else if (reviewPending) {
-      isLocked.value   = true
-      lockReason.value = 'review_pending'
-    }
+    const { data } = await tutorApi.getDashboard()
+    hasPendingChanges.value = !!data.data?.has_pending_changes
   } catch {}
 })
 
-function onSaved() {
-  toast.success('Saved!')
-  if (currentStep.value < steps.length - 1) currentStep.value++
+function onSaved(isPending) {
+  if (isPending) {
+    toast.success('Changes saved — pending admin review.')
+  } else {
+    toast.success('Saved!')
+    if (currentStep.value < steps.length - 1) currentStep.value++
+  }
 }
 </script>

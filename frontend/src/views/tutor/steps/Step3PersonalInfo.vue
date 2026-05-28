@@ -182,11 +182,12 @@ onMounted(async () => {
 async function save() {
   saving.value = true
   try {
-    await Promise.all([
+    const [bioRes, infoRes] = await Promise.all([
       tutorApi.updateProfile({ bio: bio.value }),
       tutorApi.savePersonalInfo(form),
     ])
-    emit('saved')
+    const isPending = !!(bioRes.data?.pending || infoRes.data?.pending)
+    emit('saved', isPending)
   } catch (e) {
     const msg = e.response?.data?.message
       || Object.values(e.response?.data?.errors || {})[0]?.[0]

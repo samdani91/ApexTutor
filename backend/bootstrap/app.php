@@ -14,10 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         $middleware->alias([
-            'role'             => \App\Http\Middleware\EnsureRole::class,
-            'verified.account' => \App\Http\Middleware\EnsureVerified::class,
-            'profile.unlocked' => \App\Http\Middleware\EnsureProfileUnlocked::class,
-            'active.user'      => \App\Http\Middleware\EnsureUserIsActive::class,
+            'role'        => \App\Http\Middleware\EnsureRole::class,
+            'active.user' => \App\Http\Middleware\EnsureUserIsActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

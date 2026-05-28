@@ -22,10 +22,8 @@
                 {{ tutor.tutor_id }}
               </span>
             </div>
-            <p class="text-paper-500 text-sm mt-1 font-body">
-              <template v-if="tutor.tuition_preference?.city">{{ tutor.tuition_preference.city }}</template>
-              <template v-if="tutor.tuition_preference?.city && tutor.personal_info?.gender"> · </template>
-              <span v-if="tutor.personal_info?.gender" class="capitalize">{{ tutor.personal_info.gender }}</span>
+            <p v-if="tutor.personal_info?.gender" class="text-paper-500 text-sm mt-1 font-body capitalize">
+              {{ tutor.personal_info.gender }}
             </p>
             <StarRating class="mt-2" :rating="tutor.rating" :count="tutor.review_count" />
           </div>
@@ -112,26 +110,36 @@
         </div>
 
         <!-- Preferred locations -->
+        <div v-if="tutor.tuition_preference.district" class="mb-5">
+          <p class="info-label mb-1.5">Preferred district</p>
+          <span class="text-sm font-semibold font-display text-navy-700 bg-navy-50 border border-navy-100 px-3 py-1 rounded-full">
+            {{ tutor.tuition_preference.district.name }}
+          </span>
+        </div>
+
         <div v-if="tutor.tuition_preference.locations?.length" class="mb-5">
           <p class="info-label mb-1.5">Preferred locations</p>
           <div class="flex flex-wrap gap-1.5">
             <span v-for="loc in tutor.tuition_preference.locations" :key="loc.id"
               class="text-sm font-semibold font-display text-navy-700 bg-navy-50 border border-navy-100 px-3 py-1 rounded-full">
-              {{ loc.area_name }}
+              {{ loc.area?.name }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Place of tutoring -->
+        <div v-if="asArray(tutor.tuition_preference.place_of_tutoring).length" class="mb-5">
+          <p class="info-label mb-1.5">Place of tutoring</p>
+          <div class="flex flex-wrap gap-1.5">
+            <span v-for="p in asArray(tutor.tuition_preference.place_of_tutoring)" :key="p"
+              class="text-sm font-semibold font-display text-navy-700 bg-navy-50 border border-navy-100 px-3 py-1 rounded-full">
+              {{ PLACE_LABELS[p] || p.replace(/_/g, ' ') }}
             </span>
           </div>
         </div>
 
         <!-- Key details grid -->
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3">
-          <div v-if="tutor.tuition_preference.city">
-            <p class="info-label">Location</p>
-            <p class="info-value">{{ tutor.tuition_preference.city }}</p>
-          </div>
-          <div v-if="tutor.tuition_preference.place_of_tutoring?.length">
-            <p class="info-label">Tutoring place</p>
-            <p class="info-value capitalize">{{ asArray(tutor.tuition_preference.place_of_tutoring).map(v => v.replace(/_/g,' ')).join(', ') }}</p>
-          </div>
           <div v-if="tutor.tuition_preference.days_per_week">
             <p class="info-label">Days per week</p>
             <p class="info-value">{{ tutor.tuition_preference.days_per_week }} days</p>
@@ -284,7 +292,8 @@ import { toast } from 'vue-sonner'
 import { getInitials, formatSalaryRange } from '@/utils/helpers.js'
 import { PREFERRED_TIMES } from '@/utils/constants.js'
 
-const TIME_MAP = Object.fromEntries(PREFERRED_TIMES.map(t => [t.value, `${t.label} (${t.hint})`]))
+const TIME_MAP    = Object.fromEntries(PREFERRED_TIMES.map(t => [t.value, `${t.label} (${t.hint})`]))
+const PLACE_LABELS = { student_home: "Student's home", tutor_home: "Tutor's home", online: 'Online' }
 
 const route   = useRoute()
 const router  = useRouter()

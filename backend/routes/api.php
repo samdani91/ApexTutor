@@ -1,6 +1,6 @@
 <?php
-use App\Http\Controllers\Admin\AdminChangeRequestController;
 use App\Http\Controllers\Admin\AdminNotificationController;
+use App\Http\Controllers\Admin\AdminPendingChangesController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminConnectionController;
 use App\Http\Controllers\Admin\AdminDashboardController;
@@ -18,7 +18,6 @@ use App\Http\Controllers\Public\TutorPublicProfileController;
 use App\Http\Controllers\Public\TutorSearchController;
 use App\Http\Controllers\Tutor\DocumentController;
 use App\Http\Controllers\Tutor\EducationController;
-use App\Http\Controllers\Tutor\ProfileChangeRequestController;
 use App\Http\Controllers\Tutor\TeachingVideoController;
 use App\Http\Controllers\Tutor\TutorPersonalInfoController;
 use App\Http\Controllers\Tutor\TravelAvailabilityController;
@@ -56,14 +55,14 @@ Route::middleware('throttle:60,1')->group(function () {
         Route::get('tutors', [TutorSearchController::class, 'search']);
         Route::get('subjects', [TutorSearchController::class, 'subjects']);
         Route::get('districts', [TutorSearchController::class, 'districts']);
-        Route::get('cities', [TutorSearchController::class, 'cities']);
+        Route::get('areas', [TutorSearchController::class, 'areas']);
     });
     Route::get('tutors/{publicId}', [TutorPublicProfileController::class, 'show']);
     Route::get('tutors/{publicId}/reviews', [TutorPublicProfileController::class, 'reviews']);
 });
 
 // Tutor routes
-Route::middleware(['auth:sanctum', 'active.user', 'role:tutor', 'profile.unlocked'])->prefix('tutor')->group(function () {
+Route::middleware(['auth:sanctum', 'active.user', 'role:tutor'])->prefix('tutor')->group(function () {
     Route::get('profile', [TutorProfileController::class, 'show']);
     Route::put('profile', [TutorProfileController::class, 'update']);
     Route::get('dashboard', [TutorProfileController::class, 'dashboard']);
@@ -73,10 +72,6 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:tutor', 'profile.unlocke
     Route::get('documents', [DocumentController::class, 'index']);
     Route::post('documents', [DocumentController::class, 'store']);
     Route::delete('documents/{id}', [DocumentController::class, 'destroy']);
-    Route::get('change-request', [ProfileChangeRequestController::class, 'index']);
-    Route::post('change-request', [ProfileChangeRequestController::class, 'store']);
-    Route::put('change-request/done', [ProfileChangeRequestController::class, 'doneEditing']);
-    Route::delete('change-request', [ProfileChangeRequestController::class, 'destroy']);
     Route::get('personal-info', [TutorPersonalInfoController::class, 'show']);
     Route::put('personal-info', [TutorPersonalInfoController::class, 'upsert']);
     Route::get('videos', [TeachingVideoController::class, 'index']);
@@ -118,9 +113,9 @@ Route::middleware(['auth:sanctum', 'role:admin,super_admin'])->prefix('admin')->
     Route::get('connections/{id}', [AdminConnectionController::class, 'show']);
     Route::put('connections/{id}/status', [AdminConnectionController::class, 'updateStatus']);
     Route::post('connections/{id}/notes', [AdminConnectionController::class, 'addNotes']);
-    Route::get('change-requests', [AdminChangeRequestController::class, 'index']);
-    Route::put('change-requests/{id}/approve', [AdminChangeRequestController::class, 'approve']);
-    Route::put('change-requests/{id}/reject', [AdminChangeRequestController::class, 'reject']);
+    Route::get('pending-changes', [AdminPendingChangesController::class, 'index']);
+    Route::put('pending-changes/{id}/approve', [AdminPendingChangesController::class, 'approve']);
+    Route::put('pending-changes/{id}/reject', [AdminPendingChangesController::class, 'reject']);
     Route::get('reviews/pending', [AdminReviewController::class, 'pending']);
     Route::put('reviews/{id}/approve', [AdminReviewController::class, 'approve']);
     Route::put('reviews/{id}/reject', [AdminReviewController::class, 'reject']);

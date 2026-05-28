@@ -5,10 +5,6 @@
     <!-- Basic info -->
     <div class="grid sm:grid-cols-2 gap-5">
       <div>
-        <label class="block text-xs font-semibold font-display text-navy-700 mb-1">City</label>
-        <input v-model="form.city" type="text" class="input text-sm" placeholder="e.g. Mirpur, Dhaka" />
-      </div>
-      <div>
         <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Total experience</label>
         <select v-model.number="form.total_experience_years" class="input text-sm">
           <option :value="0">Less than 1 year</option>
@@ -123,31 +119,28 @@
       <p v-else class="text-xs text-paper-400 font-body">No subjects available.</p>
     </div>
 
-    <!-- Preferred locations -->
+    <!-- Preferred district + areas -->
     <div class="mt-5">
-      <label class="block text-xs font-semibold font-display text-navy-700 mb-2">Preferred locations</label>
-      <div class="flex gap-2 mb-3">
-        <input v-model="locationInput" type="text" class="input text-sm flex-1"
-          placeholder="e.g. Dhanmondi, Uttara, Gulshan"
-          @keydown.enter.prevent="addLocation" />
-        <button type="button" @click="addLocation"
-          class="btn-primary text-sm py-2 px-4 shrink-0">
-          Add
+      <label class="block text-xs font-semibold font-display text-navy-700 mb-1.5">Preferred district</label>
+      <select v-model.number="form.district_id" @change="onDistrictChange" class="input text-sm">
+        <option :value="null">Select a district…</option>
+        <option v-for="d in allDistricts" :key="d.id" :value="d.id">{{ d.name }}</option>
+      </select>
+      <p class="text-xs text-paper-400 font-body mt-1">The city / district you are available to tutor in</p>
+    </div>
+
+    <div v-if="form.district_id" class="mt-5">
+      <label class="block text-xs font-semibold font-display text-navy-700 mb-2">Preferred areas</label>
+      <div v-if="areasLoading" class="text-xs text-paper-400 font-body py-2">Loading areas…</div>
+      <div v-else-if="allAreas.length" class="flex flex-wrap gap-2">
+        <button type="button" v-for="a in allAreas" :key="a.id"
+          @click="toggleArea(a.id)"
+          class="choice-btn"
+          :class="form.location_ids.includes(a.id) ? 'choice-btn-active' : 'choice-btn-idle'">
+          {{ a.name }}
         </button>
       </div>
-      <div v-if="form.locations.length" class="flex flex-wrap gap-2">
-        <span v-for="(loc, i) in form.locations" :key="i"
-          class="inline-flex items-center gap-1.5 bg-navy-50 text-navy-700 border border-navy-200 text-xs font-semibold font-display px-2.5 py-1 rounded-pill">
-          {{ loc }}
-          <button type="button" @click="removeLocation(i)"
-            class="text-navy-400 hover:text-red-600 transition-colors leading-none">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-        </span>
-      </div>
-      <p class="text-xs text-paper-400 font-body mt-1.5">Areas or neighbourhoods you're willing to travel to</p>
+      <p class="text-xs text-paper-400 font-body mt-1.5">Pick all the areas you're willing to travel to</p>
     </div>
 
     <!-- Preferred curricula -->
@@ -206,10 +199,12 @@ import { toast } from 'vue-sonner'
 import { MEDIUMS, CLASS_LEVELS, PLACE_OF_TUTORING, TUTORING_STYLES, DAYS, PREFERRED_TIMES } from '@/utils/constants.js'
 
 const emit = defineEmits(['saved'])
-const saving = ref(false)
+const saving         = ref(false)
 const subjectsLoading = ref(false)
-const allSubjects = ref([])
-const locationInput = ref('')
+const areasLoading   = ref(false)
+const allSubjects    = ref([])
+const allDistricts   = ref([])
+const allAreas       = ref([])
 
 const HOURS = [
   { value: 1,   label: '1 hr' },
@@ -219,7 +214,7 @@ const HOURS = [
 ]
 
 const form = reactive({
-  city: '',
+  district_id: null,
   total_experience_years: 0,
   experience_details: '',
   expected_salary_min: '',
@@ -234,22 +229,41 @@ const form = reactive({
   preferred_time: [],
   selectedDays: [],
   subject_ids: [],
-  locations: [],
+  location_ids: [],
 })
+
+async function loadAreas(districtId) {
+  if (!districtId) { allAreas.value = []; return }
+  areasLoading.value = true
+  try {
+    const { data } = await searchApi.areas(districtId)
+    allAreas.value = data.data || []
+  } finally {
+    areasLoading.value = false
+  }
+}
+
+// Called only by user interaction — clears selections when district changes
+async function onDistrictChange() {
+  form.location_ids = []
+  await loadAreas(form.district_id)
+}
 
 onMounted(async () => {
   subjectsLoading.value = true
   try {
-    const [prefRes, subjRes] = await Promise.all([
+    const [prefRes, subjRes, distRes] = await Promise.all([
       tutorApi.getPreferences(),
       searchApi.subjects(),
+      searchApi.districts(),
     ])
-    allSubjects.value = subjRes.data.data || []
+    allSubjects.value  = subjRes.data.data || []
+    allDistricts.value = distRes.data.data || []
 
     const d = prefRes.data.data
     if (d) {
       Object.assign(form, {
-        city:                       d.city || '',
+        district_id:                d.district_id ?? null,
         total_experience_years:     d.total_experience_years ?? 0,
         experience_details:         d.experience_details || '',
         expected_salary_min:        d.expected_salary_min || '',
@@ -264,8 +278,18 @@ onMounted(async () => {
         preferred_time:              d.preferred_time || [],
         selectedDays:               (d.days || []).map(x => x.day),
         subject_ids:                (d.subjects || []).map(x => x.id),
-        locations:                  (d.locations || []).map(x => x.area_name),
+        location_ids:               (d.locations || []).map(x => x.area_id).filter(Boolean),
       })
+      // Load areas for already-selected district without clearing location_ids
+      if (d.district_id) {
+        areasLoading.value = true
+        try {
+          const { data } = await searchApi.areas(d.district_id)
+          allAreas.value = data.data || []
+        } finally {
+          areasLoading.value = false
+        }
+      }
     }
   } finally {
     subjectsLoading.value = false
@@ -282,16 +306,10 @@ function toggleArray(arr, val) {
   else arr.splice(i, 1)
 }
 
-function addLocation() {
-  const val = locationInput.value.trim()
-  if (val && !form.locations.includes(val)) {
-    form.locations.push(val)
-  }
-  locationInput.value = ''
-}
-
-function removeLocation(index) {
-  form.locations.splice(index, 1)
+function toggleArea(id) {
+  const i = form.location_ids.indexOf(id)
+  if (i === -1) form.location_ids.push(id)
+  else form.location_ids.splice(i, 1)
 }
 
 function nullIfEmpty(val) {
@@ -299,11 +317,10 @@ function nullIfEmpty(val) {
 }
 
 async function save() {
-  addLocation() // flush any typed-but-not-yet-added input
   saving.value = true
   try {
-    await tutorApi.savePreferences({
-      city:                        nullIfEmpty(form.city),
+    const res = await tutorApi.savePreferences({
+      district_id:                 form.district_id,
       total_experience_years:      form.total_experience_years,
       experience_details:          nullIfEmpty(form.experience_details),
       expected_salary_min:         nullIfEmpty(form.expected_salary_min),
@@ -318,9 +335,9 @@ async function save() {
       tutoring_method_description: nullIfEmpty(form.tutoring_method_description),
       days:                        form.selectedDays.map(d => ({ day: d })),
       subject_ids:                 form.subject_ids,
-      locations:                   form.locations.map(name => ({ area_name: name })),
+      location_ids:                form.location_ids,
     })
-    emit('saved')
+    emit('saved', !!res.data?.pending)
   } catch (e) {
     const msg = e.response?.data?.message
       || Object.values(e.response?.data?.errors || {})[0]?.[0]

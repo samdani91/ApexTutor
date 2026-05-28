@@ -15,7 +15,7 @@ class ShortlistController extends Controller
         $list = $request->user()->guardianProfile->shortlists()->with([
             'tutorProfile:id,user_id,tutor_id,public_id,is_verified,rating,review_count,bio',
             'tutorProfile.user:id,name,avatar',
-            'tutorProfile.tuitionPreference:id,tutor_profile_id,city,district_id,expected_salary_min,expected_salary_max,total_experience_years,preferred_classes',
+            'tutorProfile.tuitionPreference:id,tutor_profile_id,district_id,expected_salary_min,expected_salary_max,total_experience_years,preferred_classes,place_of_tutoring',
             'tutorProfile.tuitionPreference.district:id,name',
         ])->get();
         return response()->json(['success' => true, 'data' => $list]);
