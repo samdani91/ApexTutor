@@ -113,8 +113,8 @@ class TutorSearchController extends Controller
         match($sort) {
             'rating'      => $query->orderByDesc('rating'),
             'newest'      => $query->latest(),
-            'salary_asc'  => $query->orderBy('tuition_preferences.expected_salary_min'),
-            'salary_desc' => $query->orderByDesc('tuition_preferences.expected_salary_max'),
+            'salary_asc'  => $query->orderByRaw('(SELECT expected_salary_min FROM tuition_preferences WHERE tutor_profile_id = tutor_profiles.id LIMIT 1) ASC'),
+            'salary_desc' => $query->orderByRaw('(SELECT expected_salary_max FROM tuition_preferences WHERE tutor_profile_id = tutor_profiles.id LIMIT 1) DESC'),
             default       => $query->orderByRaw('(profile_completion_percent/100*4)+(is_verified*3)+(rating/5*2)+(LEAST(review_count,50)/50)+(LEAST(profile_view_count,1000)/1000) DESC'),
         };
 
@@ -124,7 +124,9 @@ class TutorSearchController extends Controller
 
     public function subjects(Request $request): JsonResponse
     {
-        $subjects = Subject::when($request->class_level, fn($q) => $q->where('class_level', $request->class_level))->get();
+        $subjects = Subject::when($request->class_level, fn($q) => $q->where('class_level', $request->class_level))
+            ->orderBy('name')
+            ->get();
         return response()->json(['success' => true, 'data' => $subjects]);
     }
 

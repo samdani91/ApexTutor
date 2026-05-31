@@ -8,7 +8,7 @@ return new class extends Migration {
         Schema::create('tutor_documents', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tutor_profile_id')->constrained()->cascadeOnDelete();
-            $table->enum('type', ['university_id','nid','passport','birth_certificate','ssc_marksheet','ssc_certificate','hsc_marksheet','hsc_certificate','o_level_marksheet','a_level_marksheet','additional']);
+            $table->enum('type', ['university_id','nid','passport','birth_certificate','ssc_marksheet','ssc_certificate','hsc_marksheet','hsc_certificate','o_level_marksheet','a_level_marksheet','emergency_contact_nid','additional']);
             $table->string('file_path', 500);
             $table->string('file_name', 255);
             $table->unsignedInteger('file_size')->nullable();

@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Area;
 use App\Models\District;
+use App\Models\EducationEntry;
 use App\Models\Subject;
 use App\Models\TuitionPreference;
 use App\Models\TuitionPreferenceDay;
 use App\Models\TuitionPreferenceLocation;
+use App\Models\TutorDocument;
 use App\Models\TutorEmergencyContact;
 use App\Models\TutorPersonalInfo;
 use App\Models\TutorProfile;
@@ -17,6 +19,7 @@ use App\Traits\LogsAdminActivity;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class AdminPendingChangesController extends Controller
 {
@@ -31,6 +34,8 @@ class AdminPendingChangesController extends Controller
                 'tuitionPreference.subjects:id,name',
                 'tuitionPreference.district:id,name',
                 'tuitionPreference.locations.area:id,name',
+                'educationEntries',
+                'documents',
                 'personalInfo:id,tutor_profile_id,gender,date_of_birth,religion,nationality,present_address,permanent_address,additional_phone,national_id,fathers_name,fathers_phone,mothers_name,mothers_phone',
                 'emergencyContact:id,tutor_profile_id,name,relation,phone,address',
             ])
@@ -49,7 +54,12 @@ class AdminPendingChangesController extends Controller
             $changes = $profile->pending_changes;
 
             if (isset($changes['preferences']['subject_ids'])) {
-                $changes['preferences']['_subject_names'] = $subjectsMap->only($changes['preferences']['subject_ids'])->values()->toArray();
+                $changes['preferences']['_subject_names'] = $subjectsMap->only($changes['preferences']['subject_ids'])
+                    ->values()
+                    ->unique()
+                    ->sort()
+                    ->values()
+                    ->toArray();
             }
             if (isset($changes['preferences']['location_ids'])) {
                 $changes['preferences']['_location_names'] = $areasMap->only($changes['preferences']['location_ids'])->values()->toArray();
@@ -57,6 +67,20 @@ class AdminPendingChangesController extends Controller
             if (isset($changes['preferences']['district_id'])) {
                 $changes['preferences']['_district_name'] = $districtsMap[$changes['preferences']['district_id']] ?? null;
             }
+
+            if (isset($changes['documents']['upsert'])) {
+                foreach ($changes['documents']['upsert'] as $type => $document) {
+                    if (!empty($document['file_path'])) {
+                        $changes['documents']['upsert'][$type]['file_url'] = Storage::disk('public')->url($document['file_path']);
+                    }
+                }
+            }
+
+            $profile->documents->each(function ($document) {
+                if ($document->file_path) {
+                    $document->file_url = Storage::disk('public')->url($document->file_path);
+                }
+            });
 
             return [
                 'id'           => $profile->id,
@@ -67,6 +91,8 @@ class AdminPendingChangesController extends Controller
                 'live'         => [
                     'bio'               => $profile->bio,
                     'preferences'       => $profile->tuitionPreference,
+                    'education'         => $profile->educationEntries,
+                    'documents'         => $profile->documents,
                     'personal_info'     => $profile->personalInfo,
                     'emergency_contact' => $profile->emergencyContact,
                 ],
@@ -131,11 +157,55 @@ class AdminPendingChangesController extends Controller
                 );
             }
 
+            if (isset($changes['education']['changes'])) {
+                foreach ($changes['education']['changes'] as $change) {
+                    $action = $change['action'] ?? null;
+                    $entryId = $change['id'] ?? null;
+                    $data = $change['data'] ?? [];
+
+                    if ($action === 'delete' && $entryId) {
+                        $profile->educationEntries()->whereKey($entryId)->delete();
+                        continue;
+                    }
+
+                    if ($action === 'update' && $entryId) {
+                        $profile->educationEntries()->whereKey($entryId)->update($data);
+                        continue;
+                    }
+
+                    if ($action === 'create') {
+                        $profile->educationEntries()->create($data);
+                    }
+                }
+            }
+
+            if (isset($changes['documents'])) {
+                foreach ($changes['documents']['delete'] ?? [] as $docId) {
+                    $doc = $profile->documents()->whereKey($docId)->first();
+                    if (!$doc) continue;
+                    Storage::disk('public')->delete($doc->file_path);
+                    $doc->delete();
+                }
+
+                foreach ($changes['documents']['upsert'] ?? [] as $type => $docData) {
+                    $existing = $profile->documents()->where('type', $type)->get();
+                    foreach ($existing as $doc) {
+                        Storage::disk('public')->delete($doc->file_path);
+                        $doc->delete();
+                    }
+                    $profile->documents()->create($docData + ['review_status' => 'pending']);
+                }
+            }
+
             // Clear pending state
             $profile->update(['pending_changes' => null, 'pending_note' => null]);
         });
 
-        $profile->user->notify(new PendingChangeApprovedNotification());
+        try {
+            $profile->user->notify(new PendingChangeApprovedNotification());
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Notification failed (approve)', ['error' => $e->getMessage(), 'profile' => $id]);
+        }
 
         $this->logActivity($request, 'approve_pending_changes', 'tutor_profile', $id,
             "Approved pending profile changes for tutor #{$id}");
@@ -197,11 +267,15 @@ class AdminPendingChangesController extends Controller
             'pending_note'    => $data['note'] ?? null,
         ]);
 
-        $profile->user->notify(new PendingChangeRejectedNotification(
-            note:      $data['note'] ?? null,
-            sections:  $sections,
-            submitted: $submitted,
-        ));
+        try {
+            $profile->user->notify(new PendingChangeRejectedNotification(
+                note:      $data['note'] ?? null,
+                sections:  $sections,
+                submitted: $submitted,
+            ));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Notification failed (reject)', ['error' => $e->getMessage(), 'profile' => $id]);
+        }
 
         $this->logActivity($request, 'reject_pending_changes', 'tutor_profile', $id,
             "Rejected pending profile changes for tutor #{$id}" . ($data['note'] ? ": {$data['note']}" : ''));

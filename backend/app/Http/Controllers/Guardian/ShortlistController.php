@@ -38,24 +38,31 @@ class ShortlistController extends Controller
         $created = $shortlist->wasRecentlyCreated;
 
         if ($created) {
-            $admins = User::whereIn('role', ['admin', 'super_admin'])->get();
-            $notification = new TutorShortlistedNotification(
-                guardianName:       $request->user()->name,
-                guardianId:         $guardian->guardian_id ?? "G#{$guardian->id}",
-                tutorName:          $tutor->user->name,
-                tutorId:            $tutor->tutor_id ?? "T#{$tutor->id}",
-                tutorProfileId:     $tutorProfileId,
-                guardianProfileId:  $guardian->id,
-            );
-            foreach ($admins as $admin) {
-                $admin->notify($notification);
-            }
+            try {
+                $admins       = User::whereIn('role', ['admin', 'super_admin'])->get();
+                $notification = new TutorShortlistedNotification(
+                    guardianName:      $request->user()->name,
+                    guardianId:        $guardian->guardian_id ?? "G#{$guardian->id}",
+                    tutorName:         $tutor->user->name,
+                    tutorId:           $tutor->tutor_id ?? "T#{$tutor->id}",
+                    tutorProfileId:    $tutorProfileId,
+                    guardianProfileId: $guardian->id,
+                );
+                foreach ($admins as $admin) {
+                    $admin->notify($notification);
+                }
 
-            // Notify the tutor directly
-            $tutor->user->notify(new TutorShortlistedByGuardianNotification(
-                guardianName:      $request->user()->name,
-                guardianProfileId: $guardian->id,
-            ));
+                $tutor->user->notify(new TutorShortlistedByGuardianNotification(
+                    guardianName:      $request->user()->name,
+                    guardianProfileId: $guardian->id,
+                ));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Shortlist notification failed', [
+                    'error'   => $e->getMessage(),
+                    'tutor'   => $tutorProfileId,
+                    'guardian'=> $guardian->id,
+                ]);
+            }
         }
 
         return response()->json(['success' => true, 'message' => 'Added to shortlist.']);

@@ -9,11 +9,13 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('admin_id')->constrained('users');
             $table->string('action', 100);
+            $table->string('target_type', 100)->nullable();
+            $table->unsignedBigInteger('target_id')->nullable();
             $table->string('subject_type', 100)->nullable();
             $table->unsignedBigInteger('subject_id')->nullable();
             $table->text('description')->nullable();
             $table->string('ip_address', 45)->nullable();
-            $table->timestamp('created_at')->useCurrent();
+            $table->timestamps();
             $table->index('admin_id');
             $table->index('action');
         });

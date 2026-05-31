@@ -47,6 +47,8 @@ class TutorProfileController extends Controller
                 'tuitionPreference.subjects:id,name',
                 'tuitionPreference.district:id,name',
                 'tuitionPreference.locations.area:id,name',
+                'educationEntries',
+                'documents',
                 'personalInfo',
                 'emergencyContact',
             ])
@@ -88,6 +90,8 @@ class TutorProfileController extends Controller
                 'bio'               => $profile->bio,
                 'status'            => $profile->status,
                 'preferences'       => $profile->tuitionPreference,
+                'education'         => $profile->educationEntries,
+                'documents'         => $profile->documents,
                 'personal_info'     => $profile->personalInfo,
                 'emergency_contact' => $profile->emergencyContact,
             ],
@@ -102,6 +106,8 @@ class TutorProfileController extends Controller
 
         if (isset($changes['preferences']['subject_ids'])) {
             $changes['preferences']['_subject_names'] = Subject::whereIn('id', $changes['preferences']['subject_ids'])
+                ->distinct()
+                ->orderBy('name')
                 ->pluck('name')
                 ->toArray();
         }
