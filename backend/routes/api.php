@@ -19,22 +19,27 @@ use App\Http\Controllers\Public\TutorSearchController;
 use App\Http\Controllers\Tutor\DocumentController;
 use App\Http\Controllers\Tutor\EducationController;
 use App\Http\Controllers\Tutor\TeachingVideoController;
+use App\Http\Controllers\Tutor\TutorEmergencyContactController;
 use App\Http\Controllers\Tutor\TutorPersonalInfoController;
 use App\Http\Controllers\Tutor\TravelAvailabilityController;
 use App\Http\Controllers\Tutor\TuitionPreferenceController;
 use App\Http\Controllers\Tutor\TutorProfileController;
 use App\Http\Controllers\User\AvatarController;
 use App\Http\Controllers\User\UserProfileController;
+use App\Http\Controllers\UserNotificationController;
 use Illuminate\Support\Facades\Route;
 
+// Health check — no auth, no throttle
+Route::get('health', fn() => response()->json(['status' => 'ok', 'timestamp' => now()->toISOString()]));
+
 // Public auth routes
-Route::prefix('auth')->middleware('throttle:15,1')->group(function () {
-    Route::post('register',              [AuthController::class, 'register']);
-    Route::post('login',                 [AuthController::class, 'login']);
-    Route::post('verify-email',          [AuthController::class, 'verifyEmail']);
-    Route::post('resend-verification',   [AuthController::class, 'resendVerification']);
-    Route::post('otp/send',              [OtpController::class,  'send']);
-    Route::post('otp/verify',            [OtpController::class,  'verify']);
+Route::prefix('auth')->group(function () {
+    Route::post('register', [AuthController::class, 'register'])->middleware('throttle:10,1');
+    Route::post('login',    [AuthController::class, 'login'])->middleware('throttle:10,1');
+    Route::post('verify-email',        [AuthController::class, 'verifyEmail'])->middleware('throttle:10,1');
+    Route::post('resend-verification', [AuthController::class, 'resendVerification'])->middleware('throttle:5,1');
+    Route::post('otp/send',   [OtpController::class, 'send'])->middleware('throttle:5,1');
+    Route::post('otp/verify', [OtpController::class, 'verify'])->middleware('throttle:10,1');
     Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me',      [AuthController::class, 'me']);
@@ -43,83 +48,102 @@ Route::prefix('auth')->middleware('throttle:15,1')->group(function () {
 
 // User account — any authenticated user
 Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
-    Route::post('user/avatar',                   [AvatarController::class,     'store']);
-    Route::put('user/profile',                   [UserProfileController::class, 'update']);
-    Route::post('user/password/request-change',  [UserProfileController::class, 'requestPasswordChange']);
-    Route::put('user/password',                  [UserProfileController::class, 'changePassword']);
+    Route::post('user/avatar',   [AvatarController::class,      'store']);
+    Route::put('user/profile',   [UserProfileController::class,  'update']);
+
+    // Password change (2-step: request OTP → confirm)
+    Route::post('user/password/request-change', [UserProfileController::class, 'requestPasswordChange'])
+        ->middleware('throttle:3,1');
+    Route::put('user/password', [UserProfileController::class, 'changePassword'])
+        ->middleware('throttle:5,1');
+
+    // Email change (2-step: request OTP → confirm)
+    Route::post('user/email/request-change', [UserProfileController::class, 'requestEmailChange'])
+        ->middleware('throttle:3,1');
+    Route::put('user/email/confirm', [UserProfileController::class, 'confirmEmailChange'])
+        ->middleware('throttle:5,1');
+
+    // Notifications (tutors & guardians)
+    Route::get('notifications',             [UserNotificationController::class, 'index']);
+    Route::put('notifications/read-all',    [UserNotificationController::class, 'markAllRead']);
+    Route::put('notifications/{id}/read',   [UserNotificationController::class, 'markRead']);
 });
 
 // Public search & tutor profiles
 Route::middleware('throttle:60,1')->group(function () {
     Route::prefix('search')->group(function () {
-        Route::get('tutors', [TutorSearchController::class, 'search']);
-        Route::get('subjects', [TutorSearchController::class, 'subjects']);
+        Route::get('tutors',    [TutorSearchController::class, 'search']);
+        Route::get('subjects',  [TutorSearchController::class, 'subjects']);
         Route::get('districts', [TutorSearchController::class, 'districts']);
-        Route::get('areas', [TutorSearchController::class, 'areas']);
+        Route::get('areas',     [TutorSearchController::class, 'areas']);
     });
-    Route::get('tutors/{publicId}', [TutorPublicProfileController::class, 'show']);
+    Route::get('tutors/{publicId}',         [TutorPublicProfileController::class, 'show']);
     Route::get('tutors/{publicId}/reviews', [TutorPublicProfileController::class, 'reviews']);
 });
 
 // Tutor routes
 Route::middleware(['auth:sanctum', 'active.user', 'role:tutor'])->prefix('tutor')->group(function () {
-    Route::get('profile', [TutorProfileController::class, 'show']);
-    Route::put('profile', [TutorProfileController::class, 'update']);
+    Route::get('profile',   [TutorProfileController::class, 'show']);
+    Route::put('profile',   [TutorProfileController::class, 'update']);
     Route::get('dashboard', [TutorProfileController::class, 'dashboard']);
-    Route::apiResource('education', EducationController::class)->only(['index','store','update','destroy']);
+    Route::apiResource('education', EducationController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::get('preferences', [TuitionPreferenceController::class, 'show']);
     Route::put('preferences', [TuitionPreferenceController::class, 'upsert']);
-    Route::get('documents', [DocumentController::class, 'index']);
-    Route::post('documents', [DocumentController::class, 'store']);
+    Route::get('documents',        [DocumentController::class, 'index']);
+    Route::post('documents',       [DocumentController::class, 'store']);
     Route::delete('documents/{id}', [DocumentController::class, 'destroy']);
-    Route::get('personal-info', [TutorPersonalInfoController::class, 'show']);
-    Route::put('personal-info', [TutorPersonalInfoController::class, 'upsert']);
-    Route::get('videos', [TeachingVideoController::class, 'index']);
-    Route::post('videos', [TeachingVideoController::class, 'store']);
-    Route::put('videos/{id}', [TeachingVideoController::class, 'update']);
-    Route::delete('videos/{id}', [TeachingVideoController::class, 'destroy']);
-    Route::apiResource('travel', TravelAvailabilityController::class)->only(['index','store','update','destroy']);
+    Route::get('personal-info',  [TutorPersonalInfoController::class, 'show']);
+    Route::put('personal-info',  [TutorPersonalInfoController::class, 'upsert']);
+    Route::get('emergency-contact', [TutorEmergencyContactController::class, 'show']);
+    Route::put('emergency-contact', [TutorEmergencyContactController::class, 'upsert']);
+    Route::get('videos',           [TeachingVideoController::class, 'index']);
+    Route::post('videos',          [TeachingVideoController::class, 'store']);
+    Route::put('videos/{id}',      [TeachingVideoController::class, 'update']);
+    Route::delete('videos/{id}',   [TeachingVideoController::class, 'destroy']);
+    Route::apiResource('travel', TravelAvailabilityController::class)->only(['index', 'store', 'update', 'destroy']);
 });
 
 // Guardian routes
 Route::middleware(['auth:sanctum', 'active.user', 'role:guardian,student'])->prefix('guardian')->group(function () {
-    Route::get('profile', [GuardianProfileController::class, 'show']);
-    Route::put('profile', [GuardianProfileController::class, 'update']);
-    Route::post('profile/nid', [GuardianProfileController::class, 'uploadNid']);
+    Route::get('profile',    [GuardianProfileController::class, 'show']);
+    Route::put('profile',    [GuardianProfileController::class, 'update']);
+    Route::post('profile/nid',   [GuardianProfileController::class, 'uploadNid']);
     Route::delete('profile/nid', [GuardianProfileController::class, 'deleteNid']);
     Route::apiResource('requirements', TuitionRequirementController::class)->except(['show']);
-    Route::get('connections', [ConnectionRequestController::class, 'index']);
-    Route::post('connections', [ConnectionRequestController::class, 'store']);
-    Route::get('connections/{id}', [ConnectionRequestController::class, 'show']);
-    Route::get('shortlist', [ShortlistController::class, 'index']);
-    Route::post('shortlist/{tutor_profile_id}', [ShortlistController::class, 'store']);
-    Route::delete('shortlist/{tutor_profile_id}', [ShortlistController::class, 'destroy']);
+    Route::get('connections',     [ConnectionRequestController::class, 'index']);
+    Route::post('connections',    [ConnectionRequestController::class, 'store']);
+    Route::get('connections/{id}',[ConnectionRequestController::class, 'show']);
+    Route::get('shortlist',    [ShortlistController::class, 'index']);
+    Route::post('shortlist/{tutor_profile_id}',   [ShortlistController::class, 'store'])
+        ->middleware('throttle:10,1');
+    Route::delete('shortlist/{tutor_profile_id}', [ShortlistController::class, 'destroy'])
+        ->middleware('throttle:10,1');
 });
 
 // Admin routes
 Route::middleware(['auth:sanctum', 'role:admin,super_admin'])->prefix('admin')->group(function () {
     Route::get('dashboard', [AdminDashboardController::class, 'index']);
-    Route::get('admins', [AdminUserController::class, 'index']);
+    Route::get('admins',    [AdminUserController::class, 'index']);
     Route::get('admins/{id}', [AdminUserController::class, 'show']);
-    Route::get('tutors', [AdminTutorController::class, 'index']);
+    Route::get('tutors',    [AdminTutorController::class, 'index']);
     Route::get('tutors/{id}', [AdminTutorController::class, 'show']);
     Route::put('tutors/{id}/status', [AdminTutorController::class, 'updateStatus']);
-    Route::get('guardians', [AdminGuardianController::class, 'index']);
-    Route::get('guardians/{id}', [AdminGuardianController::class, 'show']);
-    Route::get('verifications', [AdminVerificationController::class, 'queue']);
+    Route::get('guardians',     [AdminGuardianController::class, 'index']);
+    Route::get('guardians/{id}',[AdminGuardianController::class, 'show']);
+    Route::get('verifications',              [AdminVerificationController::class, 'queue']);
     Route::put('verifications/{id}/approve', [AdminVerificationController::class, 'approve']);
-    Route::put('verifications/{id}/reject', [AdminVerificationController::class, 'reject']);
-    Route::get('connections', [AdminConnectionController::class, 'index']);
-    Route::get('connections/{id}', [AdminConnectionController::class, 'show']);
+    Route::put('verifications/{id}/reject',  [AdminVerificationController::class, 'reject']);
+    Route::get('connections',        [AdminConnectionController::class, 'index']);
+    Route::get('connections/{id}',   [AdminConnectionController::class, 'show']);
     Route::put('connections/{id}/status', [AdminConnectionController::class, 'updateStatus']);
     Route::post('connections/{id}/notes', [AdminConnectionController::class, 'addNotes']);
-    Route::get('pending-changes', [AdminPendingChangesController::class, 'index']);
+    Route::get('pending-changes',              [AdminPendingChangesController::class, 'index']);
     Route::put('pending-changes/{id}/approve', [AdminPendingChangesController::class, 'approve']);
-    Route::put('pending-changes/{id}/reject', [AdminPendingChangesController::class, 'reject']);
-    Route::get('reviews/pending', [AdminReviewController::class, 'pending']);
+    Route::put('pending-changes/{id}/reject',  [AdminPendingChangesController::class, 'reject']);
+    Route::get('reviews/pending',      [AdminReviewController::class, 'pending']);
     Route::put('reviews/{id}/approve', [AdminReviewController::class, 'approve']);
-    Route::put('reviews/{id}/reject', [AdminReviewController::class, 'reject']);
-    Route::get('notifications', [AdminNotificationController::class, 'index']);
-    Route::put('notifications/read-all', [AdminNotificationController::class, 'markAllRead']);
-    Route::put('notifications/{id}/read', [AdminNotificationController::class, 'markRead']);
+    Route::put('reviews/{id}/reject',  [AdminReviewController::class, 'reject']);
+    Route::get('notifications',             [AdminNotificationController::class, 'index']);
+    Route::put('notifications/read-all',    [AdminNotificationController::class, 'markAllRead']);
+    Route::put('notifications/{id}/read',   [AdminNotificationController::class, 'markRead']);
 });

@@ -4,17 +4,24 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Area;
 use App\Models\District;
+use App\Models\Subject;
 use App\Models\TuitionPreference;
 use App\Models\TuitionPreferenceDay;
 use App\Models\TuitionPreferenceLocation;
+use App\Models\TutorEmergencyContact;
 use App\Models\TutorPersonalInfo;
 use App\Models\TutorProfile;
+use App\Notifications\PendingChangeApprovedNotification;
+use App\Notifications\PendingChangeRejectedNotification;
+use App\Traits\LogsAdminActivity;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class AdminPendingChangesController extends Controller
 {
+    use LogsAdminActivity;
+
     public function index(): JsonResponse
     {
         $profiles = TutorProfile::whereNotNull('pending_changes')
@@ -24,50 +31,52 @@ class AdminPendingChangesController extends Controller
                 'tuitionPreference.subjects:id,name',
                 'tuitionPreference.district:id,name',
                 'tuitionPreference.locations.area:id,name',
-                'personalInfo:id,tutor_profile_id,gender,date_of_birth,religion,nationality,present_address,permanent_address,additional_phone,national_id,fathers_name,mothers_name',
+                'personalInfo:id,tutor_profile_id,gender,date_of_birth,religion,nationality,present_address,permanent_address,additional_phone,national_id,fathers_name,fathers_phone,mothers_name,mothers_phone',
+                'emergencyContact:id,tutor_profile_id,name,relation,phone,address',
             ])
-            ->get()
-            ->map(function (TutorProfile $profile) {
-                $changes = $profile->pending_changes;
+            ->get();
 
-                // Resolve subject names
-                if (isset($changes['preferences']['subject_ids'])) {
-                    $changes['preferences']['_subject_names'] = \App\Models\Subject
-                        ::whereIn('id', $changes['preferences']['subject_ids'])
-                        ->pluck('name')->toArray();
-                }
+        // Batch-load all referenced subjects, areas and districts in one query each (eliminates N+1)
+        $allSubjectIds  = $profiles->flatMap(fn($p) => $p->pending_changes['preferences']['subject_ids']  ?? [])->unique();
+        $allLocationIds = $profiles->flatMap(fn($p) => $p->pending_changes['preferences']['location_ids'] ?? [])->unique();
+        $allDistrictIds = $profiles->map(fn($p) => $p->pending_changes['preferences']['district_id'] ?? null)->filter()->unique();
 
-                // Resolve area names for pending location_ids
-                if (isset($changes['preferences']['location_ids'])) {
-                    $changes['preferences']['_location_names'] = \App\Models\Area
-                        ::whereIn('id', $changes['preferences']['location_ids'])
-                        ->orderBy('name')->pluck('name')->toArray();
-                }
+        $subjectsMap  = Subject::whereIn('id', $allSubjectIds)->pluck('name', 'id');
+        $areasMap     = Area::whereIn('id', $allLocationIds)->orderBy('name')->pluck('name', 'id');
+        $districtsMap = District::whereIn('id', $allDistrictIds)->pluck('name', 'id');
 
-                // Resolve district name for pending district_id
-                if (isset($changes['preferences']['district_id'])) {
-                    $district = \App\Models\District::find($changes['preferences']['district_id']);
-                    $changes['preferences']['_district_name'] = $district?->name;
-                }
+        $mapped = $profiles->map(function (TutorProfile $profile) use ($subjectsMap, $areasMap, $districtsMap) {
+            $changes = $profile->pending_changes;
 
-                return [
-                    'id'           => $profile->id,
-                    'tutor_id'     => $profile->tutor_id,
-                    'user'         => $profile->user,
-                    'submitted_at' => $changes['submitted_at'] ?? $profile->updated_at,
-                    'pending'      => $changes,
-                    'live'         => [
-                        'bio'          => $profile->bio,
-                        'preferences'  => $profile->tuitionPreference,
-                        'personal_info'=> $profile->personalInfo,
-                    ],
-                ];
-            });
+            if (isset($changes['preferences']['subject_ids'])) {
+                $changes['preferences']['_subject_names'] = $subjectsMap->only($changes['preferences']['subject_ids'])->values()->toArray();
+            }
+            if (isset($changes['preferences']['location_ids'])) {
+                $changes['preferences']['_location_names'] = $areasMap->only($changes['preferences']['location_ids'])->values()->toArray();
+            }
+            if (isset($changes['preferences']['district_id'])) {
+                $changes['preferences']['_district_name'] = $districtsMap[$changes['preferences']['district_id']] ?? null;
+            }
 
-        return response()->json(['success' => true, 'data' => $profiles]);
+            return [
+                'id'           => $profile->id,
+                'tutor_id'     => $profile->tutor_id,
+                'user'         => $profile->user,
+                'submitted_at' => $changes['submitted_at'] ?? $profile->updated_at,
+                'pending'      => $changes,
+                'live'         => [
+                    'bio'               => $profile->bio,
+                    'preferences'       => $profile->tuitionPreference,
+                    'personal_info'     => $profile->personalInfo,
+                    'emergency_contact' => $profile->emergencyContact,
+                ],
+            ];
+        });
+
+        return response()->json(['success' => true, 'data' => $mapped]);
     }
 
-    public function approve(int $id): JsonResponse
+    public function approve(Request $request, int $id): JsonResponse
     {
         $profile = TutorProfile::findOrFail($id);
         $changes = $profile->pending_changes ?? [];
@@ -114,9 +123,22 @@ class AdminPendingChangesController extends Controller
                 );
             }
 
+            // Apply emergency contact
+            if (isset($changes['emergency_contact'])) {
+                TutorEmergencyContact::updateOrCreate(
+                    ['tutor_profile_id' => $profile->id],
+                    $changes['emergency_contact']
+                );
+            }
+
             // Clear pending state
             $profile->update(['pending_changes' => null, 'pending_note' => null]);
         });
+
+        $profile->user->notify(new PendingChangeApprovedNotification());
+
+        $this->logActivity($request, 'approve_pending_changes', 'tutor_profile', $id,
+            "Approved pending profile changes for tutor #{$id}");
 
         return response()->json(['success' => true, 'message' => 'Changes approved and applied to profile.']);
     }
@@ -125,10 +147,64 @@ class AdminPendingChangesController extends Controller
     {
         $data = $request->validate(['note' => 'nullable|string|max:500']);
 
-        TutorProfile::findOrFail($id)->update([
+        $profile  = TutorProfile::findOrFail($id);
+        $pending  = $profile->pending_changes ?? [];
+        $sections = array_keys(collect($pending)->except('submitted_at')->toArray());
+
+        // Extract human-readable submitted values for the notification
+        $fieldLabels = [
+            'bio'               => 'Bio',
+            'status'            => 'Status',
+            'additional_phone'  => 'Additional Phone',
+            'present_address'   => 'Present Address',
+            'permanent_address' => 'Permanent Address',
+            'national_id'       => 'National ID',
+            'fathers_name'      => "Father's Name",
+            'fathers_phone'     => "Father's Phone",
+            'mothers_name'      => "Mother's Name",
+            'mothers_phone'     => "Mother's Phone",
+            'gender'            => 'Gender',
+            'date_of_birth'     => 'Date of Birth',
+            'religion'          => 'Religion',
+            'nationality'       => 'Nationality',
+            'facebook_url'      => 'Facebook URL',
+            'linkedin_url'      => 'LinkedIn URL',
+            'name'              => 'Name',
+            'relation'          => 'Relation',
+            'phone'             => 'Phone',
+            'address'           => 'Address',
+        ];
+
+        $submitted = [];
+        foreach (['bio', 'status'] as $f) {
+            if (!empty($pending[$f])) {
+                $submitted[] = ['field' => $fieldLabels[$f], 'value' => (string) $pending[$f]];
+            }
+        }
+        foreach ($pending['personal_info'] ?? [] as $f => $v) {
+            if ($v !== null && $v !== '') {
+                $submitted[] = ['field' => $fieldLabels[$f] ?? ucwords(str_replace('_', ' ', $f)), 'value' => (string) $v];
+            }
+        }
+        foreach ($pending['emergency_contact'] ?? [] as $f => $v) {
+            if ($v !== null && $v !== '') {
+                $submitted[] = ['field' => $fieldLabels[$f] ?? ucwords(str_replace('_', ' ', $f)), 'value' => (string) $v];
+            }
+        }
+
+        $profile->update([
             'pending_changes' => null,
             'pending_note'    => $data['note'] ?? null,
         ]);
+
+        $profile->user->notify(new PendingChangeRejectedNotification(
+            note:      $data['note'] ?? null,
+            sections:  $sections,
+            submitted: $submitted,
+        ));
+
+        $this->logActivity($request, 'reject_pending_changes', 'tutor_profile', $id,
+            "Rejected pending profile changes for tutor #{$id}" . ($data['note'] ? ": {$data['note']}" : ''));
 
         return response()->json(['success' => true, 'message' => 'Changes rejected.']);
     }

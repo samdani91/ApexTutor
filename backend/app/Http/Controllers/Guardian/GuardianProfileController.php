@@ -45,13 +45,21 @@ class GuardianProfileController extends Controller
             'nid_document' => 'required|file|mimes:jpg,jpeg,png,pdf|max:4096',
         ]);
 
+        $file     = $request->file('nid_document');
+        $realMime = mime_content_type($file->getRealPath());
+
+        if (!in_array($realMime, ['application/pdf', 'image/jpeg', 'image/png'], true)) {
+            return response()->json(['success' => false, 'message' => 'Invalid file type.'], 422);
+        }
+
         $profile = $request->user()->guardianProfile;
 
         if ($profile->nid_document) {
             Storage::disk('public')->delete($profile->nid_document);
         }
 
-        $path = $request->file('nid_document')->store('nid_documents', 'public');
+        // Scope to user subdirectory to prevent enumeration
+        $path = $file->store('nid_documents/' . $request->user()->id, 'public');
         $profile->update(['nid_document' => $path]);
 
         return response()->json([

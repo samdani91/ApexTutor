@@ -10,6 +10,8 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
@@ -19,15 +21,19 @@ class AuthController extends Controller
     public function register(Request $request): JsonResponse
     {
         $request->validate([
-            'name'     => 'required|string|max:150',
-            'email'    => 'required|email',
-            'phone'    => 'required|string|max:20',
-            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
-            'role'     => 'required|in:tutor,guardian,student',
+            'name'            => 'required|string|max:150',
+            'email'           => 'required|email|max:255',
+            'phone'           => ['required', 'string', 'max:20', 'regex:/^(\+88)?01[3-9]\d{8}$/'],
+            'password'        => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'role'            => 'required|in:tutor,guardian,student',
+            'captcha_token'   => 'required|string',
         ]);
 
-        // If email or phone belongs to an unverified account, clean it up so the user can re-register
+        $this->verifyCaptcha($request->captcha_token, $request->ip());
+
+        // Clean up stale unverified accounts older than 7 days so the user can re-register
         User::whereNull('email_verified_at')
+            ->where('created_at', '<', now()->subDays(7))
             ->where(fn($q) => $q->where('email', $request->email)->orWhere('phone', $request->phone))
             ->each(function ($stale) {
                 $stale->tutorProfile()?->forceDelete();
@@ -71,9 +77,13 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required|string',
+            'email'         => 'required|email',
+            'password'      => 'required|string',
+            'captcha_token' => 'required|string',
         ]);
+
+        $this->verifyCaptcha($request->captcha_token, $request->ip());
+
         $user = User::where('email', $data['email'])->first();
         if (!$user || !Hash::check($data['password'], $user->password)) {
             throw ValidationException::withMessages(['email' => ['Invalid credentials.']]);
@@ -85,6 +95,9 @@ class AuthController extends Controller
                 'message'   => 'Account suspended.',
             ], 403);
         }
+        // Revoke all previous sessions before issuing a new one
+        $user->tokens()->delete();
+
         $token = $user->createToken('auth_token')->plainTextToken;
         return response()->json([
             'success' => true,
@@ -123,6 +136,7 @@ class AuthController extends Controller
         }
 
         $user->update(['email_verified_at' => now()]);
+        $user->tokens()->delete(); // Revoke any stale tokens from previous attempts
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -158,7 +172,7 @@ class AuthController extends Controller
 
     private function sendEmailOtp(string $email, string $purpose): void
     {
-        $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $code = str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
         OtpCode::create([
             'email'      => $email,
             'code'       => $code,
@@ -170,6 +184,38 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('OTP mail failed', ['email' => $email, 'error' => $e->getMessage()]);
             throw new \RuntimeException('Failed to send verification email. Please try again.');
+        }
+    }
+
+    private function verifyCaptcha(string $token, string $ip): void
+    {
+        $secret = config('services.recaptcha.secret');
+
+        // Skip verification if no secret is configured (local dev without keys)
+        if (empty($secret)) {
+            Log::warning('reCAPTCHA secret not configured — skipping verification.');
+            return;
+        }
+
+        $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+            'secret'   => $secret,
+            'response' => $token,
+            'remoteip' => $ip,
+        ]);
+
+        $result    = $response->json();
+        $threshold = (float) config('services.recaptcha.threshold', 0.5);
+
+        if (!($result['success'] ?? false) || ($result['score'] ?? 0) < $threshold) {
+            Log::info('reCAPTCHA failed', [
+                'success'  => $result['success'] ?? false,
+                'score'    => $result['score']   ?? 0,
+                'errors'   => $result['error-codes'] ?? [],
+                'ip'       => $ip,
+            ]);
+            throw ValidationException::withMessages([
+                'captcha_token' => ['Security verification failed. Please refresh the page and try again.'],
+            ]);
         }
     }
 

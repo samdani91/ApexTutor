@@ -20,9 +20,13 @@ class TutorSearchController extends Controller
             'district_id'  => 'nullable|integer',
             'area_id'      => 'nullable|integer|exists:areas,id',
             'tutor_gender' => 'nullable|in:male,female,no_preference',
-            'days_per_week'=> 'nullable|integer|min:1|max:7',
-            'hours_per_day'=> 'nullable|numeric',
-            'salary_max'   => 'nullable|integer',
+            'days_per_week'        => 'nullable|integer|min:1|max:7',
+            'hours_per_day'        => 'nullable|numeric',
+            'place_of_tutoring'    => 'nullable|array',
+            'place_of_tutoring.*'  => 'in:student_home,tutor_home,online',
+            'tutoring_styles'      => 'nullable|array',
+            'tutoring_styles.*'    => 'in:one_to_one,group,online',
+            'salary_max'           => 'nullable|integer',
             'min_rating'   => 'nullable|numeric|min:1|max:5',
             'verified_only'=> 'nullable|boolean',
             'sort'         => 'nullable|in:relevance,rating,newest,salary_asc,salary_desc',
@@ -69,6 +73,32 @@ class TutorSearchController extends Controller
         if (!empty($filters['tutor_gender']) && $filters['tutor_gender'] !== 'no_preference') {
             $query->whereHas('personalInfo', fn($q) => $q->where('gender', $filters['tutor_gender']));
         }
+        if (!empty($filters['days_per_week'])) {
+            $query->whereHas('tuitionPreference', fn($q) => $q->where('days_per_week', $filters['days_per_week']));
+        }
+        if (!empty($filters['hours_per_day'])) {
+            $query->whereHas('tuitionPreference', fn($q) => $q->where('hours_per_day', (float)$filters['hours_per_day']));
+        }
+        if (!empty($filters['place_of_tutoring'])) {
+            $places = $filters['place_of_tutoring'];
+            $query->whereHas('tuitionPreference', function ($q) use ($places) {
+                $q->where(function ($inner) use ($places) {
+                    foreach ($places as $place) {
+                        $inner->orWhereJsonContains('place_of_tutoring', $place);
+                    }
+                });
+            });
+        }
+        if (!empty($filters['tutoring_styles'])) {
+            $styles = $filters['tutoring_styles'];
+            $query->whereHas('tuitionPreference', function ($q) use ($styles) {
+                $q->where(function ($inner) use ($styles) {
+                    foreach ($styles as $style) {
+                        $inner->orWhereJsonContains('tutoring_styles', $style);
+                    }
+                });
+            });
+        }
         if (!empty($filters['salary_max'])) {
             $query->whereHas('tuitionPreference', fn($q) => $q->where('expected_salary_min', '<=', (int)$filters['salary_max']));
         }
@@ -85,7 +115,7 @@ class TutorSearchController extends Controller
             'newest'      => $query->latest(),
             'salary_asc'  => $query->orderBy('tuition_preferences.expected_salary_min'),
             'salary_desc' => $query->orderByDesc('tuition_preferences.expected_salary_max'),
-            default       => $query->orderByRaw('(is_verified*3)+(profile_completion_percent/100*2)+(rating/5*2)+(LEAST(review_count,50)/50)+(LEAST(profile_view_count,1000)/1000) DESC'),
+            default       => $query->orderByRaw('(profile_completion_percent/100*4)+(is_verified*3)+(rating/5*2)+(LEAST(review_count,50)/50)+(LEAST(profile_view_count,1000)/1000) DESC'),
         };
 
         $results = $query->paginate($filters['per_page'] ?? 12);

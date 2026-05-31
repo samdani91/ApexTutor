@@ -37,7 +37,7 @@ class TutorPersonalInfoController extends Controller
 
         if ($profile->is_verified) {
             $pending = $profile->pending_changes ?? [];
-            $pending['personal_info'] = $data;
+            $pending['personal_info'] = array_merge($pending['personal_info'] ?? [], $data);
             $pending['submitted_at']  = now()->toISOString();
             $profile->update(['pending_changes' => $pending, 'pending_note' => null]);
             return response()->json(['success' => true, 'pending' => true, 'message' => 'Personal information saved — pending admin review.']);

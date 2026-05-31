@@ -21,7 +21,7 @@ class EducationController extends Controller
             'degree_title'   => 'required|string|max:150',
             'major_group'    => 'nullable|string|max:150',
             'result'         => 'nullable|string|max:100',
-            'year_of_passing'=> 'nullable|integer|min:1970|max:2030',
+            'year_of_passing'=> 'nullable|integer|min:1970|max:' . date('Y'),
             'is_current'     => 'boolean',
             'sort_order'     => 'integer|min:0',
         ]);
@@ -38,7 +38,7 @@ class EducationController extends Controller
             'degree_title'   => 'string|max:150',
             'major_group'    => 'nullable|string|max:150',
             'result'         => 'nullable|string|max:100',
-            'year_of_passing'=> 'nullable|integer',
+            'year_of_passing'=> 'nullable|integer|min:1970|max:' . date('Y'),
             'is_current'     => 'boolean',
         ]);
         $entry->update($data);

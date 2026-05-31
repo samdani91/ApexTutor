@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Guardian;
 use App\Http\Controllers\Controller;
 use App\Models\Shortlist;
 use App\Models\User;
+use App\Notifications\TutorShortlistedByGuardianNotification;
 use App\Notifications\TutorShortlistedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -49,6 +50,12 @@ class ShortlistController extends Controller
             foreach ($admins as $admin) {
                 $admin->notify($notification);
             }
+
+            // Notify the tutor directly
+            $tutor->user->notify(new TutorShortlistedByGuardianNotification(
+                guardianName:      $request->user()->name,
+                guardianProfileId: $guardian->id,
+            ));
         }
 
         return response()->json(['success' => true, 'message' => 'Added to shortlist.']);

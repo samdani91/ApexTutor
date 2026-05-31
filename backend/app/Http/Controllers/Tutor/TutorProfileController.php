@@ -2,6 +2,9 @@
 namespace App\Http\Controllers\Tutor;
 
 use App\Http\Controllers\Controller;
+use App\Models\Area;
+use App\Models\District;
+use App\Models\Subject;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -39,7 +42,16 @@ class TutorProfileController extends Controller
 
     public function dashboard(Request $request): JsonResponse
     {
-        $profile = $request->user()->tutorProfile()->withCount(['connectionRequests', 'reviews'])->first();
+        $profile = $request->user()->tutorProfile()
+            ->with([
+                'tuitionPreference.subjects:id,name',
+                'tuitionPreference.district:id,name',
+                'tuitionPreference.locations.area:id,name',
+                'personalInfo',
+                'emergencyContact',
+            ])
+            ->withCount(['connectionRequests', 'reviews'])
+            ->first();
 
         if (!$profile) {
             return response()->json(['success' => true, 'data' => [
@@ -53,8 +65,12 @@ class TutorProfileController extends Controller
                 'rating'                     => null,
                 'has_pending_changes'        => false,
                 'pending_note'               => null,
+                'pending_changes'            => null,
+                'live_profile'               => null,
             ]]);
         }
+
+        $pendingChanges = $this->resolvePendingChanges($profile->pending_changes);
 
         return response()->json(['success' => true, 'data' => [
             'tutor_id'                  => $profile->tutor_id,
@@ -67,6 +83,40 @@ class TutorProfileController extends Controller
             'rating'                    => $profile->rating,
             'has_pending_changes'       => !is_null($profile->pending_changes),
             'pending_note'              => $profile->pending_note,
+            'pending_changes'           => $pendingChanges,
+            'live_profile'              => [
+                'bio'               => $profile->bio,
+                'status'            => $profile->status,
+                'preferences'       => $profile->tuitionPreference,
+                'personal_info'     => $profile->personalInfo,
+                'emergency_contact' => $profile->emergencyContact,
+            ],
         ]]);
+    }
+
+    private function resolvePendingChanges(?array $changes): ?array
+    {
+        if (!$changes) {
+            return null;
+        }
+
+        if (isset($changes['preferences']['subject_ids'])) {
+            $changes['preferences']['_subject_names'] = Subject::whereIn('id', $changes['preferences']['subject_ids'])
+                ->pluck('name')
+                ->toArray();
+        }
+
+        if (isset($changes['preferences']['location_ids'])) {
+            $changes['preferences']['_location_names'] = Area::whereIn('id', $changes['preferences']['location_ids'])
+                ->orderBy('name')
+                ->pluck('name')
+                ->toArray();
+        }
+
+        if (isset($changes['preferences']['district_id'])) {
+            $changes['preferences']['_district_name'] = District::find($changes['preferences']['district_id'])?->name;
+        }
+
+        return $changes;
     }
 }
