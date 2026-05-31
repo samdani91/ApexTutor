@@ -8,7 +8,7 @@ const http = axios.create({
 })
 
 http.interceptors.request.use(config => {
-  const token = localStorage.getItem('token')
+  const token = sessionStorage.getItem('token')
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
@@ -17,13 +17,13 @@ http.interceptors.response.use(
   res => res,
   err => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('token')
+      sessionStorage.removeItem('token')
       window.location.href = '/login'
       return Promise.reject(err)
     }
 
     if (err.response?.status === 403 && err.response?.data?.suspended) {
-      localStorage.removeItem('token')
+      sessionStorage.removeItem('token')
       toast.error('Your account has been suspended. Please contact support.')
       window.location.href = '/login'
       return Promise.reject(err)
@@ -39,6 +39,10 @@ http.interceptors.response.use(
     } else if (err.response.status >= 500) {
       toast.error('Something went wrong on our end. Please try again.')
       err._toasted = true
+    }
+
+    if (import.meta.env.DEV) {
+      console.error('[API Error]', err.response?.status, err.config?.url, err.response?.data)
     }
 
     return Promise.reject(err)

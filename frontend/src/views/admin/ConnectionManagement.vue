@@ -31,14 +31,10 @@
               :class="statusBadgeClass(conn.status)">
               {{ conn.status.replace(/_/g,' ') }}
             </span>
-            <select @change="(e) => onStatusChange(conn, e)" :value="conn.status"
-              class="status-select flex-1">
-              <option value="pending">Pending</option>
-              <option value="admin_reviewing">Admin reviewing</option>
-              <option value="tutor_contacted">Tutor contacted</option>
-              <option value="connected">Connected</option>
-              <option value="declined">Declined</option>
-            </select>
+            <div class="flex-1">
+              <DropSelect :model-value="conn.status" :options="connectionStatusOptions" placeholder="Pending"
+                @update:modelValue="value => onStatusChange(conn, value)" />
+            </div>
           </div>
 
         </div>
@@ -67,14 +63,8 @@
                 </span>
               </td>
               <td class="py-3">
-                <select @change="(e) => onStatusChange(conn, e)" :value="conn.status"
-                  class="status-select">
-                  <option value="pending">Pending</option>
-                  <option value="admin_reviewing">Admin reviewing</option>
-                  <option value="tutor_contacted">Tutor contacted</option>
-                  <option value="connected">Connected</option>
-                  <option value="declined">Declined</option>
-                </select>
+                <DropSelect :model-value="conn.status" :options="connectionStatusOptions" placeholder="Pending"
+                  @update:modelValue="value => onStatusChange(conn, value)" />
               </td>
             </tr>
           </tbody>
@@ -108,6 +98,13 @@ import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog.vue'
 const connections   = ref([])
 const loading       = ref(true)
 const pendingChange = ref(null)
+const connectionStatusOptions = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'admin_reviewing', label: 'Admin reviewing' },
+  { value: 'tutor_contacted', label: 'Tutor contacted' },
+  { value: 'connected', label: 'Connected' },
+  { value: 'declined', label: 'Declined' },
+]
 
 onMounted(async () => {
   try {
@@ -125,9 +122,7 @@ function statusBadgeClass(status) {
   return 'bg-blue-50 text-blue-700'
 }
 
-function onStatusChange(conn, e) {
-  const newStatus = e.target.value
-  e.target.value = conn.status
+function onStatusChange(conn, newStatus) {
   pendingChange.value = { conn, newStatus }
 }
 

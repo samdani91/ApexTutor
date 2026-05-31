@@ -63,8 +63,8 @@
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
         <h2 class="font-display font-semibold text-navy-700 text-lg">Profile status</h2>
         <span v-if="stats.verification_status" :class="verificationBadgeClass"
-          class="text-xs font-semibold px-3 py-1 rounded-pill capitalize self-start sm:self-auto">
-          {{ stats.verification_status === 'under_review' ? 'Under review' : stats.verification_status?.replace(/_/g, ' ') }}
+          class="text-xs font-semibold px-3 py-1 rounded-pill self-start sm:self-auto">
+          {{ profileStatusLabel }}
         </span>
       </div>
 
@@ -79,6 +79,30 @@
           <p class="text-xs text-blue-700 font-body mt-0.5 leading-relaxed">
             Your recent edits have been saved and are awaiting admin approval. They'll go live once reviewed.
           </p>
+        </div>
+      </div>
+
+      <div v-if="pendingDiffRows.length" class="mb-4 rounded-lg border border-paper-200 overflow-hidden">
+        <div class="bg-paper-50 px-4 py-2.5">
+          <p class="font-display font-semibold text-navy-700 text-sm">Pending changes</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-xs font-semibold font-display text-paper-400 uppercase tracking-wide border-b border-paper-100">
+                <th class="py-2.5 px-4 w-1/4">Field</th>
+                <th class="py-2.5 px-4 w-[37.5%]">Current value</th>
+                <th class="py-2.5 px-4 w-[37.5%]">Proposed change</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-paper-100">
+              <tr v-for="row in pendingDiffRows" :key="row.key">
+                <td class="py-2.5 px-4 font-display font-semibold text-navy-700 text-xs align-top">{{ row.label }}</td>
+                <td class="py-2.5 px-4 text-xs text-paper-500 font-body align-top leading-relaxed">{{ row.old }}</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-navy-800 font-body align-top leading-relaxed">{{ row.new }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -135,12 +159,28 @@ const initials  = computed(() => getInitials(auth.user?.name))
 const avatarUrl = computed(() => auth.user?.avatar_url || null)
 
 const verificationBadgeClass = computed(() => {
+  if (stats.value.has_pending_changes) return 'bg-blue-50 text-blue-700 border border-blue-200'
+
   const s = stats.value.verification_status
   if (s === 'approved')     return 'bg-emerald-50 text-emerald-700 border border-emerald-200'
   if (s === 'pending')      return 'bg-amber-50 text-amber-700 border border-amber-200'
   if (s === 'rejected')     return 'bg-red-50 text-red-700 border border-red-200'
   if (s === 'under_review') return 'bg-blue-50 text-blue-700 border border-blue-200'
   return 'bg-paper-100 text-paper-500 border border-paper-200'
+})
+
+const pendingDiffRows = computed(() => buildPendingDiff(stats.value))
+
+const profileStatusLabel = computed(() => {
+  if (stats.value.has_pending_changes) return 'Profile changes pending review'
+
+  const status = stats.value.verification_status
+  if (status === 'approved') return 'Profile approved'
+  if (status === 'pending') return 'Profile pending review'
+  if (status === 'rejected') return 'Profile rejected'
+  if (status === 'under_review') return 'Profile under review'
+  if (status === 'not_started') return 'Profile not started'
+  return `Profile ${String(status || '').replace(/_/g, ' ')}`
 })
 
 onMounted(async () => {
@@ -167,5 +207,139 @@ async function uploadAvatar(e) {
   } finally {
     uploadingAvatar.value = false
   }
+}
+
+const PREF_FIELDS = [
+  { key: '_subject_names',         label: 'Subjects' },
+  { key: '_district_name',         label: 'Preferred district' },
+  { key: '_location_names',        label: 'Preferred areas' },
+  { key: 'expected_salary_min',    label: 'Min salary (BDT)' },
+  { key: 'expected_salary_max',    label: 'Max salary (BDT)' },
+  { key: 'total_experience_years', label: 'Experience (years)' },
+  { key: 'days_per_week',          label: 'Days per week' },
+  { key: 'hours_per_day',          label: 'Hours per day' },
+  { key: 'preferred_classes',      label: 'Preferred classes' },
+  { key: 'tutoring_methods',       label: 'Tutoring methods' },
+  { key: 'place_of_tutoring',      label: 'Place of tutoring' },
+  { key: 'preferred_time',         label: 'Preferred time' },
+]
+
+const PERSONAL_FIELDS = [
+  { key: 'gender',            label: 'Gender' },
+  { key: 'date_of_birth',     label: 'Date of birth' },
+  { key: 'religion',          label: 'Religion' },
+  { key: 'nationality',       label: 'Nationality' },
+  { key: 'present_address',   label: 'Present address' },
+  { key: 'permanent_address', label: 'Permanent address' },
+  { key: 'additional_phone',  label: 'Additional phone' },
+  { key: 'national_id',       label: 'National ID' },
+  { key: 'facebook_url',      label: 'Facebook' },
+  { key: 'linkedin_url',      label: 'LinkedIn' },
+  { key: 'fathers_name',      label: "Father's name" },
+  { key: 'fathers_phone',     label: "Father's phone" },
+  { key: 'mothers_name',      label: "Mother's name" },
+  { key: 'mothers_phone',     label: "Mother's phone" },
+]
+
+const EMERGENCY_FIELDS = [
+  { key: 'name',     label: 'Emergency contact name' },
+  { key: 'relation', label: 'Emergency contact relation' },
+  { key: 'phone',    label: 'Emergency contact phone' },
+  { key: 'address',  label: 'Emergency contact address' },
+]
+
+function buildPendingDiff(data) {
+  const pending = data.pending_changes || {}
+  const live = data.live_profile || {}
+  const rows = []
+
+  for (const { key, label } of [{ key: 'bio', label: 'Bio' }, { key: 'status', label: 'Status' }]) {
+    if (pending[key] === undefined) continue
+    if (norm(live[key]) === norm(pending[key])) continue
+    rows.push({ key, label, old: display(live[key]), new: display(pending[key]) })
+  }
+
+  if (pending.preferences) {
+    const livePrefs = live.preferences || {}
+    for (const { key, label } of PREF_FIELDS) {
+      if (key === '_subject_names') {
+        const liveValue = (livePrefs.subjects || []).map(subject => subject.name)
+        const pendingValue = pending.preferences._subject_names || []
+        if (norm(liveValue) !== norm(pendingValue)) {
+          rows.push({ key: `preferences.${key}`, label, old: display(liveValue), new: display(pendingValue) })
+        }
+        continue
+      }
+      if (key === '_location_names') {
+        const liveValue = (livePrefs.locations || []).map(location => location.area?.name).filter(Boolean)
+        const pendingValue = pending.preferences._location_names || []
+        if (norm(liveValue) !== norm(pendingValue)) {
+          rows.push({ key: `preferences.${key}`, label, old: display(liveValue), new: display(pendingValue) })
+        }
+        continue
+      }
+      if (key === '_district_name') {
+        const liveValue = livePrefs.district?.name ?? null
+        const pendingValue = pending.preferences._district_name ?? null
+        if (norm(liveValue) !== norm(pendingValue)) {
+          rows.push({ key: `preferences.${key}`, label, old: display(liveValue), new: display(pendingValue) })
+        }
+        continue
+      }
+      if (!(key in pending.preferences)) continue
+      const liveValue = livePrefs[key]
+      const pendingValue = pending.preferences[key]
+      if (norm(liveValue) === norm(pendingValue)) continue
+      rows.push({ key: `preferences.${key}`, label, old: display(liveValue), new: display(pendingValue) })
+    }
+  }
+
+  addFieldRows(rows, 'personal_info', PERSONAL_FIELDS, pending.personal_info, live.personal_info)
+  addFieldRows(rows, 'emergency_contact', EMERGENCY_FIELDS, pending.emergency_contact, live.emergency_contact)
+
+  return rows
+}
+
+function addFieldRows(rows, prefix, fields, pendingValues, liveValues = {}) {
+  if (!pendingValues) return
+  for (const { key, label } of fields) {
+    if (!(key in pendingValues)) continue
+    const liveValue = liveValues?.[key]
+    const pendingValue = pendingValues[key]
+    if (norm(liveValue) === norm(pendingValue)) continue
+    rows.push({ key: `${prefix}.${key}`, label, old: display(liveValue), new: display(pendingValue) })
+  }
+}
+
+function display(val) {
+  if (val === null || val === undefined || val === '') return '—'
+  if (Array.isArray(val)) {
+    if (!val.length) return '—'
+    const first = val[0]
+    if (first !== null && typeof first === 'object') {
+      if ('name' in first) return val.map(item => item.name).join(', ')
+      if ('day' in first) return val.map(item => item.day).join(', ')
+      if ('area_name' in first) return val.map(item => item.area_name).join(', ')
+      return '—'
+    }
+    return val.join(', ')
+  }
+  return String(val)
+}
+
+function norm(val) {
+  if (val === null || val === undefined || val === '') return '\0empty'
+  if (Array.isArray(val)) {
+    if (!val.length) return '\0empty'
+    const first = val[0]
+    if (first !== null && typeof first === 'object') {
+      if ('name' in first) return [...val].map(item => item.name).sort().join('|')
+      if ('day' in first) return [...val].map(item => item.day).sort().join('|')
+      if ('area_name' in first) return [...val].map(item => item.area_name).sort().join('|')
+      return '\0empty'
+    }
+    return [...val].sort().join('|')
+  }
+  return String(val)
 }
 </script>

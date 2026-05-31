@@ -116,6 +116,17 @@ import { authApi } from '@/api/auth.js'
 import { toast } from 'vue-sonner'
 import PasswordRequirements from '@/components/common/PasswordRequirements.vue'
 
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
+
+async function getCaptchaToken(action) {
+  if (!RECAPTCHA_SITE_KEY) return 'dev-bypass'
+  return new Promise((resolve, reject) => {
+    window.grecaptcha.ready(() => {
+      window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action }).then(resolve).catch(reject)
+    })
+  })
+}
+
 const step        = ref('form')
 const maskedEmail = ref('')
 const otpCode     = ref('')
@@ -142,7 +153,11 @@ async function requestChange() {
   }
   requesting.value = true
   try {
-    const { data } = await authApi.requestPasswordChange({ current_password: form.current_password })
+    const captcha_token = await getCaptchaToken('password_change')
+    const { data } = await authApi.requestPasswordChange({
+      current_password: form.current_password,
+      captcha_token,
+    })
     maskedEmail.value = data.data.email
     otpCode.value     = ''
     step.value        = 'otp'

@@ -2,7 +2,7 @@
   <div>
     <h2 class="font-display font-semibold text-navy-700 text-lg mb-2">Documents</h2>
     <p class="text-sm text-paper-500 font-body mb-6">
-      Upload all four documents for verification. Max 5 MB per file — PDF, JPG, or PNG accepted.
+      Upload all five documents for verification. Max 5 MB per file — PDF, JPG, or PNG accepted.
     </p>
 
     <div class="space-y-4">
@@ -62,10 +62,11 @@ import { tutorApi } from '@/api/tutor.js'
 const emit = defineEmits(['saved'])
 
 const DOC_SLOTS = [
-  { type: 'university_id',  label: 'University ID',            hint: 'Current student ID card from your university' },
-  { type: 'nid',            label: 'National ID (NID)',         hint: 'Bangladesh National Identity Card' },
-  { type: 'ssc_marksheet',  label: 'SSC / O Level Marksheet',  hint: 'Secondary school certificate or O Level result sheet' },
-  { type: 'hsc_marksheet',  label: 'HSC / A Level Marksheet',  hint: 'Higher secondary certificate or A Level result sheet' },
+  { type: 'university_id',       label: 'University ID',                      hint: 'Current student ID card from your university' },
+  { type: 'nid',                 label: 'National ID (NID)',                  hint: 'Bangladesh National Identity Card' },
+  { type: 'ssc_marksheet',       label: 'SSC / O Level Marksheet',           hint: 'Secondary school certificate or O Level result sheet' },
+  { type: 'hsc_marksheet',       label: 'HSC / A Level Marksheet',           hint: 'Higher secondary certificate or A Level result sheet' },
+  { type: 'emergency_contact_nid', label: 'Emergency Contact NID',           hint: "National ID card of your emergency contact person" },
 ]
 
 const documents = ref([])

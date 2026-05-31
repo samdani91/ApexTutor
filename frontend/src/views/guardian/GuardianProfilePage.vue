@@ -72,19 +72,7 @@
               </div>
               <div>
                 <label class="field-label">Relationship to student</label>
-                <select v-model="form.relationship_to_student" class="input text-sm">
-                  <option value="">— Select —</option>
-                  <option value="father">Father</option>
-                  <option value="mother">Mother</option>
-                  <option value="brother">Brother</option>
-                  <option value="sister">Sister</option>
-                  <option value="uncle">Uncle</option>
-                  <option value="aunt">Aunt</option>
-                  <option value="grandfather">Grandfather</option>
-                  <option value="grandmother">Grandmother</option>
-                  <option value="self">Self (student)</option>
-                  <option value="other">Other</option>
-                </select>
+                <DropSelect v-model="form.relationship_to_student" :options="relationshipOptions" placeholder="— Select —" />
               </div>
             </div>
 
@@ -282,6 +270,19 @@ const fileInput           = ref(null)
 const avatarUrl = computed(() => auth.user?.avatar_url || null)
 const initials  = computed(() => getInitials(form.name || auth.user?.name))
 const nidDocUrl = computed(() => profile.value?.nid_document_url ?? null)
+const relationshipOptions = [
+  { value: '', label: '— Select —' },
+  { value: 'father', label: 'Father' },
+  { value: 'mother', label: 'Mother' },
+  { value: 'brother', label: 'Brother' },
+  { value: 'sister', label: 'Sister' },
+  { value: 'uncle', label: 'Uncle' },
+  { value: 'aunt', label: 'Aunt' },
+  { value: 'grandfather', label: 'Grandfather' },
+  { value: 'grandmother', label: 'Grandmother' },
+  { value: 'self', label: 'Self (student)' },
+  { value: 'other', label: 'Other' },
+]
 
 const form = reactive({
   name:                    '',

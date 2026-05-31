@@ -5,10 +5,7 @@
       <div class="grid sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Level</label>
-          <select v-model="entry.level" class="input text-sm">
-            <option value="">Select level</option>
-            <option v-for="l in levels" :key="l.value" :value="l.value">{{ l.label }}</option>
-          </select>
+          <DropSelect v-model="entry.level" :options="levelOptions" placeholder="Select level" />
         </div>
         <div>
           <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Institute</label>
@@ -49,6 +46,7 @@ const levels = [
   { value: 'ssc', label: 'SSC' }, { value: 'o_level', label: 'O Level' },
   { value: 'a_level', label: 'A Level' }, { value: 'other', label: 'Other' },
 ]
+const levelOptions = [{ value: '', label: 'Select level' }, ...levels]
 
 onMounted(async () => {
   const { data } = await tutorApi.getEducation()

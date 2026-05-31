@@ -4,7 +4,8 @@ import { authApi } from '@/api/auth.js'
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
-    token: localStorage.getItem('token') || null,
+    // sessionStorage: cleared when the browser tab closes, reducing the persistent XSS window
+    token: sessionStorage.getItem('token') || null,
     loading: false,
   }),
   getters: {
@@ -17,7 +18,7 @@ export const useAuthStore = defineStore('auth', {
     setAuth(user, token) {
       this.user  = user
       this.token = token
-      localStorage.setItem('token', token)
+      sessionStorage.setItem('token', token)
     },
     async login(credentials) {
       this.loading = true
@@ -59,7 +60,7 @@ export const useAuthStore = defineStore('auth', {
       try { await authApi.logout() } catch {}
       this.token = null
       this.user  = null
-      localStorage.removeItem('token')
+      sessionStorage.removeItem('token')
     },
   },
 })

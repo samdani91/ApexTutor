@@ -29,34 +29,22 @@
           <!-- Status filter (tutors) -->
           <div v-if="activeTab === 'tutors'" class="flex flex-col gap-1">
             <span class="text-xs font-semibold font-display text-navy-700">Status</span>
-            <select v-model="statusFilter" @change="load()"
-              class="status-select">
-              <option value="">All</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </select>
+            <DropSelect v-model="statusFilter" :options="tutorStatusOptions" placeholder="All"
+              @update:modelValue="load()" />
           </div>
 
           <!-- Role filter (admins) -->
           <div v-if="activeTab === 'admins'" class="flex flex-col gap-1">
             <span class="text-xs font-semibold font-display text-navy-700">Role</span>
-            <select v-model="statusFilter" @change="load()"
-              class="status-select">
-              <option value="">All</option>
-              <option value="admin">Admin</option>
-              <option value="super_admin">Super Admin</option>
-            </select>
+            <DropSelect v-model="statusFilter" :options="adminRoleOptions" placeholder="All"
+              @update:modelValue="load()" />
           </div>
 
           <!-- Sort by ID -->
           <div class="flex flex-col gap-1">
             <span class="text-xs font-semibold font-display text-navy-700">Sort by</span>
-            <select v-model="sortOrder" @change="load()"
-              class="status-select">
-              <option value="id_desc">Newest first</option>
-              <option value="id_asc">Oldest first</option>
-            </select>
+            <DropSelect v-model="sortOrder" :options="sortOptions" placeholder="Newest first"
+              @update:modelValue="load()" />
           </div>
 
           <!-- Clear filters — inline on desktop (ml-auto pushes to far right), hidden here on mobile -->
@@ -319,6 +307,21 @@ const tabs = [
   { value: 'tutors',    label: 'Tutors'    },
   { value: 'guardians', label: 'Guardians' },
   { value: 'admins',    label: 'Admins'    },
+]
+const tutorStatusOptions = [
+  { value: '', label: 'All' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'rejected', label: 'Rejected' },
+]
+const adminRoleOptions = [
+  { value: '', label: 'All' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'super_admin', label: 'Super Admin' },
+]
+const sortOptions = [
+  { value: 'id_desc', label: 'Newest first' },
+  { value: 'id_asc', label: 'Oldest first' },
 ]
 
 const activeTab   = ref('tutors')

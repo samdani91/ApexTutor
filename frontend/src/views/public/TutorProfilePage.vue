@@ -1,39 +1,44 @@
 <template>
   <DefaultLayout>
     <div v-if="loading" class="text-center py-20 text-paper-500 font-body">Loading…</div>
-    <div v-else-if="tutor" class="max-w-4xl mx-auto px-4 py-10 space-y-6">
+    <div v-else-if="tutor" class="max-w-6xl mx-auto px-4 py-6 md:py-10 space-y-5 md:space-y-6">
 
       <!-- ── Header card ── -->
       <div class="card">
-        <div class="flex gap-5 items-start flex-wrap">
-          <div class="w-20 h-20 rounded-xl bg-navy-100 flex items-center justify-center shrink-0 overflow-hidden ring-2 ring-white shadow">
+        <div class="grid gap-5 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-start">
+          <div class="w-24 h-24 rounded-xl bg-navy-100 flex items-center justify-center shrink-0 overflow-hidden ring-4 ring-white shadow mx-auto md:mx-0">
             <img v-if="tutor.user?.avatar_url" :src="tutor.user.avatar_url" class="w-full h-full object-cover" />
-            <span v-else class="font-display font-bold text-2xl text-navy-700">{{ initials }}</span>
+            <span v-else class="font-display font-bold text-3xl text-navy-700">{{ initials }}</span>
           </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
-              <h1 class="font-display font-bold text-2xl text-navy-900">{{ tutor.user?.name }}</h1>
+          <div class="min-w-0 text-center md:text-left">
+            <div class="flex items-center justify-center md:justify-start gap-2 flex-wrap">
+              <h1 class="font-display font-bold text-2xl md:text-3xl text-navy-900 break-words">{{ tutor.user?.name }}</h1>
               <span v-if="tutor.is_verified"
-                class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-pill bg-emerald-50 text-emerald-700 border border-emerald-200">
+                class="status-pill bg-emerald-50 text-emerald-700 border-emerald-200">
                 ✓ Verified
               </span>
               <span v-if="tutor.tutor_id"
-                class="text-xs font-semibold font-display text-navy-500 bg-navy-50 border border-navy-200 px-2 py-0.5 rounded-pill">
+                class="status-pill text-navy-500 bg-navy-50 border-navy-200">
                 {{ tutor.tutor_id }}
               </span>
             </div>
             <p v-if="tutor.personal_info?.gender" class="text-paper-500 text-sm mt-1 font-body capitalize">
               {{ tutor.personal_info.gender }}
             </p>
-            <StarRating class="mt-2" :rating="tutor.rating" :count="tutor.review_count" />
+            <div class="flex justify-center md:justify-start mt-2">
+              <StarRating :rating="tutor.rating" :count="tutor.review_count" />
+            </div>
           </div>
-          <div class="shrink-0 text-right">
-            <p class="font-display font-bold text-xl text-navy-700">
-              {{ formatSalaryRange(tutor.tuition_preference?.expected_salary_min, tutor.tuition_preference?.expected_salary_max) }}
-            </p>
-            <p class="text-xs text-paper-500 font-body">per month</p>
+          <div class="shrink-0 w-full md:w-64">
+            <div class="rounded-lg border border-paper-200 bg-paper-50 px-4 py-3 text-center md:text-left">
+              <p class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide mb-1">Expected salary</p>
+              <p class="font-display font-bold text-xl text-navy-700 leading-tight whitespace-nowrap">
+                {{ formatSalaryRange(tutor.tuition_preference?.expected_salary_min, tutor.tuition_preference?.expected_salary_max) }}
+              </p>
+              <p class="text-xs text-paper-500 font-body">per month</p>
+            </div>
             <button @click="toggleShortlist" :disabled="shortlistLoading"
-              class="mt-3 text-sm py-2 px-4 inline-flex items-center gap-1.5 rounded-lg font-semibold font-display border transition-colors disabled:opacity-60"
+              class="mt-3 w-full text-sm py-2.5 px-4 inline-flex items-center justify-center gap-1.5 rounded-md font-semibold font-display border transition-colors disabled:opacity-60"
               :class="isShortlisted
                 ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
                 : 'bg-navy-700 text-white border-navy-700 hover:bg-navy-800'">
@@ -47,17 +52,17 @@
         </div>
 
         <!-- Bio -->
-        <div v-if="tutor.bio" class="mt-4 pt-4 border-t border-paper-100">
-          <p class="font-body text-paper-700 leading-relaxed text-sm text-justify">{{ tutor.bio }}</p>
+        <div v-if="tutor.bio" class="mt-5 rounded-lg border border-paper-200 bg-paper-50 p-4">
+          <p class="text-box">{{ tutor.bio }}</p>
         </div>
       </div>
 
       <!-- ── 1. Educational Information ── -->
       <div v-if="tutor.education_entries?.length" class="card">
         <h2 class="section-title">Educational Information</h2>
-        <div class="space-y-4">
+        <div class="grid md:grid-cols-2 gap-3">
           <div v-for="edu in tutor.education_entries" :key="edu.id"
-            class="border-l-2 border-gold-400 pl-4">
+            class="info-card border-l-4 border-l-gold-400">
             <p class="text-xs font-semibold font-display text-blue-700 uppercase tracking-wide mb-1">
               {{ formatLevel(edu.level) }}
             </p>
@@ -76,86 +81,92 @@
       <div v-if="tutor.tuition_preference" class="card">
         <h2 class="section-title">Tuition Related Information</h2>
 
+        <!-- Teaching approach -->
+        <div v-if="tutor.tuition_preference.tutoring_method_description" class="info-section">
+          <p class="info-label mb-1">Teaching approach</p>
+          <p class="note-box text-box">{{ tutor.tuition_preference.tutoring_method_description }}</p>
+        </div>
+
         <!-- Subjects -->
-        <div v-if="tutor.tuition_preference.subjects?.length" class="mb-5">
+        <div v-if="tutor.tuition_preference.subjects?.length" class="info-section">
           <p class="info-label">Subjects</p>
-          <div class="flex flex-wrap gap-1.5 mt-1.5">
+          <div class="chip-list">
             <span v-for="s in tutor.tuition_preference.subjects" :key="s.id"
-              class="text-sm font-semibold font-display text-navy-700 bg-navy-50 border border-navy-100 px-3 py-1 rounded-full">
+              class="chip">
               {{ s.name }}
             </span>
           </div>
         </div>
 
         <!-- Preferred classes -->
-        <div v-if="tutor.tuition_preference.preferred_classes?.length" class="mb-5">
+        <div v-if="tutor.tuition_preference.preferred_classes?.length" class="info-section">
           <p class="info-label">Classes</p>
-          <div class="flex flex-wrap gap-1.5 mt-1.5">
+          <div class="chip-list">
             <span v-for="cls in tutor.tuition_preference.preferred_classes" :key="cls"
-              class="text-sm font-semibold font-display text-navy-700 bg-navy-50 border border-navy-100 px-3 py-1 rounded-full">
+              class="chip">
               {{ cls.replace(/_/g,' ').replace(/\b\w/g, l => l.toUpperCase()) }}
             </span>
           </div>
         </div>
 
         <!-- Preferred curricula -->
-        <div v-if="asArray(tutor.tuition_preference.preferred_curricula).length" class="mb-5">
-          <p class="info-label mb-1.5">Curriculum</p>
-          <div class="flex flex-wrap gap-1.5">
+        <div v-if="asArray(tutor.tuition_preference.preferred_curricula).length" class="info-section">
+          <p class="info-label">Curriculum</p>
+          <div class="chip-list">
             <span v-for="c in asArray(tutor.tuition_preference.preferred_curricula)" :key="c"
-              class="text-sm font-semibold font-display text-navy-700 bg-navy-50 border border-navy-100 px-3 py-1 rounded-full capitalize">
+              class="chip capitalize">
               {{ c.replace(/_/g,' ') }}
             </span>
           </div>
         </div>
 
         <!-- Preferred locations -->
-        <div v-if="tutor.tuition_preference.district" class="mb-5">
-          <p class="info-label mb-1.5">Preferred district</p>
-          <span class="text-sm font-semibold font-display text-navy-700 bg-navy-50 border border-navy-100 px-3 py-1 rounded-full">
+        <div v-if="tutor.tuition_preference.district" class="info-section">
+          <p class="info-label">Preferred district</p>
+          <span class="chip">
             {{ tutor.tuition_preference.district.name }}
           </span>
         </div>
 
-        <div v-if="tutor.tuition_preference.locations?.length" class="mb-5">
-          <p class="info-label mb-1.5">Preferred locations</p>
-          <div class="flex flex-wrap gap-1.5">
+        <div v-if="tutor.tuition_preference.locations?.length" class="info-section">
+          <p class="info-label">Preferred locations</p>
+          <div class="chip-list">
             <span v-for="loc in tutor.tuition_preference.locations" :key="loc.id"
-              class="text-sm font-semibold font-display text-navy-700 bg-navy-50 border border-navy-100 px-3 py-1 rounded-full">
+              class="chip">
               {{ loc.area?.name }}
             </span>
           </div>
         </div>
 
         <!-- Place of tutoring -->
-        <div v-if="asArray(tutor.tuition_preference.place_of_tutoring).length" class="mb-5">
-          <p class="info-label mb-1.5">Place of tutoring</p>
-          <div class="flex flex-wrap gap-1.5">
+        <div v-if="asArray(tutor.tuition_preference.place_of_tutoring).length" class="info-section">
+          <p class="info-label">Place of tutoring</p>
+          <div class="chip-list">
             <span v-for="p in asArray(tutor.tuition_preference.place_of_tutoring)" :key="p"
-              class="text-sm font-semibold font-display text-navy-700 bg-navy-50 border border-navy-100 px-3 py-1 rounded-full">
+              class="chip">
               {{ PLACE_LABELS[p] || p.replace(/_/g, ' ') }}
             </span>
           </div>
         </div>
 
         <!-- Key details grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3">
-          <div v-if="tutor.tuition_preference.days_per_week">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div v-if="tutor.tuition_preference.days_per_week" class="info-card">
             <p class="info-label">Days per week</p>
             <p class="info-value">{{ tutor.tuition_preference.days_per_week }} days</p>
           </div>
-          <div v-if="tutor.tuition_preference.hours_per_day">
+          <div v-if="tutor.tuition_preference.hours_per_day" class="info-card">
             <p class="info-label">Hours per session</p>
             <p class="info-value">{{ tutor.tuition_preference.hours_per_day }} hrs</p>
           </div>
-          <div v-if="tutor.tuition_preference.total_experience_years != null">
+          <div v-if="tutor.tuition_preference.total_experience_years != null" class="info-card">
             <p class="info-label">Experience</p>
             <p class="info-value">
               {{ tutor.tuition_preference.total_experience_years >= 21 ? '20+' : tutor.tuition_preference.total_experience_years }}
               year{{ tutor.tuition_preference.total_experience_years === 1 ? '' : 's' }}
             </p>
           </div>
-          <div>
+          <div class="info-card">
             <p class="info-label">Expected salary</p>
             <p class="info-value">
               {{ formatSalaryRange(tutor.tuition_preference.expected_salary_min, tutor.tuition_preference.expected_salary_max) }}/mo
@@ -165,10 +176,10 @@
 
         <!-- Available days -->
         <div v-if="tutor.tuition_preference.days?.length" class="mt-4">
-          <p class="info-label mb-1.5">Available days</p>
-          <div class="flex flex-wrap gap-1.5">
+          <p class="info-label">Available days</p>
+          <div class="chip-list">
             <span v-for="d in tutor.tuition_preference.days" :key="d.day"
-              class="text-xs font-semibold font-display text-navy-700 bg-navy-50 border border-navy-100 px-2.5 py-1 rounded-full capitalize">
+              class="chip capitalize">
               {{ d.day }}
             </span>
           </div>
@@ -176,10 +187,10 @@
 
         <!-- Preferred time -->
         <div v-if="asArray(tutor.tuition_preference.preferred_time).length" class="mt-4">
-          <p class="info-label mb-1.5">Preferred time</p>
-          <div class="flex flex-wrap gap-1.5">
+          <p class="info-label">Preferred time</p>
+          <div class="chip-list">
             <span v-for="t in asArray(tutor.tuition_preference.preferred_time)" :key="t"
-              class="text-xs font-semibold font-display text-navy-700 bg-navy-50 border border-navy-100 px-2.5 py-1 rounded-full">
+              class="chip">
               {{ TIME_MAP[t] || t }}
             </span>
           </div>
@@ -187,49 +198,43 @@
 
         <!-- Tutoring styles -->
         <div v-if="asArray(tutor.tuition_preference.tutoring_styles).length" class="mt-4">
-          <p class="info-label mb-1.5">Tutoring style</p>
-          <div class="flex flex-wrap gap-1.5">
+          <p class="info-label">Tutoring style</p>
+          <div class="chip-list">
             <span v-for="style in asArray(tutor.tuition_preference.tutoring_styles)" :key="style"
-              class="text-xs font-semibold font-display text-navy-600 bg-navy-50 border border-navy-100 px-2.5 py-1 rounded-full capitalize">
+              class="chip capitalize">
               {{ style.replace(/_/g,' ') }}
             </span>
           </div>
         </div>
 
-        <!-- Teaching approach -->
-        <div v-if="tutor.tuition_preference.tutoring_method_description" class="mt-4 pt-4 border-t border-paper-100">
-          <p class="info-label mb-1">Teaching approach</p>
-          <p class="text-sm font-body text-paper-700 leading-relaxed text-justify">{{ tutor.tuition_preference.tutoring_method_description }}</p>
-        </div>
-
         <!-- Experience details -->
-        <div v-if="tutor.tuition_preference.experience_details" class="mt-4 pt-4 border-t border-paper-100">
+        <div v-if="tutor.tuition_preference.experience_details" class="mt-4">
           <p class="info-label mb-1">Experience details</p>
-          <p class="text-sm font-body text-paper-700 leading-relaxed text-justify">{{ tutor.tuition_preference.experience_details }}</p>
+          <p class="note-box text-box">{{ tutor.tuition_preference.experience_details }}</p>
         </div>
       </div>
 
       <!-- ── 3. Personal Information (no email / phone) ── -->
       <div v-if="tutor.personal_info" class="card">
         <h2 class="section-title">Personal Information</h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3">
-          <div v-if="tutor.personal_info.gender">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div v-if="tutor.personal_info.gender" class="info-card">
             <p class="info-label">Gender</p>
             <p class="info-value capitalize">{{ tutor.personal_info.gender }}</p>
           </div>
-          <div v-if="tutor.personal_info.religion">
+          <div v-if="tutor.personal_info.religion" class="info-card">
             <p class="info-label">Religion</p>
             <p class="info-value capitalize">{{ tutor.personal_info.religion }}</p>
           </div>
-          <div v-if="tutor.personal_info.nationality">
+          <div v-if="tutor.personal_info.nationality" class="info-card">
             <p class="info-label">Nationality</p>
             <p class="info-value">{{ tutor.personal_info.nationality }}</p>
           </div>
-          <div v-if="tutor.personal_info.fathers_name">
+          <div v-if="tutor.personal_info.fathers_name" class="info-card">
             <p class="info-label">Father's name</p>
             <p class="info-value">{{ tutor.personal_info.fathers_name }}</p>
           </div>
-          <div v-if="tutor.personal_info.mothers_name">
+          <div v-if="tutor.personal_info.mothers_name" class="info-card">
             <p class="info-label">Mother's name</p>
             <p class="info-value">{{ tutor.personal_info.mothers_name }}</p>
           </div>
@@ -239,8 +244,8 @@
       <!-- ── Teaching videos ── -->
       <div class="card">
         <h2 class="section-title">Teaching Videos</h2>
-        <div v-if="tutor.teaching_videos?.length" class="space-y-5">
-          <div v-for="vid in tutor.teaching_videos" :key="vid.id">
+        <div v-if="tutor.teaching_videos?.length" class="grid md:grid-cols-2 gap-4">
+          <div v-for="vid in tutor.teaching_videos" :key="vid.id" class="info-card">
             <video :src="vid.file_url" controls
               class="w-full rounded-lg bg-black max-h-72" preload="metadata" />
             <div class="mt-2">
@@ -265,13 +270,15 @@
       <!-- ── Reviews ── -->
       <div v-if="tutor.reviews?.length" class="card">
         <h2 class="section-title">Reviews ({{ tutor.review_count }})</h2>
+        <div class="space-y-3">
         <div v-for="review in tutor.reviews" :key="review.id"
-          class="border-b border-paper-100 pb-4 mb-4 last:border-0 last:mb-0">
+          class="info-card">
           <div class="flex items-center justify-between mb-1">
             <p class="font-display font-semibold text-sm text-navy-900">{{ review.guardian_profile?.user?.name }}</p>
             <StarRating :rating="review.rating" :showCount="false" />
           </div>
           <p class="text-sm text-paper-600 font-body leading-relaxed">{{ review.review_text }}</p>
+        </div>
         </div>
       </div>
 
@@ -375,7 +382,14 @@ async function toggleShortlist() {
 </script>
 
 <style scoped>
-.section-title { @apply font-display font-semibold text-navy-800 text-lg mb-4 pb-2 border-b border-paper-100; }
-.info-label    { @apply text-xs font-semibold font-display text-paper-400 uppercase tracking-wide; }
-.info-value    { @apply text-sm font-body text-navy-800 mt-0.5; }
+.section-title { @apply font-display font-semibold text-navy-800 text-lg mb-4; }
+.info-label    { @apply text-xs font-semibold font-display text-paper-400 uppercase tracking-wide mb-1; }
+.info-value    { @apply text-sm font-body text-navy-800; }
+.info-card     { @apply rounded-lg border border-paper-200 bg-paper-50 p-3; }
+.info-section  { @apply mb-4; }
+.chip-list     { @apply flex flex-wrap gap-1.5 mt-1.5; }
+.chip          { @apply text-xs sm:text-sm font-semibold font-display text-navy-700 bg-navy-50 border border-navy-100 px-2.5 sm:px-3 py-1 rounded-full; }
+.status-pill   { @apply inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-pill border; }
+.note-box      { @apply rounded-lg border border-paper-200 bg-paper-50 p-3 text-sm font-body text-paper-700 leading-relaxed; }
+.text-box      { @apply font-body text-paper-700 leading-relaxed text-sm text-justify; }
 </style>

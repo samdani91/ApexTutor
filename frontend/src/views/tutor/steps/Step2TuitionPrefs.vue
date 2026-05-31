@@ -6,11 +6,7 @@
     <div class="grid sm:grid-cols-2 gap-5">
       <div>
         <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Total experience</label>
-        <select v-model.number="form.total_experience_years" class="input text-sm">
-          <option :value="0">Less than 1 year</option>
-          <option v-for="y in 20" :key="y" :value="y">{{ y }} year{{ y > 1 ? 's' : '' }}</option>
-          <option :value="21">20+ years</option>
-        </select>
+        <DropSelect v-model="form.total_experience_years" :options="experienceOptions" placeholder="Less than 1 year" />
       </div>
       <div>
         <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Min salary (BDT/mo)</label>
@@ -122,10 +118,8 @@
     <!-- Preferred district + areas -->
     <div class="mt-5">
       <label class="block text-xs font-semibold font-display text-navy-700 mb-1.5">Preferred district</label>
-      <select v-model.number="form.district_id" @change="onDistrictChange" class="input text-sm">
-        <option :value="null">Select a district…</option>
-        <option v-for="d in allDistricts" :key="d.id" :value="d.id">{{ d.name }}</option>
-      </select>
+      <DropSelect v-model="form.district_id" :options="districtOptions" placeholder="Select a district…"
+        @update:modelValue="onDistrictChange" />
       <p class="text-xs text-paper-400 font-body mt-1">The city / district you are available to tutor in</p>
     </div>
 
@@ -192,7 +186,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, computed, onMounted } from 'vue'
 import { tutorApi } from '@/api/tutor.js'
 import { searchApi } from '@/api/search.js'
 import { toast } from 'vue-sonner'
@@ -212,6 +206,15 @@ const HOURS = [
   { value: 2,   label: '2 hr' },
   { value: 3,   label: '3 hr' },
 ]
+const experienceOptions = [
+  { value: 0, label: 'Less than 1 year' },
+  ...Array.from({ length: 20 }, (_, i) => ({ value: i + 1, label: `${i + 1} year${i + 1 > 1 ? 's' : ''}` })),
+  { value: 21, label: '20+ years' },
+]
+const districtOptions = computed(() => [
+  { value: null, label: 'Select a district…' },
+  ...allDistricts.value.map(d => ({ value: d.id, label: d.name })),
+])
 
 const form = reactive({
   district_id: null,

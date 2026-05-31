@@ -10,14 +10,8 @@
 
         <!-- Mobile: filter + sort inline -->
         <div class="flex items-center gap-2 lg:hidden">
-          <select v-model="currentSort" @change="onSortChange"
-            class="status-select h-9 min-w-[8.75rem]">
-            <option value="relevance">Best match</option>
-            <option value="rating">Top rated</option>
-            <option value="newest">Newest</option>
-            <option value="salary_asc">Salary ↑</option>
-            <option value="salary_desc">Salary ↓</option>
-          </select>
+          <DropSelect v-model="currentSort" :options="mobileSortOptions" placeholder="Best match"
+            @update:modelValue="onSortChange" />
 
           <button @click="openDrawer"
             class="relative flex items-center gap-1.5 border border-paper-300 bg-white px-3 py-2 rounded-sm text-xs font-semibold font-display text-navy-700 hover:bg-navy-50 hover:border-navy-200 transition-colors h-9 shrink-0">
@@ -61,14 +55,10 @@
             <p class="text-sm text-paper-500 font-body">
               <span class="font-semibold text-navy-900">{{ searchStore.results.length }}</span> tutors found
             </p>
-            <select v-model="currentSort" @change="onSortChange"
-              class="input input-compact min-w-[12rem]">
-              <option value="relevance">Best match</option>
-              <option value="rating">Highest rated</option>
-              <option value="newest">Newest</option>
-              <option value="salary_asc">Salary: low to high</option>
-              <option value="salary_desc">Salary: high to low</option>
-            </select>
+            <div class="w-52">
+              <DropSelect v-model="currentSort" :options="sortOptions" placeholder="Best match"
+                @update:modelValue="onSortChange" />
+            </div>
           </div>
 
           <!-- Loading spinner -->
@@ -181,6 +171,20 @@ const mobileFiltersRef = ref(null)
 const drawerOpen = ref(false)
 const currentSort = ref('relevance')
 const lastFilters = ref({})
+const sortOptions = [
+  { value: 'relevance', label: 'Best match' },
+  { value: 'rating', label: 'Highest rated' },
+  { value: 'newest', label: 'Newest' },
+  { value: 'salary_asc', label: 'Salary: low to high' },
+  { value: 'salary_desc', label: 'Salary: high to low' },
+]
+const mobileSortOptions = [
+  { value: 'relevance', label: 'Best match' },
+  { value: 'rating', label: 'Top rated' },
+  { value: 'newest', label: 'Newest' },
+  { value: 'salary_asc', label: 'Salary ↑' },
+  { value: 'salary_desc', label: 'Salary ↓' },
+]
 
 // ── Drawer helpers ──────────────────────────────────────────
 function openDrawer() {

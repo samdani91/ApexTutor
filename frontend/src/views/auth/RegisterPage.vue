@@ -230,9 +230,25 @@ const form = reactive({
   name: '', email: '', phone: '', role: 'guardian', password: '', password_confirmation: '',
 })
 
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
+
+async function getCaptchaToken() {
+  // If no site key configured (local dev without keys), return a placeholder
+  if (!RECAPTCHA_SITE_KEY) return 'dev-bypass'
+  return new Promise((resolve, reject) => {
+    window.grecaptcha.ready(() => {
+      window.grecaptcha
+        .execute(RECAPTCHA_SITE_KEY, { action: 'register' })
+        .then(resolve)
+        .catch(reject)
+    })
+  })
+}
+
 async function handleRegister() {
   try {
-    const data = await auth.register(form)
+    const captcha_token = await getCaptchaToken()
+    const data = await auth.register({ ...form, captcha_token })
     if (data.data?.pending_verification) {
       rawEmail.value    = form.email
       maskedEmail.value = data.data.email

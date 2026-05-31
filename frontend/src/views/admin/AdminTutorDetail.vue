@@ -11,18 +11,17 @@
     <div v-if="loading" class="text-paper-500 font-body py-12 text-center">Loading…</div>
 
     <template v-else-if="tutor">
-      <!-- Header card -->
       <div class="card mb-5">
-        <div class="flex gap-5 items-start flex-wrap">
+        <div class="grid gap-4 lg:grid-cols-[auto_minmax(0,1fr)_220px_auto] lg:items-start">
           <!-- Avatar -->
-          <div class="w-20 h-20 rounded-xl bg-navy-100 flex items-center justify-center shrink-0 overflow-hidden ring-2 ring-white shadow">
+          <div class="w-20 h-20 rounded-xl bg-navy-100 flex items-center justify-center shrink-0 overflow-hidden ring-2 ring-white shadow mx-auto sm:mx-0">
             <img v-if="tutor.user?.avatar_url" :src="tutor.user.avatar_url" class="w-full h-full object-cover" />
             <span v-else class="font-display font-bold text-2xl text-navy-700">{{ initials }}</span>
           </div>
           <!-- Basic info -->
-          <div class="flex-1 min-w-0">
-            <div class="flex flex-wrap items-center gap-2 mb-1">
-              <h1 class="font-display font-bold text-xl text-navy-900">{{ tutor.user?.name }}</h1>
+          <div class="min-w-0 text-center sm:text-left">
+            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
+              <h1 class="font-display font-bold text-xl text-navy-900 break-words">{{ tutor.user?.name }}</h1>
               <span v-if="tutor.tutor_id"
                 class="text-xs font-semibold font-display text-navy-600 bg-navy-50 border border-navy-200 px-2 py-0.5 rounded-pill">
                 {{ tutor.tutor_id }}
@@ -36,36 +35,43 @@
                 Locked
               </span>
             </div>
-            <p class="text-sm text-paper-500 font-body">{{ tutor.user?.email }}</p>
+            <p class="text-sm text-paper-500 font-body break-all">{{ tutor.user?.email }}</p>
             <p class="text-sm text-paper-500 font-body">{{ tutor.user?.phone }}</p>
-            <div class="flex flex-wrap items-center gap-2 mt-2">
-              <span class="text-xs font-semibold px-2 py-0.5 rounded-pill capitalize"
+            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
+              <span class="status-chip capitalize"
                 :class="verificationClass(tutor.verification_status)">
                 {{ tutor.verification_status }}
               </span>
-              <span class="text-xs font-semibold px-2 py-0.5 rounded-pill capitalize"
+              <span class="status-chip capitalize"
                 :class="tutor.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">
                 {{ tutor.status }}
               </span>
-              <span class="text-xs text-paper-400 font-body">{{ tutor.profile_completion_percent }}% complete</span>
+            </div>
+          </div>
+          <div class="rounded-lg border border-paper-200 bg-paper-50 px-4 py-3 w-full">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <div>
+                <p class="text-xs font-display font-semibold text-paper-500 uppercase tracking-wide">Profile completion</p>
+                <p class="text-xs text-paper-400 font-body mt-0.5">Verification readiness</p>
+              </div>
+              <p class="text-lg font-display font-bold text-navy-800">{{ tutor.profile_completion_percent }}%</p>
+            </div>
+            <div class="h-2 rounded-full bg-paper-200 overflow-hidden">
+              <div class="h-full bg-gold-400" :style="`width:${tutor.profile_completion_percent}%`"></div>
             </div>
           </div>
           <!-- Admin actions -->
-          <div class="flex flex-col gap-2 shrink-0">
+          <div class="flex flex-col gap-2 w-full lg:w-36">
             <template v-if="tutor.verification_status === 'pending'">
               <button @click="openApprove" :disabled="acting"
-                class="btn-primary text-sm py-1.5 px-4">Approve</button>
+                class="btn-primary text-sm py-1.5 px-4 w-full">Approve</button>
               <button @click="openReject"
-                class="bg-red-600 text-white text-sm font-semibold font-display py-1.5 px-4 rounded-md hover:bg-red-700 transition-colors">
+                class="bg-red-600 text-white text-sm font-semibold font-display py-1.5 px-4 rounded-md hover:bg-red-700 transition-colors w-full">
                 Reject
               </button>
             </template>
-            <select @change="onStatusChange" :value="statusValue"
-              class="status-select">
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="suspended">Suspended</option>
-            </select>
+            <DropSelect :model-value="statusValue" :options="accountStatusOptions" placeholder="Active"
+              @update:modelValue="onStatusChange" />
           </div>
         </div>
 
@@ -75,258 +81,169 @@
         </div>
       </div>
 
-      <!-- Two-column layout for sections -->
       <div class="grid lg:grid-cols-2 gap-5">
 
-        <!-- Bio / Personal info -->
-        <div class="card">
+        <div class="card lg:col-span-2">
           <h2 class="section-title">Personal information</h2>
-          <dl class="space-y-2 text-sm">
-            <div v-if="tutor.bio">
-              <dt class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide">About</dt>
-              <dd class="mt-0.5 text-navy-800 font-body leading-relaxed text-justify">{{ tutor.bio }}</dd>
-            </div>
-            <template v-if="tutor.personal_info">
-              <div v-if="tutor.personal_info.gender" class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">Gender</span>
-                <span class="text-navy-800 font-body capitalize">{{ tutor.personal_info.gender }}</span>
-              </div>
-              <div v-if="tutor.personal_info.date_of_birth" class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">Date of birth</span>
-                <span class="text-navy-800 font-body">{{ formatDate(tutor.personal_info.date_of_birth) }}</span>
-              </div>
-              <div v-if="tutor.personal_info.religion" class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">Religion</span>
-                <span class="text-navy-800 font-body capitalize">{{ tutor.personal_info.religion }}</span>
-              </div>
-              <div v-if="tutor.personal_info.nationality" class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">Nationality</span>
-                <span class="text-navy-800 font-body">{{ tutor.personal_info.nationality }}</span>
-              </div>
-              <div v-if="tutor.personal_info.additional_phone" class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">Alt. phone</span>
-                <span class="text-navy-800 font-body">{{ tutor.personal_info.additional_phone }}</span>
-              </div>
-              <div v-if="tutor.personal_info.present_address" class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">Present address</span>
-                <span class="text-navy-800 font-body">{{ tutor.personal_info.present_address }}</span>
-              </div>
-              <div v-if="tutor.personal_info.permanent_address" class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">Perm. address</span>
-                <span class="text-navy-800 font-body">{{ tutor.personal_info.permanent_address }}</span>
-              </div>
-              <div v-if="tutor.personal_info.national_id" class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">National ID</span>
-                <span class="text-navy-800 font-body">{{ tutor.personal_info.national_id }}</span>
-              </div>
-              <div v-if="tutor.personal_info.facebook_url || tutor.personal_info.linkedin_url" class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">Social</span>
-                <span class="text-navy-800 font-body space-x-2">
-                  <a v-if="tutor.personal_info.facebook_url" :href="tutor.personal_info.facebook_url" target="_blank" class="text-blue-600 hover:underline text-xs">Facebook</a>
-                  <a v-if="tutor.personal_info.linkedin_url" :href="tutor.personal_info.linkedin_url" target="_blank" class="text-blue-600 hover:underline text-xs">LinkedIn</a>
-                </span>
-              </div>
-              <!-- Father -->
-              <div class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">Father's name</span>
-                <span class="text-navy-800 font-body">{{ tutor.personal_info.fathers_name || 'Not given' }}</span>
-              </div>
-              <div class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">Father's phone</span>
-                <span class="text-navy-800 font-body">{{ tutor.personal_info.fathers_phone || 'Not given' }}</span>
-              </div>
-              <!-- Mother -->
-              <div class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">Mother's name</span>
-                <span class="text-navy-800 font-body">{{ tutor.personal_info.mothers_name || 'Not given' }}</span>
-              </div>
-              <div class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">Mother's phone</span>
-                <span class="text-navy-800 font-body">{{ tutor.personal_info.mothers_phone || 'Not given' }}</span>
-              </div>
-            </template>
-            <p v-else class="text-paper-400 text-xs font-body italic">No personal info submitted.</p>
-          </dl>
-        </div>
-
-        <!-- Education -->
-        <div class="card">
-          <h2 class="section-title">Education</h2>
-          <div v-if="tutor.education_entries?.length" class="space-y-3">
-            <div v-for="edu in tutor.education_entries" :key="edu.id"
-              class="border-l-2 border-gold-400 pl-3">
-              <p class="font-display font-semibold text-navy-900 text-sm">{{ edu.degree_title }}</p>
-              <p class="text-xs text-paper-500 font-body">{{ edu.institute_name }}</p>
-              <p v-if="edu.year_of_passing" class="text-xs text-paper-400 font-body">{{ edu.year_of_passing }}</p>
-            </div>
+          <div v-if="tutor.bio" class="rounded-lg bg-paper-50 border border-paper-100 p-3 mb-4">
+            <p class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide mb-1">About</p>
+            <p class="text-sm text-navy-800 font-body leading-relaxed">{{ tutor.bio }}</p>
           </div>
-          <p v-else class="text-paper-400 text-xs font-body italic">No education entries.</p>
-        </div>
-
-        <!-- Tuition Preferences -->
-        <div class="card">
-          <h2 class="section-title">Tuition preferences</h2>
-          <template v-if="tutor.tuition_preference">
-            <!-- Key–value rows -->
-            <div class="space-y-2 text-sm">
-              <div v-if="tutor.tuition_preference.city" class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">City</span>
-                <span class="text-navy-800 font-body">{{ tutor.tuition_preference.city }}</span>
-              </div>
-              <div v-if="tutor.tuition_preference.total_experience_years != null" class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">Experience</span>
-                <span class="text-navy-800 font-body">
-                  {{ tutor.tuition_preference.total_experience_years >= 21 ? '20+' : tutor.tuition_preference.total_experience_years }}
-                  year{{ tutor.tuition_preference.total_experience_years === 1 ? '' : 's' }}
-                </span>
-              </div>
-              <div v-if="tutor.tuition_preference.days_per_week" class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">Days/week</span>
-                <span class="text-navy-800 font-body">{{ tutor.tuition_preference.days_per_week }}</span>
-              </div>
-              <div v-if="tutor.tuition_preference.hours_per_day" class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">Hours/session</span>
-                <span class="text-navy-800 font-body">{{ tutor.tuition_preference.hours_per_day }} hr</span>
-              </div>
-              <div v-if="tutor.tuition_preference.preferred_time?.length" class="flex gap-2 items-start">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0 mt-0.5">Preferred time</span>
-                <div class="flex flex-wrap gap-1.5">
-                  <span v-for="t in tutor.tuition_preference.preferred_time" :key="t"
-                    class="text-xs bg-navy-50 text-navy-700 border border-navy-200 px-2 py-0.5 rounded-pill font-semibold font-display">
-                    {{ TIME_MAP[t] || t }}
-                  </span>
-                </div>
-              </div>
-              <div v-if="formatArray(tutor.tuition_preference.tutoring_styles)" class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">Style</span>
-                <span class="text-navy-800 font-body capitalize">{{ formatLabels(tutor.tuition_preference.tutoring_styles) }}</span>
-              </div>
-              <div v-if="formatArray(tutor.tuition_preference.place_of_tutoring)" class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">Place</span>
-                <span class="text-navy-800 font-body capitalize">{{ formatLabels(tutor.tuition_preference.place_of_tutoring) }}</span>
-              </div>
-              <div class="flex gap-2">
-                <span class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-32 shrink-0">Salary range</span>
-                <span class="text-navy-800 font-body">৳{{ tutor.tuition_preference.expected_salary_min || 0 }} – ৳{{ tutor.tuition_preference.expected_salary_max || 0 }}</span>
+          <template v-if="tutor.personal_info">
+            <div class="responsive-info-grid">
+              <div v-for="row in personalRows" :key="row.label" class="info-row">
+                <span class="info-label">{{ row.label }}</span>
+                <span class="info-value" :class="row.capitalize ? 'capitalize' : ''">{{ row.value }}</span>
               </div>
             </div>
-
-            <!-- Available days chips -->
-            <div v-if="tutor.tuition_preference.days?.length" class="mt-3">
-              <p class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide mb-1.5">Available days</p>
-              <div class="flex flex-wrap gap-1.5">
-                <span v-for="d in tutor.tuition_preference.days" :key="d.day"
-                  class="text-xs bg-navy-50 text-navy-700 border border-navy-200 px-2 py-0.5 rounded-pill font-semibold uppercase">
-                  {{ d.day }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Preferred subjects chips -->
-            <div v-if="tutor.tuition_preference.subjects?.length" class="mt-3">
-              <p class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide mb-1.5">Subjects</p>
-              <div class="flex flex-wrap gap-1.5">
-                <span v-for="s in tutor.tuition_preference.subjects" :key="s.id"
-                  class="text-xs bg-navy-50 text-navy-700 border border-navy-200 px-2 py-0.5 rounded-pill font-semibold">{{ s.name }}</span>
-              </div>
-            </div>
-
-            <!-- Preferred locations chips -->
-            <div v-if="tutor.tuition_preference.locations?.length" class="mt-3">
-              <p class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide mb-1.5">Preferred locations</p>
-              <div class="flex flex-wrap gap-1.5">
-                <span v-for="loc in tutor.tuition_preference.locations" :key="loc.id"
-                  class="text-xs bg-navy-50 text-navy-700 border border-navy-200 px-2 py-0.5 rounded-pill font-semibold font-display">
-                  {{ loc.area_name }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Preferred curricula chips -->
-            <div v-if="tutor.tuition_preference.preferred_curricula?.length" class="mt-3">
-              <p class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide mb-1.5">Curriculum</p>
-              <div class="flex flex-wrap gap-1.5">
-                <span v-for="c in tutor.tuition_preference.preferred_curricula" :key="c"
-                  class="text-xs bg-navy-50 text-navy-700 border border-navy-200 px-2 py-0.5 rounded-pill font-semibold font-display capitalize">
-                  {{ c.replace(/_/g,' ') }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Preferred classes chips -->
-            <div v-if="tutor.tuition_preference.preferred_classes?.length" class="mt-3">
-              <p class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide mb-1.5">Preferred classes</p>
-              <div class="flex flex-wrap gap-1.5">
-                <span v-for="cls in tutor.tuition_preference.preferred_classes" :key="cls"
-                  class="text-xs bg-navy-50 text-navy-700 border border-navy-200 px-2 py-0.5 rounded-pill font-semibold font-display">
-                  {{ cls.replace(/_/g,' ').replace(/\b\w/g, l => l.toUpperCase()) }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Tutoring method description -->
-            <div v-if="tutor.tuition_preference.tutoring_method_description" class="mt-3">
-              <p class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide mb-1">Tutoring method</p>
-              <p class="text-sm font-body text-navy-800 leading-relaxed text-justify">{{ tutor.tuition_preference.tutoring_method_description }}</p>
-            </div>
-
-            <!-- Experience details -->
-            <div v-if="tutor.tuition_preference.experience_details" class="mt-3">
-              <p class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide mb-1">Experience details</p>
-              <p class="text-sm font-body text-navy-800 leading-relaxed text-justify">{{ tutor.tuition_preference.experience_details }}</p>
+            <div v-if="tutor.personal_info.facebook_url || tutor.personal_info.linkedin_url" class="mt-4 flex flex-wrap gap-2">
+              <a v-if="tutor.personal_info.facebook_url" :href="tutor.personal_info.facebook_url" target="_blank" class="link-pill">Facebook</a>
+              <a v-if="tutor.personal_info.linkedin_url" :href="tutor.personal_info.linkedin_url" target="_blank" class="link-pill">LinkedIn</a>
             </div>
           </template>
-          <p v-else class="text-paper-400 text-xs font-body italic">No preferences saved.</p>
+          <p v-else class="empty-state">No personal info submitted.</p>
         </div>
 
-        <!-- Documents -->
+        <div class="card lg:col-span-2">
+          <h2 class="section-title">Guardian information</h2>
+          <template v-if="tutor.personal_info">
+            <div class="responsive-info-grid">
+              <div v-for="row in guardianRows" :key="row.label" class="info-row">
+                <span class="info-label">{{ row.label }}</span>
+                <span class="info-value">{{ row.value }}</span>
+              </div>
+            </div>
+          </template>
+          <p v-else class="empty-state">No guardian info submitted.</p>
+        </div>
+
+        <div class="card lg:col-span-2">
+          <h2 class="section-title">Emergency contact</h2>
+          <template v-if="tutor.emergency_contact">
+            <div class="responsive-info-grid">
+              <div v-for="row in emergencyRows" :key="row.label" class="info-row">
+                <span class="info-label">{{ row.label }}</span>
+                <span class="info-value" :class="row.capitalize ? 'capitalize' : ''">{{ row.value }}</span>
+              </div>
+            </div>
+          </template>
+          <p v-else class="empty-state">No emergency contact submitted.</p>
+        </div>
+
+        <div class="card lg:col-span-2">
+          <h2 class="section-title">Tuition preferences</h2>
+          <template v-if="tutor.tuition_preference">
+            <div class="responsive-info-grid mb-4">
+              <div v-for="row in preferenceRows" :key="row.label" class="info-row">
+                <span class="info-label">{{ row.label }}</span>
+                <span class="info-value">{{ row.value }}</span>
+              </div>
+            </div>
+
+            <div v-if="tutor.tuition_preference.days?.length" class="mt-3">
+              <p class="chip-label">Available days</p>
+              <div class="chip-list"><span v-for="d in tutor.tuition_preference.days" :key="d.day" class="chip uppercase">{{ d.day }}</span></div>
+            </div>
+
+            <div v-if="tutor.tuition_preference.subjects?.length" class="mt-3">
+              <p class="chip-label">Subjects</p>
+              <div class="chip-list"><span v-for="s in tutor.tuition_preference.subjects" :key="s.id" class="chip">{{ s.name }}</span></div>
+            </div>
+
+            <div v-if="tutor.tuition_preference.locations?.length" class="mt-3">
+              <p class="chip-label">Preferred locations</p>
+              <div class="chip-list"><span v-for="loc in tutor.tuition_preference.locations" :key="loc.id" class="chip">{{ loc.area_name || loc.area?.name }}</span></div>
+            </div>
+
+            <div v-if="tutor.tuition_preference.preferred_curricula?.length" class="mt-3">
+              <p class="chip-label">Curriculum</p>
+              <div class="chip-list"><span v-for="c in tutor.tuition_preference.preferred_curricula" :key="c" class="chip capitalize">{{ c.replace(/_/g,' ') }}</span></div>
+            </div>
+
+            <div v-if="tutor.tuition_preference.preferred_classes?.length" class="mt-3">
+              <p class="chip-label">Preferred classes</p>
+              <div class="chip-list"><span v-for="cls in tutor.tuition_preference.preferred_classes" :key="cls" class="chip">{{ titleize(cls) }}</span></div>
+            </div>
+
+            <div v-if="tutor.tuition_preference.tutoring_method_description" class="mt-3">
+              <p class="chip-label">Tutoring method</p>
+              <p class="note-box">{{ tutor.tuition_preference.tutoring_method_description }}</p>
+            </div>
+
+            <div v-if="tutor.tuition_preference.experience_details" class="mt-3">
+              <p class="chip-label">Experience details</p>
+              <p class="note-box">{{ tutor.tuition_preference.experience_details }}</p>
+            </div>
+          </template>
+          <p v-else class="empty-state">No preferences saved.</p>
+        </div>
+
+        <div class="card">
+          <h2 class="section-title">Education</h2>
+          <div v-if="tutor.education_entries?.length" class="space-y-2">
+            <div v-for="edu in tutor.education_entries" :key="edu.id"
+              class="rounded-lg border border-paper-200 bg-paper-50 px-3 py-2.5">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="font-display font-semibold text-navy-900 text-sm">{{ edu.degree_title }}</p>
+                  <p class="text-xs text-paper-500 font-body mt-0.5">{{ edu.institute_name }}</p>
+                </div>
+                <span v-if="edu.year_of_passing" class="status-chip bg-white text-paper-500 border border-paper-200">{{ edu.year_of_passing }}</span>
+              </div>
+              <p v-if="edu.major_group || edu.result" class="text-xs text-paper-500 font-body mt-2">
+                {{ [edu.major_group, edu.result].filter(Boolean).join(' · ') }}
+              </p>
+            </div>
+          </div>
+          <p v-else class="empty-state">No education entries.</p>
+        </div>
+
         <div class="card">
           <h2 class="section-title">Documents</h2>
           <div v-if="tutor.documents?.length" class="space-y-2">
             <div v-for="doc in tutor.documents" :key="doc.id"
-              class="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-paper-200 bg-paper-50">
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 rounded-lg border border-paper-200 bg-paper-50">
               <div class="min-w-0">
                 <p class="text-xs font-semibold font-display text-navy-800 capitalize">
                   {{ doc.type.replace(/_/g, ' ') }}
                 </p>
-                <p class="text-xs text-paper-400 font-body">{{ formatSize(doc.file_size) }}</p>
+                <p class="text-xs text-paper-400 font-body mt-0.5">{{ doc.file_name || 'Uploaded document' }} · {{ formatSize(doc.file_size) }}</p>
               </div>
-              <div class="flex items-center gap-2 shrink-0">
+              <div class="flex items-center gap-2 shrink-0 flex-wrap">
                 <span v-if="doc.review_status === 'approved'"
-                  class="text-xs font-semibold px-2 py-0.5 rounded-pill bg-emerald-50 text-emerald-700">
+                  class="status-chip bg-emerald-50 text-emerald-700">
                   Approved
                 </span>
                 <span v-else-if="doc.review_status === 'rejected'"
-                  class="text-xs font-semibold px-2 py-0.5 rounded-pill bg-red-50 text-red-700">
+                  class="status-chip bg-red-50 text-red-700">
                   Rejected
                 </span>
                 <a :href="doc.file_url" target="_blank"
-                  class="text-xs font-semibold font-display text-navy-700 hover:text-navy-900 underline">
+                  class="text-xs font-semibold font-display text-navy-700 hover:text-navy-900 underline underline-offset-2">
                   View
                 </a>
               </div>
             </div>
           </div>
-          <p v-else class="text-paper-400 text-xs font-body italic">No documents uploaded.</p>
+          <p v-else class="empty-state">No documents uploaded.</p>
         </div>
 
-        <!-- Teaching Videos -->
         <div class="card lg:col-span-2">
           <h2 class="section-title">
             Teaching videos
             <span v-if="tutor.teaching_videos?.length" class="text-paper-400 font-body font-normal">({{ tutor.teaching_videos.length }})</span>
           </h2>
-          <div v-if="tutor.teaching_videos?.length" class="space-y-5">
-            <div v-for="vid in tutor.teaching_videos" :key="vid.id">
+          <div v-if="tutor.teaching_videos?.length" class="grid md:grid-cols-2 gap-4">
+            <div v-for="vid in tutor.teaching_videos" :key="vid.id" class="rounded-lg border border-paper-200 bg-paper-50 p-3">
               <video :src="vid.file_url" controls
                 class="w-full rounded-lg bg-black max-h-60" preload="metadata" />
               <div class="mt-2">
                 <p v-if="vid.title" class="font-display font-semibold text-sm text-navy-900 mb-1.5">{{ vid.title }}</p>
                 <div class="flex items-center flex-wrap gap-2">
-                  <span v-if="vid.subject" class="text-xs bg-navy-50 text-navy-700 border border-navy-200 px-2 py-0.5 rounded-pill font-body">{{ vid.subject }}</span>
-                  <span v-if="vid.class_level" class="text-xs bg-navy-50 text-navy-700 border border-navy-100 px-2 py-0.5 rounded-pill font-body">Class {{ vid.class_level }}</span>
-                  <span v-if="vid.medium" class="text-xs bg-paper-100 text-paper-600 border border-paper-200 px-2 py-0.5 rounded-pill font-body capitalize">{{ vid.medium.replace('_', ' & ') }}</span>
-                  <span class="text-xs font-semibold px-2 py-0.5 rounded-pill capitalize"
+                  <span v-if="vid.subject" class="chip">{{ vid.subject }}</span>
+                  <span v-if="vid.class_level" class="chip">Class {{ vid.class_level }}</span>
+                  <span v-if="vid.medium" class="chip capitalize">{{ vid.medium.replace('_', ' & ') }}</span>
+                  <span class="status-chip capitalize"
                     :class="vid.review_status === 'approved' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">
                     {{ vid.review_status }}
                   </span>
@@ -335,38 +252,36 @@
               </div>
             </div>
           </div>
-          <p v-else class="text-paper-400 text-xs font-body italic">No teaching videos uploaded.</p>
+          <p v-else class="empty-state">No teaching videos uploaded.</p>
         </div>
 
-        <!-- Connection Requests -->
         <div class="card">
           <h2 class="section-title">Connection requests <span class="text-paper-400 font-body font-normal">({{ tutor.connection_requests?.length || 0 }})</span></h2>
-          <div v-if="tutor.connection_requests?.length" class="divide-y divide-paper-100">
-            <div v-for="conn in tutor.connection_requests" :key="conn.id" class="py-2.5 flex items-center justify-between">
-              <div>
+          <div v-if="tutor.connection_requests?.length" class="space-y-2">
+            <div v-for="conn in tutor.connection_requests" :key="conn.id" class="rounded-lg border border-paper-200 bg-paper-50 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div class="min-w-0">
                 <p class="text-sm font-display font-semibold text-navy-900">{{ conn.guardian_profile?.user?.name }}</p>
-                <p class="text-xs text-paper-400 font-body">{{ conn.guardian_profile?.user?.email }}</p>
+                <p class="text-xs text-paper-400 font-body mt-0.5 break-all">{{ conn.guardian_profile?.user?.email }}</p>
               </div>
-              <span class="text-xs font-semibold px-2 py-0.5 rounded-pill capitalize"
+              <span class="status-chip capitalize"
                 :class="connStatusClass(conn.status)">{{ conn.status.replace(/_/g,' ') }}</span>
             </div>
           </div>
-          <p v-else class="text-paper-400 text-xs font-body italic">No connection requests.</p>
+          <p v-else class="empty-state">No connection requests.</p>
         </div>
 
-        <!-- Reviews -->
         <div class="card">
           <h2 class="section-title">Reviews <span class="text-paper-400 font-body font-normal">({{ tutor.reviews?.length || 0 }})</span></h2>
-          <div v-if="tutor.reviews?.length" class="divide-y divide-paper-100">
-            <div v-for="rev in tutor.reviews" :key="rev.id" class="py-2.5">
+          <div v-if="tutor.reviews?.length" class="space-y-2">
+            <div v-for="rev in tutor.reviews" :key="rev.id" class="rounded-lg border border-paper-200 bg-paper-50 p-3">
               <div class="flex items-center justify-between mb-1">
                 <p class="text-sm font-display font-semibold text-navy-900">{{ rev.guardian_profile?.user?.name }}</p>
-                <span class="text-xs text-gold-500 font-semibold">★ {{ rev.rating }}</span>
+                <span class="status-chip bg-gold-50 text-gold-700">★ {{ rev.rating }}</span>
               </div>
-              <p class="text-xs text-paper-600 font-body">{{ rev.review_text }}</p>
+              <p class="text-xs text-paper-600 font-body leading-relaxed">{{ rev.review_text }}</p>
             </div>
           </div>
-          <p v-else class="text-paper-400 text-xs font-body italic">No reviews yet.</p>
+          <p v-else class="empty-state">No reviews yet.</p>
         </div>
 
       </div>
@@ -427,8 +342,64 @@ const statusValue      = ref('active')
 const showApproveDialog = ref(false)
 const showRejectDialog  = ref(false)
 const pendingStatus     = ref(null)
+const accountStatusOptions = [
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+  { value: 'suspended', label: 'Suspended' },
+]
 
 const initials = computed(() => getInitials(tutor.value?.user?.name))
+
+const personalRows = computed(() => {
+  const info = tutor.value?.personal_info
+  if (!info) return []
+  return [
+    { label: 'Gender', value: info.gender || 'Not given', capitalize: true },
+    { label: 'Date of birth', value: formatDate(info.date_of_birth) || 'Not given' },
+    { label: 'Religion', value: info.religion || 'Not given', capitalize: true },
+    { label: 'Nationality', value: info.nationality || 'Not given' },
+    { label: 'Additional phone', value: info.additional_phone || 'Not given' },
+    { label: 'National ID', value: info.national_id || 'Not given' },
+    { label: 'Present address', value: info.present_address || 'Not given' },
+    { label: 'Permanent address', value: info.permanent_address || 'Not given' },
+  ]
+})
+
+const guardianRows = computed(() => {
+  const info = tutor.value?.personal_info
+  if (!info) return []
+  return [
+    { label: "Father's name", value: info.fathers_name || 'Not given' },
+    { label: "Father's phone", value: info.fathers_phone || 'Not given' },
+    { label: "Mother's name", value: info.mothers_name || 'Not given' },
+    { label: "Mother's phone", value: info.mothers_phone || 'Not given' },
+  ]
+})
+
+const emergencyRows = computed(() => {
+  const contact = tutor.value?.emergency_contact
+  if (!contact) return []
+  return [
+    { label: 'Name', value: contact.name || 'Not given' },
+    { label: 'Relation', value: contact.relation || 'Not given', capitalize: true },
+    { label: 'Phone', value: contact.phone || 'Not given' },
+    { label: 'Address', value: contact.address || 'Not given' },
+  ]
+})
+
+const preferenceRows = computed(() => {
+  const pref = tutor.value?.tuition_preference
+  if (!pref) return []
+  return [
+    { label: 'Experience', value: pref.total_experience_years != null ? `${pref.total_experience_years >= 21 ? '20+' : pref.total_experience_years} year${pref.total_experience_years === 1 ? '' : 's'}` : 'Not given' },
+    { label: 'Days/week', value: pref.days_per_week || 'Not given' },
+    { label: 'Hours/session', value: pref.hours_per_day ? `${pref.hours_per_day} hr` : 'Not given' },
+    { label: 'Preferred time', value: pref.preferred_time?.length ? pref.preferred_time.map(t => TIME_MAP[t] || t).join(', ') : 'Not given' },
+    { label: 'Style', value: formatLabels(pref.tutoring_styles) || 'Not given' },
+    { label: 'Place', value: formatLabels(pref.place_of_tutoring) || 'Not given' },
+    { label: 'Salary range', value: `৳${pref.expected_salary_min || 0} – ৳${pref.expected_salary_max || 0}` },
+  ]
+})
 
 onMounted(async () => {
   try {
@@ -472,7 +443,11 @@ function formatArray(arr) {
 function formatLabels(arr) {
   if (!arr) return ''
   const items = Array.isArray(arr) ? arr : [arr]
-  return items.map(v => v.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())).join(', ')
+  return items.map(v => titleize(v)).join(', ')
+}
+
+function titleize(value) {
+  return String(value || '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
 }
 
 function openApprove() { showApproveDialog.value = true }
@@ -508,9 +483,8 @@ async function confirmReject(reason) {
   }
 }
 
-function onStatusChange(e) {
-  pendingStatus.value = e.target.value
-  e.target.value = statusValue.value  // reset select visually until confirmed
+function onStatusChange(value) {
+  pendingStatus.value = value
 }
 
 async function confirmStatusChange() {
@@ -533,6 +507,54 @@ function cancelStatusChange() {
 
 <style scoped>
 .section-title {
-  @apply font-display font-semibold text-navy-700 text-base mb-3 pb-2 border-b border-paper-100;
+  @apply font-display font-semibold text-navy-700 text-base mb-4;
+}
+
+.status-chip {
+  @apply text-xs font-semibold px-2 py-0.5 rounded-pill font-display whitespace-nowrap;
+}
+
+.info-grid {
+  @apply grid gap-2;
+}
+
+.responsive-info-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2;
+}
+
+.info-row {
+  @apply rounded-lg border border-paper-200 bg-paper-50 px-3 py-2.5;
+}
+
+.info-label {
+  @apply block text-xs text-paper-400 font-display font-semibold uppercase tracking-wide mb-1;
+}
+
+.info-value {
+  @apply block text-sm text-navy-800 font-body leading-relaxed break-words;
+}
+
+.chip-label {
+  @apply text-xs text-paper-400 font-display font-semibold uppercase tracking-wide mb-1.5;
+}
+
+.chip-list {
+  @apply flex flex-wrap gap-1.5;
+}
+
+.chip {
+  @apply text-xs bg-navy-50 text-navy-700 border border-navy-200 px-2 py-0.5 rounded-pill font-semibold font-display;
+}
+
+.link-pill {
+  @apply text-xs font-semibold font-display text-navy-700 bg-navy-50 border border-navy-200 px-2.5 py-1 rounded-pill hover:bg-navy-100 transition-colors;
+}
+
+.note-box {
+  @apply rounded-lg bg-paper-50 border border-paper-200 p-3 text-sm font-body text-navy-800 leading-relaxed;
+}
+
+.empty-state {
+  @apply text-paper-400 text-xs font-body italic rounded-lg border border-dashed border-paper-200 bg-paper-50 px-3 py-3;
 }
 </style>

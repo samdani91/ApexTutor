@@ -10,17 +10,11 @@
         <div class="grid sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-semibold font-display text-navy-700 mb-1">Medium</label>
-            <select v-model="form.medium" class="input" required>
-              <option value="">Select medium</option>
-              <option v-for="m in MEDIUMS" :key="m.value" :value="m.value">{{ m.label }}</option>
-            </select>
+            <DropSelect v-model="form.medium" :options="mediumOptions" placeholder="Select medium" />
           </div>
           <div>
             <label class="block text-sm font-semibold font-display text-navy-700 mb-1">Class</label>
-            <select v-model="form.class_level" class="input" required>
-              <option value="">Select class</option>
-              <option v-for="c in CLASS_LEVELS" :key="c.value" :value="c.value">{{ c.label }}</option>
-            </select>
+            <DropSelect v-model="form.class_level" :options="classOptions" placeholder="Select class" />
           </div>
         </div>
         <div class="grid sm:grid-cols-2 gap-4">
@@ -55,6 +49,8 @@ const router = useRouter()
 const saving = ref(false)
 const error = ref('')
 const form = reactive({ student_name: '', medium: '', class_level: '', city: '', salary_max: '', special_notes: '' })
+const mediumOptions = [{ value: '', label: 'Select medium' }, ...MEDIUMS]
+const classOptions = [{ value: '', label: 'Select class' }, ...CLASS_LEVELS]
 
 async function submit() {
   error.value = ''

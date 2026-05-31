@@ -35,8 +35,12 @@
         <template v-else-if="!inDashboard">
           <div class="w-px h-5 bg-paper-200 mx-1" />
           <RouterLink :to="dashboardPath"
-            class="px-3 py-2 rounded-lg text-sm font-semibold font-display text-navy-600 hover:text-navy-900 hover:bg-navy-50 transition-colors">
+            class="relative px-3 py-2 rounded-lg text-sm font-semibold font-display text-navy-600 hover:text-navy-900 hover:bg-navy-50 transition-colors inline-flex items-center gap-1.5">
             My Dashboard
+            <span v-if="notifStore.unreadCount > 0"
+              class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold font-display bg-red-500 text-white rounded-full leading-none">
+              {{ notifStore.unreadCount > 99 ? '99+' : notifStore.unreadCount }}
+            </span>
           </RouterLink>
           <button @click="showLogoutDialog = true"
             class="ml-1 px-3 py-2 rounded-lg text-sm font-semibold font-display text-red-600 hover:bg-red-50 transition-colors">
@@ -80,6 +84,10 @@
           <RouterLink @click="mobileOpen = false" :to="dashboardPath"
             class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold font-display text-navy-700 hover:bg-navy-50 transition-colors">
             My Dashboard
+            <span v-if="notifStore.unreadCount > 0"
+              class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold font-display bg-red-500 text-white rounded-full leading-none">
+              {{ notifStore.unreadCount > 99 ? '99+' : notifStore.unreadCount }}
+            </span>
           </RouterLink>
           <button @click="mobileOpen = false; showLogoutDialog = true"
             class="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold font-display text-red-600 hover:bg-red-50 transition-colors">
@@ -98,15 +106,27 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
+import { useNotificationStore } from '@/stores/notification.js'
+import { notificationApi } from '@/api/notifications.js'
 import LogoutConfirmDialog from './LogoutConfirmDialog.vue'
 import { toast } from 'vue-sonner'
 
-const auth   = useAuthStore()
-const router = useRouter()
-const $route = useRoute()
+const auth        = useAuthStore()
+const notifStore  = useNotificationStore()
+const router      = useRouter()
+const $route      = useRoute()
+
+onMounted(async () => {
+  if (auth.isAuthenticated && (auth.isTutor || auth.isGuardian) && !notifStore.initialized) {
+    try {
+      const { data } = await notificationApi.getAll()
+      notifStore.setUnread(data.unread)
+    } catch {}
+  }
+})
 
 const mobileOpen      = ref(false)
 const showLogoutDialog = ref(false)

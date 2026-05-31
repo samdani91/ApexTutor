@@ -73,12 +73,7 @@
                   </div>
                   <div>
                     <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Medium</label>
-                    <select v-model="editForm.medium" class="input text-sm" required>
-                      <option value="">Select…</option>
-                      <option value="bangla">Bangla</option>
-                      <option value="english">English</option>
-                      <option value="bangla_english">Bangla & English</option>
-                    </select>
+                    <DropSelect v-model="editForm.medium" :options="mediumOptions" placeholder="Select…" />
                   </div>
                 </div>
                 <div class="flex gap-2 pt-1">
@@ -150,12 +145,7 @@
               </div>
               <div>
                 <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Medium <span class="text-red-500">*</span></label>
-                <select v-model="newForm.medium" class="input text-sm" required>
-                  <option value="">Select…</option>
-                  <option value="bangla">Bangla</option>
-                  <option value="english">English</option>
-                  <option value="bangla_english">Bangla & English</option>
-                </select>
+                <DropSelect v-model="newForm.medium" :options="mediumOptions" placeholder="Select…" />
               </div>
             </div>
 
@@ -208,6 +198,12 @@ const saving          = ref(false)
 
 const newForm  = reactive({ title: '', subject: '', class_level: '', medium: '' })
 const editForm = reactive({ title: '', subject: '', class_level: '', medium: '' })
+const mediumOptions = [
+  { value: '', label: 'Select…' },
+  { value: 'bangla', label: 'Bangla' },
+  { value: 'english', label: 'English' },
+  { value: 'bangla_english', label: 'Bangla & English' },
+]
 
 onMounted(async () => {
   try {

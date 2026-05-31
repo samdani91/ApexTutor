@@ -41,7 +41,12 @@
     </div>
 
     <!-- Step content -->
-    <div class="card">
+    <component
+      v-if="steps[currentStep].key === 'personal'"
+      :is="steps[currentStep].component"
+      @saved="onSaved"
+    />
+    <div v-else class="card">
       <component :is="steps[currentStep].component" @saved="onSaved" />
     </div>
 
@@ -87,12 +92,12 @@ onMounted(async () => {
   } catch {}
 })
 
-function onSaved(isPending) {
+function onSaved(isPending, shouldAdvance = true) {
   if (isPending) {
     toast.success('Changes saved — pending admin review.')
   } else {
     toast.success('Saved!')
-    if (currentStep.value < steps.length - 1) currentStep.value++
+    if (shouldAdvance && currentStep.value < steps.length - 1) currentStep.value++
   }
 }
 </script>

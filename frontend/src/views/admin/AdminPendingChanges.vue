@@ -258,7 +258,16 @@ const PERSONAL_FIELDS = [
   { key: 'facebook_url',      label: 'Facebook'         },
   { key: 'linkedin_url',      label: 'LinkedIn'         },
   { key: 'fathers_name',      label: "Father's name"    },
+  { key: 'fathers_phone',     label: "Father's phone"   },
   { key: 'mothers_name',      label: "Mother's name"    },
+  { key: 'mothers_phone',     label: "Mother's phone"   },
+]
+
+const EMERGENCY_FIELDS = [
+  { key: 'name',     label: 'Emergency contact name'     },
+  { key: 'relation', label: 'Emergency contact relation' },
+  { key: 'phone',    label: 'Emergency contact phone'    },
+  { key: 'address',  label: 'Emergency contact address'  },
 ]
 
 // Pretty-print a value for display. Handles arrays of objects gracefully.
@@ -361,6 +370,19 @@ function buildDiff(item) {
       const pendingVal = pending.personal_info[key]
       if (norm(liveVal) === norm(pendingVal)) continue
       rows.push({ key: `personal_info.${key}`, label, old: display(liveVal), new: display(pendingVal) })
+    }
+  }
+
+  // ── Emergency contact (whitelist only) ─────────────────────────────────
+  if (pending.emergency_contact) {
+    const liveContact = live.emergency_contact || {}
+
+    for (const { key, label } of EMERGENCY_FIELDS) {
+      if (!(key in pending.emergency_contact)) continue
+      const liveVal    = liveContact[key]
+      const pendingVal = pending.emergency_contact[key]
+      if (norm(liveVal) === norm(pendingVal)) continue
+      rows.push({ key: `emergency_contact.${key}`, label, old: display(liveVal), new: display(pendingVal) })
     }
   }
 

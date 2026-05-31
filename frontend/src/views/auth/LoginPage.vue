@@ -119,9 +119,24 @@ const route  = useRoute()
 const form         = reactive({ email: '', password: '' })
 const showPassword = ref(false)
 
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
+
+async function getCaptchaToken() {
+  if (!RECAPTCHA_SITE_KEY) return 'dev-bypass'
+  return new Promise((resolve, reject) => {
+    window.grecaptcha.ready(() => {
+      window.grecaptcha
+        .execute(RECAPTCHA_SITE_KEY, { action: 'login' })
+        .then(resolve)
+        .catch(reject)
+    })
+  })
+}
+
 async function handleLogin() {
   try {
-    const data = await auth.login(form)
+    const captcha_token = await getCaptchaToken()
+    const data = await auth.login({ ...form, captcha_token })
     if (data.data?.token) {
       toast.success('Welcome back!')
       const redirect = route.query.redirect

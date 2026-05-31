@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 
 export const useNotificationStore = defineStore('notification', {
-  state: () => ({ toasts: [] }),
+  state: () => ({ toasts: [], unreadCount: 0, initialized: false }),
   actions: {
     show(message, type = 'success') {
       const id = Date.now()
@@ -11,5 +11,8 @@ export const useNotificationStore = defineStore('notification', {
     dismiss(id) {
       this.toasts = this.toasts.filter(t => t.id !== id)
     },
+    setUnread(n)  { this.unreadCount = n; this.initialized = true },
+    decrement()   { this.unreadCount = Math.max(0, this.unreadCount - 1) },
+    clearUnread() { this.unreadCount = 0 },
   },
 })

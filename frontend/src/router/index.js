@@ -12,9 +12,10 @@ const routes = [
     component: () => import('@/layouts/DashboardLayout.vue'),
     meta: { requiresAuth: true, role: 'tutor' },
     children: [
-      { path: 'dashboard', component: () => import('@/views/tutor/TutorDashboard.vue'), name: 'tutor-dashboard' },
-      { path: 'profile', component: () => import('@/views/tutor/ProfileBuilder.vue'), name: 'tutor-profile-builder' },
-      { path: 'settings', component: () => import('@/views/shared/SettingsPage.vue'), name: 'tutor-settings' },
+      { path: 'dashboard',      component: () => import('@/views/tutor/TutorDashboard.vue'),       name: 'tutor-dashboard' },
+      { path: 'profile',        component: () => import('@/views/tutor/ProfileBuilder.vue'),        name: 'tutor-profile-builder' },
+      { path: 'notifications',  component: () => import('@/views/shared/NotificationsPage.vue'),   name: 'tutor-notifications' },
+      { path: 'settings',       component: () => import('@/views/shared/SettingsPage.vue'),         name: 'tutor-settings' },
     ]
   },
   {
@@ -22,11 +23,12 @@ const routes = [
     component: () => import('@/layouts/DashboardLayout.vue'),
     meta: { requiresAuth: true, role: ['guardian', 'student'] },
     children: [
-      { path: 'dashboard', component: () => import('@/views/guardian/GuardianDashboard.vue'), name: 'guardian-dashboard' },
-      { path: 'profile',   component: () => import('@/views/guardian/GuardianProfilePage.vue'), name: 'guardian-profile' },
-      { path: 'shortlist', component: () => import('@/views/guardian/Shortlist.vue'), name: 'shortlist' },
-      { path: 'post-requirement', component: () => import('@/views/guardian/PostRequirement.vue'), name: 'post-requirement' },
-      { path: 'settings', component: () => import('@/views/shared/SettingsPage.vue'), name: 'guardian-settings' },
+      { path: 'dashboard',        component: () => import('@/views/guardian/GuardianDashboard.vue'),   name: 'guardian-dashboard' },
+      { path: 'profile',          component: () => import('@/views/guardian/GuardianProfilePage.vue'), name: 'guardian-profile' },
+      { path: 'shortlist',        component: () => import('@/views/guardian/Shortlist.vue'),            name: 'shortlist' },
+      { path: 'post-requirement', component: () => import('@/views/guardian/PostRequirement.vue'),      name: 'post-requirement' },
+      { path: 'notifications',    component: () => import('@/views/shared/NotificationsPage.vue'),     name: 'guardian-notifications' },
+      { path: 'settings',         component: () => import('@/views/shared/SettingsPage.vue'),           name: 'guardian-settings' },
     ]
   },
   {

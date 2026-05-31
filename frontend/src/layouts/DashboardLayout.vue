@@ -8,7 +8,7 @@
 
     <!-- ─── Sidebar ─────────────────────────────────────────── -->
     <aside
-      class="fixed lg:static inset-y-0 left-0 w-60 bg-white border-r border-paper-200 z-50
+      class="fixed lg:static inset-y-0 left-0 w-64 bg-white border-r border-paper-200 z-50
              flex flex-col transition-transform duration-200 ease-in-out"
       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
     >
@@ -65,8 +65,14 @@
               d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0016.803 15.803z"/>
             <path v-else-if="item.icon === 'heart'" stroke-linecap="round" stroke-linejoin="round"
               d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
+            <path v-else-if="item.icon === 'bell'" stroke-linecap="round" stroke-linejoin="round"
+              d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
           </svg>
           {{ item.label }}
+          <span v-if="item.badge && unreadCount > 0"
+            class="ml-auto text-[10px] font-bold font-display bg-red-500 text-white rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shrink-0">
+            {{ unreadCount > 99 ? '99+' : unreadCount }}
+          </span>
         </RouterLink>
       </nav>
 
@@ -137,34 +143,47 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import LogoutConfirmDialog from '@/components/common/LogoutConfirmDialog.vue'
 import { useAuthStore } from '@/stores/auth.js'
+import { useNotificationStore } from '@/stores/notification.js'
 import { getInitials } from '@/utils/helpers.js'
+import { notificationApi } from '@/api/notifications.js'
 import { toast } from 'vue-sonner'
 
-const auth   = useAuthStore()
-const $route = useRoute()
-const router = useRouter()
+const auth     = useAuthStore()
+const notifStore = useNotificationStore()
+const $route   = useRoute()
+const router   = useRouter()
 
 const sidebarOpen      = ref(false)
 const showLogoutDialog = ref(false)
 const initials         = computed(() => getInitials(auth.user?.name))
+const unreadCount      = computed(() => notifStore.unreadCount)
 const logoutToast      = { id: 'auth-logout', position: 'top-right' }
 
 watch(() => $route.path, () => { sidebarOpen.value = false })
 
+onMounted(async () => {
+  try {
+    const { data } = await notificationApi.getAll()
+    notifStore.setUnread(data.unread)
+  } catch {}
+})
+
 const navItems = computed(() => {
   if (auth.isTutor) return [
-    { to: '/tutor/dashboard', label: 'Dashboard',  icon: 'home' },
-    { to: '/tutor/profile',   label: 'My Profile', icon: 'user' },
+    { to: '/tutor/dashboard',      label: 'Dashboard',      icon: 'home'  },
+    { to: '/tutor/profile',        label: 'My Profile',     icon: 'user'  },
+    { to: '/tutor/notifications',  label: 'Notifications',  icon: 'bell', badge: true },
   ]
   if (auth.isGuardian) return [
-    { to: '/guardian/dashboard', label: 'Dashboard',   icon: 'home'   },
-    { to: '/guardian/profile',   label: 'My Profile',  icon: 'user'   },
-    { to: '/search',             label: 'Find Tutors', icon: 'search' },
-    { to: '/guardian/shortlist', label: 'Shortlist',   icon: 'heart'  },
+    { to: '/guardian/dashboard',     label: 'Dashboard',     icon: 'home'   },
+    { to: '/guardian/profile',       label: 'My Profile',    icon: 'user'   },
+    { to: '/search',                 label: 'Find Tutors',   icon: 'search' },
+    { to: '/guardian/shortlist',     label: 'Shortlist',     icon: 'heart'  },
+    { to: '/guardian/notifications', label: 'Notifications', icon: 'bell', badge: true },
   ]
   return []
 })
