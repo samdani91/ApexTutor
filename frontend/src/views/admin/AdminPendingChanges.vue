@@ -75,10 +75,16 @@
                       {{ row.label }}
                     </td>
                     <td class="py-2.5 pr-4 font-body text-paper-500 align-top text-xs leading-relaxed max-w-0">
-                      <span class="line-clamp-3 block">{{ row.old }}</span>
+                      <template v-if="row.oldDocuments">
+                        <DocumentChangeList :documents="row.oldDocuments" muted />
+                      </template>
+                      <span v-else class="line-clamp-3 block">{{ row.old }}</span>
                     </td>
                     <td class="py-2.5 font-body align-top text-xs leading-relaxed max-w-0">
-                      <span class="line-clamp-3 block font-semibold text-navy-800 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5 inline-block">
+                      <template v-if="row.newDocuments">
+                        <DocumentChangeList :documents="row.newDocuments" highlight />
+                      </template>
+                      <span v-else class="line-clamp-3 block font-semibold text-navy-800 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5 inline-block">
                         {{ row.new }}
                       </span>
                     </td>
@@ -113,9 +119,9 @@
               </p>
               <div class="flex gap-3">
                 <button @click="approveTarget = null" class="btn-outline flex-1 py-2.5 text-sm">Cancel</button>
-                <button @click="confirmApprove"
-                  class="flex-1 inline-flex items-center justify-center bg-emerald-600 text-white font-semibold font-display py-2.5 rounded-md text-sm hover:bg-emerald-700 transition-colors">
-                  Yes, approve
+                <button @click="confirmApprove" :disabled="actionLoading"
+                  class="flex-1 inline-flex items-center justify-center bg-emerald-600 text-white font-semibold font-display py-2.5 rounded-md text-sm hover:bg-emerald-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                  {{ actionLoading ? 'Approving…' : 'Yes, approve' }}
                 </button>
               </div>
             </div>
@@ -145,9 +151,9 @@
                 class="input text-sm resize-none w-full mb-4" />
               <div class="flex gap-3">
                 <button @click="rejectTarget = null; rejectNote = ''" class="btn-outline flex-1 py-2.5 text-sm">Cancel</button>
-                <button @click="confirmReject"
-                  class="flex-1 inline-flex items-center justify-center bg-red-600 text-white font-semibold font-display py-2.5 rounded-md text-sm hover:bg-red-700 transition-colors">
-                  Reject
+                <button @click="confirmReject" :disabled="actionLoading"
+                  class="flex-1 inline-flex items-center justify-center bg-red-600 text-white font-semibold font-display py-2.5 rounded-md text-sm hover:bg-red-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                  {{ actionLoading ? 'Rejecting…' : 'Reject' }}
                 </button>
               </div>
             </div>
@@ -159,7 +165,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { h, ref, onMounted } from 'vue'
 import { adminApi } from '@/api/admin.js'
 import { getInitials } from '@/utils/helpers.js'
 import { toast } from 'vue-sonner'
@@ -170,6 +176,34 @@ const expanded      = ref(new Set())
 const approveTarget = ref(null)
 const rejectTarget  = ref(null)
 const rejectNote    = ref('')
+const actionLoading = ref(false)
+
+const DocumentChangeList = {
+  props: {
+    documents: { type: Array, default: () => [] },
+    muted: { type: Boolean, default: false },
+    highlight: { type: Boolean, default: false },
+  },
+  setup(props) {
+    return () => h('div', { class: 'space-y-1.5' }, props.documents.length
+      ? props.documents.map(doc => h('div', {
+          class: props.highlight
+            ? 'rounded border border-emerald-200 bg-emerald-50 px-2 py-1.5'
+            : 'rounded border border-paper-200 bg-paper-50 px-2 py-1.5',
+        }, [
+          h('p', { class: props.muted ? 'font-display text-xs font-semibold text-paper-600' : 'font-display text-xs font-semibold text-navy-800' }, doc.label),
+          h('p', { class: 'mt-0.5 truncate font-body text-xs text-paper-500' }, doc.file_name || 'Uploaded document'),
+          doc.file_url
+            ? h('a', {
+                href: doc.file_url,
+                target: '_blank',
+                class: 'mt-1 inline-flex font-display text-xs font-semibold text-navy-700 underline underline-offset-2',
+              }, 'View document')
+            : null,
+        ]))
+      : [h('span', { class: 'text-xs text-paper-400' }, '—')])
+  },
+}
 
 onMounted(async () => {
   try {
@@ -203,13 +237,28 @@ function openReject(item)  { rejectTarget.value = item; rejectNote.value = '' }
 
 async function confirmApprove() {
   const id   = approveTarget.value.id
+  const name = approveTarget.value.user?.name || 'this tutor'
   approveTarget.value = null
+  actionLoading.value = true
+  const toastId = `approve-pending-${id}`
+  toast.loading('Approving profile changes…', {
+    id: toastId,
+    description: `Applying pending changes for ${name}.`,
+  })
   try {
     await adminApi.approvePendingChange(id)
     items.value = items.value.filter(i => i.id !== id)
-    toast.success('Changes approved and applied to live profile.')
+    toast.success('Changes approved and applied to live profile.', {
+      id: toastId,
+      description: `${name}'s profile is now updated.`,
+    })
   } catch {
-    toast.error('Failed to approve changes.')
+    toast.error('Failed to approve changes.', {
+      id: toastId,
+      description: 'Please try again.',
+    })
+  } finally {
+    actionLoading.value = false
   }
 }
 
@@ -218,12 +267,26 @@ async function confirmReject() {
   const note = rejectNote.value
   rejectTarget.value = null
   rejectNote.value   = ''
+  actionLoading.value = true
+  const toastId = `reject-pending-${item.id}`
+  toast.loading('Rejecting profile changes…', {
+    id: toastId,
+    description: `Saving rejection for ${item.user?.name || 'this tutor'}.`,
+  })
   try {
     await adminApi.rejectPendingChange(item.id, { note })
     items.value = items.value.filter(i => i.id !== item.id)
-    toast.success('Changes rejected.')
+    toast.success('Changes rejected.', {
+      id: toastId,
+      description: 'The tutor can review your note and submit again.',
+    })
   } catch {
-    toast.error('Failed to reject changes.')
+    toast.error('Failed to reject changes.', {
+      id: toastId,
+      description: 'Please try again.',
+    })
+  } finally {
+    actionLoading.value = false
   }
 }
 
@@ -290,6 +353,10 @@ function display(val) {
   return String(val)
 }
 
+function uniqueSubjectNames(subjects) {
+  return [...new Set((subjects || []).filter(Boolean).map(subject => String(subject).trim()).filter(Boolean))].sort()
+}
+
 // Normalised form for equality comparison.
 // Arrays are sorted so ordering differences don't produce false positives.
 // null / undefined / '' / 0-length arrays all map to the same sentinel.
@@ -328,8 +395,8 @@ function buildDiff(item) {
     for (const { key, label } of PREF_FIELDS) {
       // ── Resolved name arrays (backend converts IDs → names) ──────────────
       if (key === '_subject_names') {
-        const liveSubs    = (livePrefs.subjects || []).map(s => s.name)
-        const pendingSubs = pending.preferences._subject_names || []
+        const liveSubs    = uniqueSubjectNames((livePrefs.subjects || []).map(s => s.name))
+        const pendingSubs = uniqueSubjectNames(pending.preferences._subject_names || [])
         if (norm(liveSubs) === norm(pendingSubs)) continue
         rows.push({ key: `preferences.${key}`, label, old: display(liveSubs), new: display(pendingSubs) })
         continue
@@ -386,7 +453,103 @@ function buildDiff(item) {
     }
   }
 
+  if (pending.education?.changes) {
+    const liveEducation = live.education || []
+    const proposedEducation = applyEducationPreview(liveEducation, pending.education.changes)
+    if (norm(educationSummary(liveEducation)) !== norm(educationSummary(proposedEducation))) {
+      rows.push({
+        key: 'education',
+        label: 'Education',
+        old: display(educationSummary(liveEducation)),
+        new: display(educationSummary(proposedEducation)),
+      })
+    }
+  }
+
+  if (pending.documents) {
+    const oldDocuments = changedLiveDocuments(live.documents || [], pending.documents)
+    const newDocuments = changedPendingDocuments(pending.documents)
+    if (oldDocuments.length || newDocuments.length) {
+      rows.push({
+        key: 'documents',
+        label: 'Documents',
+        old: display(documentSummary(oldDocuments)),
+        new: display(documentSummary(newDocuments)),
+        oldDocuments,
+        newDocuments,
+      })
+    }
+  }
+
   return rows
+}
+
+function educationSummary(entries) {
+  return (entries || []).map(entry => [
+    entry.level,
+    entry.degree_title,
+    entry.institute_name,
+    entry.year_of_passing,
+  ].filter(Boolean).join(' - '))
+}
+
+function applyEducationPreview(liveEntries, changes) {
+  const next = (liveEntries || []).map(entry => ({ ...entry }))
+  Object.values(changes || {}).forEach(change => {
+    const action = change.action
+    const id = change.id
+    const data = change.data || {}
+    const index = next.findIndex(entry => entry.id === id)
+    if (action === 'delete') {
+      if (index !== -1) next.splice(index, 1)
+      return
+    }
+    if (action === 'update') {
+      if (index !== -1) next.splice(index, 1, { ...next[index], ...data })
+      return
+    }
+    if (action === 'create') {
+      next.push(data)
+    }
+  })
+  return next
+}
+
+function documentSummary(documents) {
+  return (documents || []).map(doc => `${documentLabel(doc.type)}${doc.file_name ? ` - ${doc.file_name}` : ''}`).filter(Boolean)
+}
+
+function changedLiveDocuments(liveDocuments, changes) {
+  const upsertTypes = Object.keys(changes.upsert || {})
+  const deleteIds = changes.delete || []
+  return (liveDocuments || [])
+    .filter(doc => deleteIds.includes(doc.id) || upsertTypes.includes(doc.type))
+    .map(formatDocument)
+}
+
+function changedPendingDocuments(changes) {
+  const uploaded = Object.entries(changes.upsert || {}).map(([type, doc]) => formatDocument({ ...doc, type }))
+  const deleted = (changes.delete || []).map(id => ({
+    id,
+    type: 'deleted_document',
+    label: 'Document removal requested',
+    file_name: `Existing document #${id}`,
+    file_url: null,
+  }))
+  return [...uploaded, ...deleted]
+}
+
+function formatDocument(doc) {
+  return {
+    ...doc,
+    label: documentLabel(doc.type),
+  }
+}
+
+function documentLabel(type) {
+  return String(type || 'document')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, letter => letter.toUpperCase())
 }
 </script>
 

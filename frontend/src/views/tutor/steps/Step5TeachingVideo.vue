@@ -47,8 +47,8 @@
                     class="text-xs font-semibold font-display border border-paper-300 px-3 py-1.5 rounded-sm text-navy-700 hover:bg-navy-50 transition-colors">
                     Edit info
                   </button>
-                  <button @click="removeVideo(vid.id)"
-                    class="text-xs font-semibold font-display border border-red-200 px-3 py-1.5 rounded-sm text-red-600 hover:bg-red-50 transition-colors">
+                  <button @click="openRemoveDialog(vid)"
+                    class="text-xs font-semibold font-display px-3 py-1.5 rounded-sm bg-red-600 text-white hover:bg-red-700 transition-colors">
                     Remove
                   </button>
                 </div>
@@ -177,6 +177,37 @@
         Maximum 4 videos uploaded. Remove one to add another.
       </div>
     </template>
+
+    <Teleport to="body">
+      <Transition name="dialog">
+        <div v-if="removeTarget" class="fixed inset-0 z-[220] flex items-center justify-center px-4">
+          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="removeTarget = null" />
+          <div class="relative w-full max-w-sm overflow-hidden rounded-sm bg-white shadow-xl">
+            <div class="bg-red-600 px-6 pt-8 pb-7 text-center">
+              <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/20">
+                <svg class="h-7 w-7 text-white" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                </svg>
+              </div>
+              <h3 class="font-display text-xl font-bold text-white">Remove video?</h3>
+              <p class="mt-1 text-xs font-body text-red-100">This action will remove the uploaded teaching video.</p>
+            </div>
+            <div class="px-6 py-5">
+              <p class="mb-5 text-center font-body text-sm text-paper-600">
+                Remove <strong>{{ removeTarget?.title || 'this video' }}</strong>?
+              </p>
+              <div class="flex gap-3">
+                <button @click="removeTarget = null" class="btn-outline flex-1 py-2.5 text-sm">Cancel</button>
+                <button @click="confirmRemoveVideo" :disabled="removing"
+                  class="flex-1 rounded-md bg-red-600 py-2.5 font-display text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60">
+                  {{ removing ? 'Removing…' : 'Remove' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -195,6 +226,8 @@ const dragging        = ref(false)
 const pendingFile     = ref(null)
 const editingId       = ref(null)
 const saving          = ref(false)
+const removeTarget    = ref(null)
+const removing        = ref(false)
 
 const newForm  = reactive({ title: '', subject: '', class_level: '', medium: '' })
 const editForm = reactive({ title: '', subject: '', class_level: '', medium: '' })
@@ -297,13 +330,34 @@ async function saveEdit(id) {
   }
 }
 
+function openRemoveDialog(video) {
+  removeTarget.value = video
+}
+
+async function confirmRemoveVideo() {
+  if (!removeTarget.value) return
+  const id = removeTarget.value.id
+  removeTarget.value = null
+  await removeVideo(id)
+}
+
 async function removeVideo(id) {
+  removing.value = true
   try {
     await tutorApi.deleteVideo(id)
     videos.value = videos.value.filter(v => v.id !== id)
     toast.success('Video removed.')
   } catch {
     toast.error('Failed to remove video.')
+  } finally {
+    removing.value = false
   }
 }
 </script>
+
+<style scoped>
+.dialog-enter-active { transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.dialog-leave-active { transition: all 0.15s ease-in; }
+.dialog-enter-from   { opacity: 0; transform: scale(0.88) translateY(8px); }
+.dialog-leave-to     { opacity: 0; transform: scale(0.95) translateY(4px); }
+</style>

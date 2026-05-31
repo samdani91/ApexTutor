@@ -88,10 +88,10 @@
         </div>
 
         <!-- Subjects -->
-        <div v-if="tutor.tuition_preference.subjects?.length" class="info-section">
+        <div v-if="uniqueSubjects.length" class="info-section">
           <p class="info-label">Subjects</p>
           <div class="chip-list">
-            <span v-for="s in tutor.tuition_preference.subjects" :key="s.id"
+            <span v-for="s in uniqueSubjects" :key="s.key"
               class="chip">
               {{ s.name }}
             </span>
@@ -312,6 +312,23 @@ const isShortlisted   = ref(false)
 const shortlistLoading = ref(false)
 
 const initials = computed(() => getInitials(tutor.value?.user?.name))
+const uniqueSubjects = computed(() => {
+  const seen = new Set()
+
+  return (tutor.value?.tuition_preference?.subjects || [])
+    .map(subject => ({
+      ...subject,
+      name: String(subject.name || '').trim(),
+    }))
+    .filter(subject => {
+      if (!subject.name) return false
+      const key = subject.name.toLowerCase()
+      if (seen.has(key)) return false
+      seen.add(key)
+      subject.key = key
+      return true
+    })
+})
 
 const LEVEL_LABELS = {
   ssc:      'Secondary (SSC)',

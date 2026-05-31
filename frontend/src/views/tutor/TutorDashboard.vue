@@ -61,7 +61,7 @@
     <!-- Profile status card -->
     <div v-if="!loading" class="card">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-        <h2 class="font-display font-semibold text-navy-700 text-lg">Profile status</h2>
+        <h2 class="font-display font-semibold text-navy-800 text-xl">Profile status</h2>
         <span v-if="stats.verification_status" :class="verificationBadgeClass"
           class="text-xs font-semibold px-3 py-1 rounded-pill self-start sm:self-auto">
           {{ profileStatusLabel }}
@@ -84,12 +84,12 @@
 
       <div v-if="pendingDiffRows.length" class="mb-4 rounded-lg border border-paper-200 overflow-hidden">
         <div class="bg-paper-50 px-4 py-2.5">
-          <p class="font-display font-semibold text-navy-700 text-sm">Pending changes</p>
+          <p class="font-display font-semibold text-navy-800 text-base">Pending changes</p>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
-              <tr class="text-left text-xs font-semibold font-display text-paper-400 uppercase tracking-wide border-b border-paper-100">
+              <tr class="text-left text-sm font-semibold font-display text-paper-500 border-b border-paper-100">
                 <th class="py-2.5 px-4 w-1/4">Field</th>
                 <th class="py-2.5 px-4 w-[37.5%]">Current value</th>
                 <th class="py-2.5 px-4 w-[37.5%]">Proposed change</th>
@@ -97,9 +97,9 @@
             </thead>
             <tbody class="divide-y divide-paper-100">
               <tr v-for="row in pendingDiffRows" :key="row.key">
-                <td class="py-2.5 px-4 font-display font-semibold text-navy-700 text-xs align-top">{{ row.label }}</td>
-                <td class="py-2.5 px-4 text-xs text-paper-500 font-body align-top leading-relaxed">{{ row.old }}</td>
-                <td class="py-2.5 px-4 text-xs font-semibold text-navy-800 font-body align-top leading-relaxed">{{ row.new }}</td>
+                <td class="py-3 px-4 font-display font-semibold text-navy-700 text-sm align-top">{{ row.label }}</td>
+                <td class="py-3 px-4 text-sm text-paper-500 font-body align-top leading-relaxed">{{ row.old }}</td>
+                <td class="py-3 px-4 text-sm font-semibold text-navy-800 font-body align-top leading-relaxed">{{ row.new }}</td>
               </tr>
             </tbody>
           </table>
@@ -263,8 +263,8 @@ function buildPendingDiff(data) {
     const livePrefs = live.preferences || {}
     for (const { key, label } of PREF_FIELDS) {
       if (key === '_subject_names') {
-        const liveValue = (livePrefs.subjects || []).map(subject => subject.name)
-        const pendingValue = pending.preferences._subject_names || []
+        const liveValue = uniqueSubjectNames((livePrefs.subjects || []).map(subject => subject.name))
+        const pendingValue = uniqueSubjectNames(pending.preferences._subject_names || [])
         if (norm(liveValue) !== norm(pendingValue)) {
           rows.push({ key: `preferences.${key}`, label, old: display(liveValue), new: display(pendingValue) })
         }
@@ -297,6 +297,22 @@ function buildPendingDiff(data) {
   addFieldRows(rows, 'personal_info', PERSONAL_FIELDS, pending.personal_info, live.personal_info)
   addFieldRows(rows, 'emergency_contact', EMERGENCY_FIELDS, pending.emergency_contact, live.emergency_contact)
 
+  if (pending.education?.changes) {
+    const liveEducation = live.education || []
+    const proposedEducation = applyEducationPreview(liveEducation, pending.education.changes)
+    if (norm(educationSummary(liveEducation)) !== norm(educationSummary(proposedEducation))) {
+      rows.push({ key: 'education', label: 'Education', old: display(educationSummary(liveEducation)), new: display(educationSummary(proposedEducation)) })
+    }
+  }
+
+  if (pending.documents) {
+    const liveDocuments = live.documents || []
+    const proposedDocuments = applyDocumentPreview(liveDocuments, pending.documents)
+    if (norm(documentSummary(liveDocuments)) !== norm(documentSummary(proposedDocuments))) {
+      rows.push({ key: 'documents', label: 'Documents', old: display(documentSummary(liveDocuments)), new: display(documentSummary(proposedDocuments)) })
+    }
+  }
+
   return rows
 }
 
@@ -325,6 +341,54 @@ function display(val) {
     return val.join(', ')
   }
   return String(val)
+}
+
+function uniqueSubjectNames(subjects) {
+  return [...new Set((subjects || []).filter(Boolean).map(subject => String(subject).trim()).filter(Boolean))]
+}
+
+function educationSummary(entries) {
+  return (entries || []).map(entry => [
+    entry.level,
+    entry.degree_title,
+    entry.institute_name,
+    entry.year_of_passing,
+  ].filter(Boolean).join(' - '))
+}
+
+function applyEducationPreview(liveEntries, changes) {
+  const next = (liveEntries || []).map(entry => ({ ...entry }))
+  Object.values(changes || {}).forEach(change => {
+    const action = change.action
+    const id = change.id
+    const data = change.data || {}
+    const index = next.findIndex(entry => entry.id === id)
+    if (action === 'delete') {
+      if (index !== -1) next.splice(index, 1)
+      return
+    }
+    if (action === 'update') {
+      if (index !== -1) next.splice(index, 1, { ...next[index], ...data })
+      return
+    }
+    if (action === 'create') next.push(data)
+  })
+  return next
+}
+
+function documentSummary(documents) {
+  return (documents || []).map(doc => doc.type).filter(Boolean)
+}
+
+function applyDocumentPreview(liveDocuments, changes) {
+  let next = (liveDocuments || []).map(doc => ({ ...doc }))
+  const deleteIds = changes.delete || []
+  next = next.filter(doc => !deleteIds.includes(doc.id))
+  Object.entries(changes.upsert || {}).forEach(([type, doc]) => {
+    next = next.filter(existing => existing.type !== type)
+    next.push({ ...doc, type })
+  })
+  return next
 }
 
 function norm(val) {

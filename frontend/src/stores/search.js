@@ -17,7 +17,7 @@ export const useSearchStore = defineStore('search', {
       try {
         const { data } = await searchApi.tutors(filters)
         this.results = data.data.data || data.data
-        this.pagination = data.data.meta || null
+        this.pagination = normalizePagination(data.data)
       } finally {
         this.loading = false
       }
@@ -33,3 +33,15 @@ export const useSearchStore = defineStore('search', {
     },
   },
 })
+
+function normalizePagination(payload) {
+  if (!payload || Array.isArray(payload)) return null
+  if (payload.meta) return payload.meta
+  return {
+    current_page: payload.current_page,
+    last_page: payload.last_page,
+    next_page_url: payload.next_page_url,
+    per_page: payload.per_page,
+    total: payload.total,
+  }
+}

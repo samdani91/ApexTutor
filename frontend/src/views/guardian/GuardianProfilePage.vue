@@ -150,7 +150,7 @@
                   View document
                 </a>
                 <button @click="showRemoveNidDialog = true" :disabled="removingNid"
-                  class="flex items-center justify-center gap-1.5 text-sm font-semibold font-display text-red-600 border border-red-200 bg-white hover:bg-red-50 rounded-lg py-2 px-4 transition-colors disabled:opacity-50">
+                  class="flex items-center justify-center gap-1.5 text-sm font-semibold font-display bg-red-600 text-white hover:bg-red-700 rounded-lg py-2 px-4 transition-colors disabled:opacity-50">
                   Remove
                 </button>
               </div>
@@ -212,8 +212,7 @@
         <div v-if="showRemoveNidDialog" class="fixed inset-0 z-[200] flex items-center justify-center px-4">
           <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showRemoveNidDialog = false" />
           <div class="relative bg-white rounded-sm shadow-xl w-full max-w-xs overflow-hidden">
-            <!-- Amber header -->
-            <div class="bg-amber-500 px-6 pt-8 pb-7 text-center">
+            <div class="bg-red-600 px-6 pt-8 pb-7 text-center">
               <div class="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round"
@@ -221,7 +220,7 @@
                 </svg>
               </div>
               <h3 class="font-display font-bold text-white text-xl leading-tight">Remove document?</h3>
-              <p class="text-amber-100 text-xs font-body mt-1 tracking-wide">Identity Verification</p>
+              <p class="text-red-100 text-xs font-body mt-1 tracking-wide">Identity Verification</p>
             </div>
             <!-- Body -->
             <div class="px-6 py-5">

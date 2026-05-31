@@ -5,22 +5,22 @@
     <!-- Basic info -->
     <div class="grid sm:grid-cols-2 gap-5">
       <div>
-        <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Total experience</label>
+        <label class="block text-sm font-semibold font-display text-navy-800 mb-1">Total experience</label>
         <DropSelect v-model="form.total_experience_years" :options="experienceOptions" placeholder="Less than 1 year" />
       </div>
       <div>
-        <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Min salary (BDT/mo)</label>
+        <label class="block text-sm font-semibold font-display text-navy-800 mb-1">Min salary (BDT/mo)</label>
         <input v-model.number="form.expected_salary_min" type="number" min="0" class="input text-sm" />
       </div>
       <div>
-        <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Max salary (BDT/mo)</label>
+        <label class="block text-sm font-semibold font-display text-navy-800 mb-1">Max salary (BDT/mo)</label>
         <input v-model.number="form.expected_salary_max" type="number" min="0" class="input text-sm" />
       </div>
     </div>
 
     <!-- Available days of the week -->
     <div class="mt-5">
-      <label class="block text-xs font-semibold font-display text-navy-700 mb-2">Available days</label>
+      <label class="block text-sm font-semibold font-display text-navy-800 mb-2">Available days</label>
       <div class="flex flex-wrap gap-2">
         <button type="button" v-for="d in DAYS" :key="d.value"
           @click="toggleArray(form.selectedDays, d.value)"
@@ -34,7 +34,7 @@
 
     <!-- Days per week -->
     <div class="mt-5">
-      <label class="block text-xs font-semibold font-display text-navy-700 mb-2">Days per week</label>
+      <label class="block text-sm font-semibold font-display text-navy-800 mb-2">Days per week</label>
       <div class="flex flex-wrap gap-2">
         <button type="button" v-for="d in [1,2,3,4,5,6,7]" :key="d"
           @click="toggleNum('days_per_week', d)"
@@ -48,7 +48,7 @@
 
     <!-- Hours per session -->
     <div class="mt-5">
-      <label class="block text-xs font-semibold font-display text-navy-700 mb-2">Hours per session</label>
+      <label class="block text-sm font-semibold font-display text-navy-800 mb-2">Hours per session</label>
       <div class="flex flex-wrap gap-2">
         <button type="button" v-for="h in HOURS" :key="h.value"
           @click="toggleNum('hours_per_day', h.value)"
@@ -61,7 +61,7 @@
 
     <!-- Preferred time -->
     <div class="mt-5">
-      <label class="block text-xs font-semibold font-display text-navy-700 mb-2">Preferred time</label>
+      <label class="block text-sm font-semibold font-display text-navy-800 mb-2">Preferred time</label>
       <div class="flex flex-wrap gap-2">
         <button type="button" v-for="t in PREFERRED_TIMES" :key="t.value"
           @click="toggleArray(form.preferred_time, t.value)"
@@ -76,7 +76,7 @@
 
     <!-- Place of tutoring -->
     <div class="mt-5">
-      <label class="block text-xs font-semibold font-display text-navy-700 mb-2">Place of tutoring</label>
+      <label class="block text-sm font-semibold font-display text-navy-800 mb-2">Place of tutoring</label>
       <div class="flex flex-wrap gap-2">
         <button type="button" v-for="p in PLACE_OF_TUTORING" :key="p.value"
           @click="toggleArray(form.place_of_tutoring, p.value)"
@@ -89,7 +89,7 @@
 
     <!-- Tutoring style -->
     <div class="mt-5">
-      <label class="block text-xs font-semibold font-display text-navy-700 mb-2">Tutoring style</label>
+      <label class="block text-sm font-semibold font-display text-navy-800 mb-2">Tutoring style</label>
       <div class="flex flex-wrap gap-2">
         <button type="button" v-for="s in TUTORING_STYLES" :key="s.value"
           @click="toggleArray(form.tutoring_styles, s.value)"
@@ -102,14 +102,14 @@
 
     <!-- Preferred subjects -->
     <div class="mt-5">
-      <label class="block text-xs font-semibold font-display text-navy-700 mb-2">Preferred subjects</label>
+      <label class="block text-sm font-semibold font-display text-navy-800 mb-2">Preferred subjects</label>
       <div v-if="subjectsLoading" class="text-xs text-paper-400 font-body">Loading subjects…</div>
-      <div v-else-if="allSubjects.length" class="flex flex-wrap gap-2">
-        <button type="button" v-for="s in allSubjects" :key="s.id"
-          @click="toggleArray(form.subject_ids, s.id)"
+      <div v-else-if="subjectGroups.length" class="flex flex-wrap gap-2">
+        <button type="button" v-for="group in subjectGroups" :key="group.name"
+          @click="toggleSubjectGroup(group)"
           class="choice-btn"
-          :class="form.subject_ids.includes(s.id) ? 'choice-btn-active' : 'choice-btn-idle'">
-          {{ s.name }}
+          :class="isSubjectGroupSelected(group) ? 'choice-btn-active' : 'choice-btn-idle'">
+          {{ group.name }}
         </button>
       </div>
       <p v-else class="text-xs text-paper-400 font-body">No subjects available.</p>
@@ -117,14 +117,14 @@
 
     <!-- Preferred district + areas -->
     <div class="mt-5">
-      <label class="block text-xs font-semibold font-display text-navy-700 mb-1.5">Preferred district</label>
+      <label class="block text-sm font-semibold font-display text-navy-800 mb-1.5">Preferred district</label>
       <DropSelect v-model="form.district_id" :options="districtOptions" placeholder="Select a district…"
         @update:modelValue="onDistrictChange" />
       <p class="text-xs text-paper-400 font-body mt-1">The city / district you are available to tutor in</p>
     </div>
 
     <div v-if="form.district_id" class="mt-5">
-      <label class="block text-xs font-semibold font-display text-navy-700 mb-2">Preferred areas</label>
+      <label class="block text-sm font-semibold font-display text-navy-800 mb-2">Preferred areas</label>
       <div v-if="areasLoading" class="text-xs text-paper-400 font-body py-2">Loading areas…</div>
       <div v-else-if="allAreas.length" class="flex flex-wrap gap-2">
         <button type="button" v-for="a in allAreas" :key="a.id"
@@ -139,7 +139,7 @@
 
     <!-- Preferred curricula -->
     <div class="mt-5">
-      <label class="block text-xs font-semibold font-display text-navy-700 mb-2">Preferred Curriculum</label>
+      <label class="block text-sm font-semibold font-display text-navy-800 mb-2">Preferred Curriculum</label>
       <div class="flex flex-wrap gap-2">
         <button type="button" v-for="m in MEDIUMS" :key="m.value"
           @click="toggleArray(form.preferred_curricula, m.value)"
@@ -152,7 +152,7 @@
 
     <!-- Preferred classes -->
     <div class="mt-5">
-      <label class="block text-xs font-semibold font-display text-navy-700 mb-2">Preferred Classes</label>
+      <label class="block text-sm font-semibold font-display text-navy-800 mb-2">Preferred Classes</label>
       <div class="flex flex-wrap gap-2">
         <button type="button" v-for="c in CLASS_LEVELS" :key="c.value"
           @click="toggleArray(form.preferred_classes, c.value)"
@@ -165,7 +165,7 @@
 
     <!-- Tutoring method description -->
     <div class="mt-5">
-      <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Describe your tutoring method</label>
+      <label class="block text-sm font-semibold font-display text-navy-800 mb-1">Describe your tutoring method</label>
       <textarea v-model="form.tutoring_method_description" rows="4" class="input text-sm resize-none"
         placeholder="Explain how you typically conduct sessions — your approach, techniques, use of examples, practice problems, etc." />
       <p class="text-xs text-paper-400 font-body mt-1">Helps students and guardians understand how you teach.</p>
@@ -173,7 +173,7 @@
 
     <!-- Experience details -->
     <div class="mt-5">
-      <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Experience details</label>
+      <label class="block text-sm font-semibold font-display text-navy-800 mb-1">Experience details</label>
       <textarea v-model="form.experience_details" rows="3" class="input text-sm resize-none"
         placeholder="Describe your teaching background, institutions you've taught at, notable achievements, etc." />
       <p class="text-xs text-paper-400 font-body mt-1">Give students a clearer picture of your teaching history.</p>
@@ -215,6 +215,16 @@ const districtOptions = computed(() => [
   { value: null, label: 'Select a district…' },
   ...allDistricts.value.map(d => ({ value: d.id, label: d.name })),
 ])
+const subjectGroups = computed(() => {
+  const groups = new Map()
+  for (const subject of allSubjects.value) {
+    const name = String(subject.name || '').trim()
+    if (!name) continue
+    if (!groups.has(name)) groups.set(name, { name, ids: [] })
+    groups.get(name).ids.push(subject.id)
+  }
+  return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name))
+})
 
 const form = reactive({
   district_id: null,
@@ -307,6 +317,20 @@ function toggleArray(arr, val) {
   const i = arr.indexOf(val)
   if (i === -1) arr.push(val)
   else arr.splice(i, 1)
+}
+
+function isSubjectGroupSelected(group) {
+  return group.ids.some(id => form.subject_ids.includes(id))
+}
+
+function toggleSubjectGroup(group) {
+  if (isSubjectGroupSelected(group)) {
+    form.subject_ids = form.subject_ids.filter(id => !group.ids.includes(id))
+    return
+  }
+  const next = new Set(form.subject_ids)
+  group.ids.forEach(id => next.add(id))
+  form.subject_ids = [...next]
 }
 
 function toggleArea(id) {

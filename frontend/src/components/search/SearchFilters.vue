@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between">
       <h2 class="font-display font-semibold text-navy-700 text-base">Filters</h2>
       <button v-if="activeCount > 0" @click="clearFilters"
-        class="text-xs font-semibold font-display text-gold-600 hover:text-gold-700 transition-colors">
+        class="rounded-sm bg-red-600 px-3 py-1.5 text-xs font-semibold font-display text-white shadow-sm transition-colors hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100">
         Clear all ({{ activeCount }})
       </button>
     </div>
@@ -17,6 +17,15 @@
     <!-- Class level -->
     <FilterSection label="Class">
       <DropSelect v-model="filters.class_level" :options="classOpts" placeholder="Any class" />
+    </FilterSection>
+
+    <!-- Subjects -->
+    <FilterSection label="Subjects">
+      <div v-if="!filters.class_level" class="text-xs text-paper-400 font-body py-2">
+        Select a class to choose relevant subjects.
+      </div>
+      <div v-else-if="subjectsLoading" class="text-xs text-paper-400 font-body py-2">Loading subjects…</div>
+      <DropSelect v-else v-model="filters.subject_ids" :options="subjectOpts" placeholder="Any subject" multiple />
     </FilterSection>
 
     <!-- District -->
@@ -124,30 +133,20 @@
       </label>
     </FilterSection>
 
-    <!-- Sort -->
-    <FilterSection label="Sort by">
-      <DropSelect v-model="filters.sort" :options="sortOpts" placeholder="Best match" />
-    </FilterSection>
-
-    <!-- CTA -->
-    <div class="pt-1 space-y-2">
-      <button @click="applyFilters" class="btn-primary w-full py-3">Search tutors</button>
-      <button v-if="activeCount > 0" @click="clearFilters"
-        class="w-full text-sm font-semibold font-display text-paper-500 hover:text-navy-700 transition-colors py-1.5">
-        Clear all filters
-      </button>
-    </div>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref, computed } from 'vue'
+import { reactive, ref, computed, watch } from 'vue'
 import { useSearchStore } from '@/stores/search.js'
 import { searchApi } from '@/api/search.js'
 import { MEDIUMS, CLASS_LEVELS, PLACE_OF_TUTORING, TUTORING_STYLES } from '@/utils/constants.js'
 import FilterSection from './FilterSection.vue'
 import DropSelect from './DropSelect.vue'
 
+const props = defineProps({
+  modelValue: { type: Object, default: () => ({}) },
+})
 const emit = defineEmits(['search'])
 const searchStore = useSearchStore()
 
@@ -168,18 +167,15 @@ const RATING_OPTIONS = [
 
 const allAreas     = ref([])
 const areasLoading = ref(false)
+const allSubjects  = ref([])
+const subjectsLoading = ref(false)
+const syncingFromParent = ref(false)
+const classLevelChanging = ref(false)
 
 // ── Option arrays for DropSelect ────────────────────────────────────────────
 const mediumOpts   = [{ value: '', label: 'Any medium' }, ...MEDIUMS.map(m => ({ value: m.value, label: m.label }))]
 const classOpts    = [{ value: '', label: 'Any class'  }, ...CLASS_LEVELS.map(c => ({ value: c.value, label: c.label }))]
 const genderOpts   = [{ value: '', label: 'No preference' }, { value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }]
-const sortOpts     = [
-  { value: 'relevance', label: 'Best match' },
-  { value: 'rating',    label: 'Highest rated' },
-  { value: 'newest',    label: 'Newest' },
-  { value: 'salary_asc',  label: 'Salary: low to high' },
-  { value: 'salary_desc', label: 'Salary: high to low' },
-]
 const districtOpts = computed(() => [
   { value: '', label: 'Any district' },
   ...searchStore.districts.map(d => ({ value: d.id, label: d.name })),
@@ -188,10 +184,12 @@ const areaOpts = computed(() => [
   { value: null, label: 'Any area' },
   ...allAreas.value.map(a => ({ value: a.id, label: a.name })),
 ])
+const subjectOpts = computed(() => allSubjects.value.map(s => ({ value: s.id, label: s.name })))
 
 const filters = reactive({
   medium: '',
   class_level: '',
+  subject_ids: [],
   district_id: '',
   area_id: null,
   tutor_gender: '',
@@ -202,20 +200,25 @@ const filters = reactive({
   salary_max: '',
   min_rating: null,
   verified_only: false,
-  sort: 'relevance',
 })
 
 async function onDistrictChange(newId) {
   filters.district_id = newId
   filters.area_id     = null
-  allAreas.value      = []
-  if (!newId) return
-  areasLoading.value  = true
+  await loadAreas(newId)
+}
+
+async function loadSubjectsForClass(classLevel) {
+  allSubjects.value = []
+  if (!classLevel) return
+  subjectsLoading.value = true
   try {
-    const { data } = await searchApi.areas(newId)
-    allAreas.value = data.data || []
+    const { data } = await searchApi.subjects({ class_level: classLevel })
+    allSubjects.value = data.data || []
+    const validIds = new Set(allSubjects.value.map(subject => subject.id))
+    filters.subject_ids = filters.subject_ids.filter(id => validIds.has(Number(id)))
   } finally {
-    areasLoading.value = false
+    subjectsLoading.value = false
   }
 }
 
@@ -226,7 +229,7 @@ const activeCount = computed(() => {
     filters.salary_max, filters.min_rating,
   ].filter(v => v !== '' && v !== null).length
   const bools  = filters.verified_only ? 1 : 0
-  const arrays = filters.place_of_tutoring.length + filters.tutoring_styles.length
+  const arrays = filters.subject_ids.length + filters.place_of_tutoring.length + filters.tutoring_styles.length
   return singles + bools + arrays
 })
 
@@ -240,14 +243,84 @@ function toggleMulti(key, val) {
   else arr.splice(i, 1)
 }
 
+// Class watcher registered first so the flag is set before the deep watcher fires
+watch(() => filters.class_level, async (classLevel, oldClassLevel) => {
+  if (syncingFromParent.value) return
+  classLevelChanging.value = true
+  if (classLevel !== oldClassLevel) {
+    filters.subject_ids = []
+  }
+  await loadSubjectsForClass(classLevel)
+  classLevelChanging.value = false
+})
+
+// Auto-search: fire 400ms after the last filter change (class changes are excluded)
+let searchTimer = null
+watch(filters, () => {
+  if (syncingFromParent.value) return
+  if (classLevelChanging.value) return
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(applyFilters, 400)
+}, { deep: true })
+
+watch(() => props.modelValue, async (value) => {
+  await syncFilters(value || {})
+}, { deep: true, immediate: true })
+
+async function syncFilters(value) {
+  syncingFromParent.value = true
+  Object.assign(filters, {
+    medium: value.medium || '',
+    class_level: value.class_level || '',
+    subject_ids: value.class_level ? normalizeIdArray(value.subject_ids) : [],
+    district_id: value.district_id || '',
+    area_id: value.area_id ?? null,
+    tutor_gender: value.tutor_gender || '',
+    days_per_week: value.days_per_week ?? null,
+    hours_per_day: value.hours_per_day ?? null,
+    place_of_tutoring: Array.isArray(value.place_of_tutoring) ? [...value.place_of_tutoring] : [],
+    tutoring_styles: Array.isArray(value.tutoring_styles) ? [...value.tutoring_styles] : [],
+    salary_max: value.salary_max ?? '',
+    min_rating: value.min_rating ?? null,
+    verified_only: Boolean(value.verified_only),
+  })
+
+  if (filters.district_id) {
+    await loadAreas(filters.district_id)
+  } else {
+    allAreas.value = []
+  }
+  await loadSubjectsForClass(filters.class_level)
+  syncingFromParent.value = false
+}
+
+async function loadAreas(districtId) {
+  allAreas.value = []
+  if (!districtId) return
+  areasLoading.value = true
+  try {
+    const { data } = await searchApi.areas(districtId)
+    allAreas.value = data.data || []
+  } finally {
+    areasLoading.value = false
+  }
+}
+
+function normalizeIdArray(value) {
+  if (Array.isArray(value)) return value.map(Number).filter(Boolean)
+  if (typeof value === 'string') return value.split(',').map(Number).filter(Boolean)
+  return []
+}
+
 function clearFilters() {
   Object.assign(filters, {
-    medium: '', class_level: '', district_id: '', area_id: null,
+    medium: '', class_level: '', subject_ids: [], district_id: '', area_id: null,
     tutor_gender: '', days_per_week: null, hours_per_day: null,
     place_of_tutoring: [], tutoring_styles: [], salary_max: '',
-    min_rating: null, verified_only: false, sort: 'relevance',
+    min_rating: null, verified_only: false,
   })
   allAreas.value = []
+  allSubjects.value = []
   emit('search', {})
 }
 
@@ -256,12 +329,16 @@ function applyFilters() {
   Object.entries(filters).forEach(([k, v]) => {
     if (v === '' || v === null || v === false) return
     if (Array.isArray(v) && !v.length) return
+    if (k === 'subject_ids') {
+      payload[k] = v.join(',')
+      return
+    }
     payload[k] = v
   })
   emit('search', payload)
 }
 
-defineExpose({ activeCount, filters, allAreas, areaOpts, applyFilters })
+defineExpose({ activeCount, filters, allAreas, allSubjects, areaOpts, applyFilters })
 </script>
 
 <style scoped>

@@ -210,11 +210,7 @@
                 <p class="text-xs text-paper-400 font-body mt-0.5">{{ doc.file_name || 'Uploaded document' }} · {{ formatSize(doc.file_size) }}</p>
               </div>
               <div class="flex items-center gap-2 shrink-0 flex-wrap">
-                <span v-if="doc.review_status === 'approved'"
-                  class="status-chip bg-emerald-50 text-emerald-700">
-                  Approved
-                </span>
-                <span v-else-if="doc.review_status === 'rejected'"
+                <span v-if="doc.review_status === 'rejected'"
                   class="status-chip bg-red-50 text-red-700">
                   Rejected
                 </span>

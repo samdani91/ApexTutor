@@ -38,8 +38,8 @@
             </label>
 
             <button v-if="uploaded(slot.type)"
-              @click="deleteDoc(uploaded(slot.type).id)"
-              class="text-red-500 hover:text-red-600 text-xs font-semibold font-display px-2 py-1.5 rounded-sm hover:bg-red-50 transition-colors">
+              @click="openRemoveDialog(uploaded(slot.type))"
+              class="rounded-sm bg-red-600 px-3 py-1.5 text-xs font-semibold font-display text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100">
               Remove
             </button>
           </div>
@@ -52,6 +52,37 @@
         </div>
       </div>
     </div>
+
+    <Teleport to="body">
+      <Transition name="dialog">
+        <div v-if="removeTarget" class="fixed inset-0 z-[220] flex items-center justify-center px-4">
+          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="removeTarget = null" />
+          <div class="relative w-full max-w-sm overflow-hidden rounded-sm bg-white shadow-xl">
+            <div class="bg-red-600 px-6 pt-8 pb-7 text-center">
+              <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/20">
+                <svg class="h-7 w-7 text-white" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                </svg>
+              </div>
+              <h3 class="font-display text-xl font-bold text-white">Remove document?</h3>
+              <p class="mt-1 text-xs font-body text-red-100">Verified profile changes require admin review.</p>
+            </div>
+            <div class="px-6 py-5">
+              <p class="mb-5 text-center font-body text-sm text-paper-600">
+                Remove <strong>{{ removeTarget?.file_name || 'this document' }}</strong>?
+              </p>
+              <div class="flex gap-3">
+                <button @click="removeTarget = null" class="btn-outline flex-1 py-2.5 text-sm">Cancel</button>
+                <button @click="confirmRemove" :disabled="removing"
+                  class="flex-1 rounded-md bg-red-600 py-2.5 font-display text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60">
+                  {{ removing ? 'Removing…' : 'Remove' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -71,6 +102,8 @@ const DOC_SLOTS = [
 
 const documents = ref([])
 const uploading = ref(null)  // type string while uploading
+const removeTarget = ref(null)
+const removing = ref(false)
 
 onMounted(async () => {
   const { data } = await tutorApi.getDocuments()
@@ -86,28 +119,46 @@ async function onFileSelected(type, e) {
   if (!file) return
   e.target.value = ''
 
-  // If a doc of this type already exists, delete it first
-  const existing = uploaded(type)
-  if (existing) {
-    await tutorApi.deleteDocument(existing.id)
-    documents.value = documents.value.filter(d => d.id !== existing.id)
-  }
-
   uploading.value = type
   try {
     const fd = new FormData()
     fd.append('type', type)
     fd.append('file', file)
     const { data } = await tutorApi.uploadDocument(fd)
+    documents.value = documents.value.filter(doc => doc.type !== type)
     documents.value.push(data.data)
-    emit('saved')
+    emit('saved', !!data.pending)
   } finally {
     uploading.value = null
   }
 }
 
+function openRemoveDialog(doc) {
+  removeTarget.value = doc
+}
+
+async function confirmRemove() {
+  if (!removeTarget.value) return
+  const id = removeTarget.value.id
+  removeTarget.value = null
+  await deleteDoc(id)
+}
+
 async function deleteDoc(id) {
-  await tutorApi.deleteDocument(id)
+  removing.value = true
+  try {
+    const { data } = await tutorApi.deleteDocument(id)
   documents.value = documents.value.filter(d => d.id !== id)
+    emit('saved', !!data.pending)
+  } finally {
+    removing.value = false
+  }
 }
 </script>
+
+<style scoped>
+.dialog-enter-active { transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.dialog-leave-active { transition: all 0.15s ease-in; }
+.dialog-enter-from   { opacity: 0; transform: scale(0.88) translateY(8px); }
+.dialog-leave-to     { opacity: 0; transform: scale(0.95) translateY(4px); }
+</style>

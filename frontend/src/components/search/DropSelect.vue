@@ -5,7 +5,7 @@
       type="button"
       @click="toggle"
       class="input text-sm w-full flex items-center justify-between gap-2 text-left pr-8"
-      :class="modelValue !== '' && modelValue !== null ? 'text-navy-900' : 'text-paper-400'"
+      :class="hasValue ? 'text-navy-900' : 'text-paper-400'"
     >
       <span class="truncate">{{ selectedLabel }}</span>
       <svg
@@ -45,12 +45,17 @@
               :key="opt.value"
               type="button"
               @click="select(opt.value)"
-              class="w-full text-left px-3 py-2 text-sm font-body transition-colors"
-              :class="opt.value === modelValue
+              class="w-full text-left px-3 py-2 text-sm font-body transition-colors flex items-center gap-2"
+              :class="isSelected(opt.value)
                 ? 'bg-navy-700 text-white font-semibold'
                 : 'text-navy-700 hover:bg-navy-50'"
             >
-              {{ opt.label }}
+              <span v-if="multiple"
+                class="h-4 w-4 rounded-sm border flex items-center justify-center text-[10px] leading-none"
+                :class="isSelected(opt.value) ? 'border-white bg-white text-navy-700' : 'border-paper-300 bg-white text-transparent'">
+                ✓
+              </span>
+              <span class="truncate">{{ opt.label }}</span>
             </button>
             <p v-if="!filtered.length" class="px-3 py-2 text-xs text-paper-400 font-body">No results</p>
           </div>
@@ -67,6 +72,7 @@ const props = defineProps({
   modelValue: { default: '' },
   options:    { type: Array, required: true }, // [{ value, label }]
   placeholder:{ type: String, default: 'Select…' },
+  multiple:   { type: Boolean, default: false },
 })
 const emit = defineEmits(['update:modelValue'])
 
@@ -78,8 +84,23 @@ const panelStyle = ref({})
 const maxListHeight = ref(220)
 
 const selectedLabel = computed(() => {
+  if (props.multiple) {
+    const selected = Array.isArray(props.modelValue) ? props.modelValue : []
+    if (!selected.length) return props.placeholder
+    const labels = props.options
+      .filter(o => selected.includes(o.value))
+      .map(o => o.label)
+    if (!labels.length) return props.placeholder
+    if (labels.length <= 2) return labels.join(', ')
+    return `${labels.slice(0, 2).join(', ')} +${labels.length - 2}`
+  }
   const opt = props.options.find(o => o.value === props.modelValue)
   return opt ? opt.label : props.placeholder
+})
+
+const hasValue = computed(() => {
+  if (props.multiple) return Array.isArray(props.modelValue) && props.modelValue.length > 0
+  return props.modelValue !== '' && props.modelValue !== null
 })
 
 const filtered = computed(() => {
@@ -117,7 +138,20 @@ async function toggle() {
   }
 }
 
+function isSelected(val) {
+  if (props.multiple) return Array.isArray(props.modelValue) && props.modelValue.includes(val)
+  return val === props.modelValue
+}
+
 function select(val) {
+  if (props.multiple) {
+    const selected = Array.isArray(props.modelValue) ? [...props.modelValue] : []
+    const index = selected.indexOf(val)
+    if (index === -1) selected.push(val)
+    else selected.splice(index, 1)
+    emit('update:modelValue', selected)
+    return
+  }
   emit('update:modelValue', val)
   open.value = false
   query.value = ''
