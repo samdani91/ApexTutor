@@ -30,8 +30,8 @@
       </button>
     </div>
     <div class="flex flex-col sm:flex-row gap-3 mt-2">
-      <button @click="addEntry" class="btn-outline text-sm py-2 px-4">+ Add education</button>
-      <button @click="save" :disabled="saving" class="btn-primary text-sm py-2.5 px-6">{{ saving ? 'Saving…' : 'Save education' }}</button>
+      <button @click="addEntry" class="btn-outline text-sm py-2 px-4">+ Add Education</button>
+      <button @click="saveConfirmOpen = true" :disabled="saving" class="btn-primary text-sm py-2.5 px-6">{{ saving ? 'Saving…' : 'Save Education' }}</button>
     </div>
 
     <Teleport to="body">
@@ -46,7 +46,7 @@
                 </svg>
               </div>
               <h3 class="font-display text-xl font-bold text-white">Remove education?</h3>
-              <p class="mt-1 text-xs font-body text-red-100">This change will be saved after you press Save education.</p>
+              <p class="mt-1 text-xs font-body text-red-100">This change will be saved after you press Save Education.</p>
             </div>
             <div class="px-6 py-5">
               <p class="mb-5 text-center font-body text-sm text-paper-600">
@@ -64,15 +64,26 @@
         </div>
       </Transition>
     </Teleport>
+
+    <ConfirmDialog
+      :show="saveConfirmOpen"
+      title="Save Education?"
+      message="Save your education entries? Changes will be submitted for admin review before going live."
+      confirm-label="Save Education"
+      @confirm="saveConfirmOpen = false; save()"
+      @cancel="saveConfirmOpen = false"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { tutorApi } from '@/api/tutor.js'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const emit = defineEmits(['saved'])
 const saving = ref(false)
+const saveConfirmOpen = ref(false)
 const entries = ref([])
 const deletedEntryIds = ref([])
 const removeIndex = ref(null)

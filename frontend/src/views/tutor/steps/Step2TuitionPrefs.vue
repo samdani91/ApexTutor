@@ -179,9 +179,18 @@
       <p class="text-xs text-paper-400 font-body mt-1">Give students a clearer picture of your teaching history.</p>
     </div>
 
-    <button @click="save" :disabled="saving" class="btn-primary mt-6 text-sm py-2.5 px-6">
-      {{ saving ? 'Saving…' : 'Save preferences' }}
+    <button @click="saveConfirmOpen = true" :disabled="saving" class="btn-primary mt-6 text-sm py-2.5 px-6">
+      {{ saving ? 'Saving…' : 'Save Preferences' }}
     </button>
+
+    <ConfirmDialog
+      :show="saveConfirmOpen"
+      title="Save Tuition Preferences?"
+      message="Save your preferences? Changes will be submitted for admin review before they go live."
+      confirm-label="Save Preferences"
+      @confirm="saveConfirmOpen = false; save()"
+      @cancel="saveConfirmOpen = false"
+    />
   </div>
 </template>
 
@@ -191,9 +200,11 @@ import { tutorApi } from '@/api/tutor.js'
 import { searchApi } from '@/api/search.js'
 import { toast } from 'vue-sonner'
 import { MEDIUMS, CLASS_LEVELS, PLACE_OF_TUTORING, TUTORING_STYLES, DAYS, PREFERRED_TIMES } from '@/utils/constants.js'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const emit = defineEmits(['saved'])
 const saving         = ref(false)
+const saveConfirmOpen = ref(false)
 const subjectsLoading = ref(false)
 const areasLoading   = ref(false)
 const allSubjects    = ref([])

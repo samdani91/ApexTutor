@@ -9,7 +9,7 @@
         <div>
           <label class="block text-xs font-semibold font-display text-navy-700 mb-1">About me</label>
           <textarea v-model="bio" rows="4" class="input text-sm resize-none"
-            placeholder="Write a short introduction — your teaching background, strengths, and what makes you a great tutor…" />
+            placeholder="Write a short introduction — your teaching background, strengths and what makes you a great tutor…" />
           <p class="text-xs text-paper-400 font-body mt-1">Shown on your public profile. Max 2000 characters.</p>
         </div>
 
@@ -70,7 +70,7 @@
       </div>
 
       <div class="mt-6 flex justify-start">
-        <button @click="savePersonalSection" :disabled="!!savingSection" class="btn-primary text-sm py-2.5 px-6">
+        <button @click="pendingSaveSection = 'personal'" :disabled="!!savingSection" class="btn-primary text-sm py-2.5 px-6">
           {{ savingSection === 'personal' ? 'Saving…' : 'Save personal information' }}
         </button>
       </div>
@@ -101,7 +101,7 @@
       </div>
 
       <div class="mt-6 flex justify-start">
-        <button @click="saveGuardianSection" :disabled="!!savingSection" class="btn-primary text-sm py-2.5 px-6">
+        <button @click="pendingSaveSection = 'guardian'" :disabled="!!savingSection" class="btn-primary text-sm py-2.5 px-6">
           {{ savingSection === 'guardian' ? 'Saving…' : 'Save guardian information' }}
         </button>
       </div>
@@ -132,11 +132,22 @@
       </div>
 
       <div class="mt-6 flex justify-start">
-        <button @click="saveEmergencySection" :disabled="!!savingSection" class="btn-primary text-sm py-2.5 px-6">
+        <button @click="pendingSaveSection = 'emergency'" :disabled="!!savingSection" class="btn-primary text-sm py-2.5 px-6">
           {{ savingSection === 'emergency' ? 'Saving…' : 'Save emergency contact' }}
         </button>
       </div>
     </section>
+
+    <ConfirmDialog
+      :show="pendingSaveSection !== null"
+      title="Save Changes?"
+      :message="pendingSaveSection === 'personal' ? 'Save your personal information? Changes will be submitted for admin review.'
+              : pendingSaveSection === 'guardian' ? 'Save guardian information? Changes will be submitted for admin review.'
+              : 'Save emergency contact? Changes will be submitted for admin review.'"
+      confirm-label="Save"
+      @confirm="doSectionSave"
+      @cancel="pendingSaveSection = null"
+    />
   </div>
 </template>
 
@@ -145,10 +156,12 @@ import { reactive, ref, onMounted } from 'vue'
 import { tutorApi } from '@/api/tutor.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { toast } from 'vue-sonner'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const emit = defineEmits(['saved'])
 const auth = useAuthStore()
-const savingSection = ref(null)
+const savingSection  = ref(null)
+const pendingSaveSection = ref(null) // 'personal' | 'guardian' | 'emergency'
 const bio = ref('')
 const initialBio = ref('')
 const initialForm = ref(null)
@@ -264,6 +277,14 @@ onMounted(async () => {
   } catch {}
 })
 
+function doSectionSave() {
+  const section = pendingSaveSection.value
+  pendingSaveSection.value = null
+  if (section === 'personal')  savePersonalSection()
+  else if (section === 'guardian')  saveGuardianSection()
+  else if (section === 'emergency') saveEmergencySection()
+}
+
 async function savePersonalSection() {
   const payload = changedPayload(form, personalKeys, initialForm.value)
   const requests = []
@@ -296,7 +317,7 @@ async function saveEmergencySection() {
   const hasRequiredEmergency = emergency.name && emergency.relation && emergency.phone
 
   if (hasEmergencyInput && !hasRequiredEmergency) {
-    toast.error('Emergency contact name, relation, and phone are required.')
+    toast.error('Emergency contact name, relation and phone are required.')
     return
   }
 

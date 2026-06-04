@@ -82,9 +82,9 @@
             </div>
           </div>
 
-          <button @click="saveProfile" :disabled="saving"
+          <button @click="saveConfirmOpen = true" :disabled="saving"
             class="btn-primary mt-5 text-sm py-2.5 px-6">
-            {{ saving ? 'Saving…' : 'Save changes' }}
+            {{ saving ? 'Saving…' : 'Save Changes' }}
           </button>
         </div>
 
@@ -243,6 +243,14 @@
       </Transition>
     </Teleport>
 
+    <ConfirmDialog
+      :show="saveConfirmOpen"
+      title="Save Profile Changes?"
+      message="Update your profile with the information entered?"
+      confirm-label="Save Changes"
+      @confirm="saveConfirmOpen = false; saveProfile()"
+      @cancel="saveConfirmOpen = false"
+    />
   </div>
 </template>
 
@@ -253,11 +261,13 @@ import { authApi } from '@/api/auth.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { getInitials } from '@/utils/helpers.js'
 import { toast } from 'vue-sonner'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
-const auth            = useAuthStore()
-const profile         = ref(null)
-const loading         = ref(true)
-const saving          = ref(false)
+const auth               = useAuthStore()
+const profile            = ref(null)
+const loading            = ref(true)
+const saving             = ref(false)
+const saveConfirmOpen    = ref(false)
 const uploadingAvatar     = ref(false)
 const uploadingNid        = ref(false)
 const removingNid         = ref(false)
