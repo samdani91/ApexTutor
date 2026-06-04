@@ -94,7 +94,7 @@ onMounted(async () => {
 
 function onSaved(isPending, shouldAdvance = true) {
   if (isPending) {
-    toast.success('Changes saved — pending admin review.')
+    toast.success('Uploaded successfully — pending admin review.')
   } else {
     toast.success('Saved!')
     if (shouldAdvance && currentStep.value < steps.length - 1) currentStep.value++

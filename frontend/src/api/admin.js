@@ -15,6 +15,11 @@ export const adminApi = {
   getTutor: (id) => http.get(`/admin/tutors/${id}`),
   updateTutor: (id, data) => http.put(`/admin/tutors/${id}`, data),
   updateTutorStatus: (id, data) => http.put(`/admin/tutors/${id}/status`, data),
+  uploadTutorDocument: (id, formData) => http.post(`/admin/tutors/${id}/documents`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  deleteTutorDocument: (id, docId) => http.delete(`/admin/tutors/${id}/documents/${docId}`),
+  updateTutorVideo: (id, videoId, data) => http.put(`/admin/tutors/${id}/videos/${videoId}`, data),
+  reviewTutorVideo: (id, videoId, data) => http.put(`/admin/tutors/${id}/videos/${videoId}/review`, data),
+  deleteTutorVideo: (id, videoId) => http.delete(`/admin/tutors/${id}/videos/${videoId}`),
 
   // Guardians
   getGuardians: (params) => http.get('/admin/guardians', { params }),

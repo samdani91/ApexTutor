@@ -27,7 +27,9 @@
           <!-- Optional text input (e.g. rejection reason) -->
           <div v-if="withInput" class="mb-4">
             <label class="block text-xs font-semibold font-display text-navy-700 mb-1">
-              {{ inputLabel || 'Note' }} <span class="text-red-500">*</span>
+              {{ inputLabel || 'Note' }}
+              <span v-if="inputRequired" class="text-red-500">*</span>
+              <span v-else class="text-paper-400 font-normal">(optional)</span>
             </label>
             <textarea v-model="inputValue" rows="3"
               class="input w-full resize-none"
@@ -41,7 +43,7 @@
               Cancel
             </button>
             <button @click="handleConfirm"
-              :disabled="withInput && !inputValue.trim()"
+              :disabled="withInput && inputRequired && !inputValue.trim()"
               class="flex-1 text-sm font-semibold font-display py-2 rounded-md transition-colors disabled:opacity-50"
               :class="danger
                 ? 'bg-red-600 text-white hover:bg-red-700'
@@ -65,6 +67,7 @@ const props = defineProps({
   confirmLabel:     { type: String,  default: 'Confirm' },
   danger:           { type: Boolean, default: false },
   withInput:        { type: Boolean, default: false },
+  inputRequired:    { type: Boolean, default: true },
   inputLabel:       { type: String,  default: '' },
   inputPlaceholder: { type: String,  default: '' },
 })

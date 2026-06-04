@@ -1,10 +1,19 @@
 <template>
   <div>
     <h2 class="font-display font-semibold text-navy-700 text-lg mb-1">Teaching videos</h2>
-    <p class="text-sm text-paper-500 font-body mb-6">
+    <p class="text-sm text-paper-500 font-body mb-4">
       Upload up to 4 videos showcasing your teaching style. Each video needs a title, subject, class and medium.
       Max 150 MB per video — MP4, WebM, or MOV.
     </p>
+    <div class="mb-6 flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+      <svg class="w-4 h-4 text-amber-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+      </svg>
+      <p class="text-xs text-amber-800 font-body leading-relaxed">
+        Uploaded videos are reviewed by our team before they appear on your public profile.
+        Videos marked <strong>pending</strong> are not visible to guardians yet.
+      </p>
+    </div>
 
     <!-- Loading -->
     <div v-if="loading" class="flex items-center gap-2 py-6">
@@ -13,6 +22,38 @@
     </div>
 
     <template v-else>
+
+      <!-- Status alerts -->
+      <div v-if="rejectedVideos.length" class="mb-5 rounded-lg border border-red-200 bg-red-50 p-4">
+        <div class="flex items-start gap-3">
+          <svg class="w-5 h-5 text-red-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9.303 3.376c.866 1.5-.217 3.374-1.948 3.374H2.645c-1.73 0-2.813-1.874-1.948-3.374l7.371-12.748c.866-1.5 3.032-1.5 3.898 0l7.286 12.748z"/>
+          </svg>
+          <div class="min-w-0">
+            <p class="font-display font-semibold text-sm text-red-800">
+              {{ rejectedVideos.length }} video{{ rejectedVideos.length === 1 ? '' : 's' }} not approved
+            </p>
+            <ul class="mt-1 space-y-1">
+              <li v-for="v in rejectedVideos" :key="v.id" class="text-xs text-red-700 font-body">
+                <strong>{{ v.title }}</strong>
+                <span v-if="v.review_note"> — "{{ v.review_note }}"</span>
+              </li>
+            </ul>
+            <p class="mt-2 text-xs text-red-600 font-body">Remove the rejected video and upload a new one to resubmit.</p>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="approvedVideos.length && !pendingVideos.length"
+        class="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 p-4 flex items-center gap-3">
+        <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p class="text-sm text-emerald-800 font-body">
+          All your videos are <strong>approved</strong> and visible on your public profile.
+        </p>
+      </div>
+
       <!-- Uploaded videos list -->
       <div v-if="videos.length" class="space-y-4 mb-6">
         <div v-for="vid in videos" :key="vid.id" class="border border-paper-200 rounded-sm overflow-hidden bg-white shadow-xs">
@@ -32,19 +73,28 @@
                       {{ vid.subject }}
                     </span>
                     <span v-if="vid.class_level" class="text-xs bg-navy-50 text-navy-700 border border-navy-100 px-2 py-0.5 rounded-pill font-body">
-                      Class {{ vid.class_level }}
+                      {{ classLabel(vid.class_level) }}
                     </span>
                     <span v-if="vid.medium" class="text-xs bg-paper-100 text-paper-600 border border-paper-200 px-2 py-0.5 rounded-pill font-body capitalize">
                       {{ vid.medium }}
                     </span>
-                    <span :class="vid.review_status === 'approved' ? 'badge-verified' : 'badge-pending'" class="text-xs">
+                    <span class="text-xs px-2 py-0.5 rounded-pill font-semibold font-display border"
+                      :class="vid.review_status === 'approved'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : vid.review_status === 'rejected'
+                          ? 'bg-red-50 text-red-700 border-red-200'
+                          : 'bg-amber-50 text-amber-700 border-amber-200'">
                       {{ vid.review_status }}
+                    </span>
+                    <span v-if="vid.review_status === 'rejected' && vid.review_note"
+                      class="text-xs text-red-600 font-body italic">
+                      "{{ vid.review_note }}"
                     </span>
                   </div>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                   <button @click="startEdit(vid)"
-                    class="text-xs font-semibold font-display border border-paper-300 px-3 py-1.5 rounded-sm text-navy-700 hover:bg-navy-50 transition-colors">
+                    class="text-xs font-semibold font-display px-3 py-1.5 rounded-sm bg-navy-700 text-white hover:bg-navy-600 transition-colors">
                     Edit info
                   </button>
                   <button @click="openRemoveDialog(vid)"
@@ -64,12 +114,12 @@
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Subject</label>
-                    <input v-model="editForm.subject" type="text" class="input text-sm" placeholder="e.g. Mathematics" required maxlength="100" />
+                    <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Class / Grade</label>
+                    <DropSelect v-model="editForm.class_level" :options="classOptions" placeholder="Select class…" @update:modelValue="onEditClassChange" />
                   </div>
                   <div>
-                    <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Class / Grade</label>
-                    <input v-model="editForm.class_level" type="text" class="input text-sm" placeholder="e.g. 9–10" required maxlength="100" />
+                    <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Subject</label>
+                    <DropSelect v-model="editForm.subject" :options="editSubjectOptions" placeholder="Select subject…" :disabled="!editForm.class_level" />
                   </div>
                   <div>
                     <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Medium</label>
@@ -136,12 +186,12 @@
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Subject <span class="text-red-500">*</span></label>
-                <input v-model="newForm.subject" type="text" class="input text-sm" placeholder="e.g. Mathematics" required maxlength="100" />
+                <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Class / Grade <span class="text-red-500">*</span></label>
+                <DropSelect v-model="newForm.class_level" :options="classOptions" placeholder="Select class…" @update:modelValue="onNewClassChange" />
               </div>
               <div>
-                <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Class / Grade <span class="text-red-500">*</span></label>
-                <input v-model="newForm.class_level" type="text" class="input text-sm" placeholder="e.g. 9–10" required maxlength="100" />
+                <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Subject <span class="text-red-500">*</span></label>
+                <DropSelect v-model="newForm.subject" :options="newSubjectOptions" placeholder="Select subject…" :disabled="!newForm.class_level" />
               </div>
               <div>
                 <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Medium <span class="text-red-500">*</span></label>
@@ -212,9 +262,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { tutorApi } from '@/api/tutor.js'
+import { searchApi } from '@/api/search.js'
 import { toast } from 'vue-sonner'
+import { CLASS_LEVELS } from '@/utils/constants.js'
 
 const emit = defineEmits(['saved'])
 
@@ -229,14 +281,47 @@ const saving          = ref(false)
 const removeTarget    = ref(null)
 const removing        = ref(false)
 
+const newSubjectOptions  = ref([])
+const editSubjectOptions = ref([])
+
+const rejectedVideos = computed(() => videos.value.filter(v => v.review_status === 'rejected'))
+const approvedVideos = computed(() => videos.value.filter(v => v.review_status === 'approved'))
+const pendingVideos  = computed(() => videos.value.filter(v => v.review_status === 'pending'))
+
 const newForm  = reactive({ title: '', subject: '', class_level: '', medium: '' })
 const editForm = reactive({ title: '', subject: '', class_level: '', medium: '' })
+
+const classOptions = CLASS_LEVELS.map(c => ({ value: c.value, label: c.label }))
+
 const mediumOptions = [
-  { value: '', label: 'Select…' },
   { value: 'bangla', label: 'Bangla' },
   { value: 'english', label: 'English' },
   { value: 'bangla_english', label: 'Bangla & English' },
 ]
+
+function classLabel(val) {
+  return CLASS_LEVELS.find(c => c.value === val)?.label ?? val
+}
+
+async function fetchSubjects(classLevel) {
+  if (!classLevel) return []
+  try {
+    const { data } = await searchApi.subjects({ class_level: classLevel })
+    return (data.data ?? []).map(s => ({ value: s.name, label: s.name }))
+  } catch {
+    return []
+  }
+}
+
+async function onNewClassChange(val) {
+  newForm.subject = ''
+  newSubjectOptions.value = await fetchSubjects(val)
+}
+
+async function onEditClassChange(val) {
+  editForm.subject = ''
+  editSubjectOptions.value = await fetchSubjects(val)
+}
 
 onMounted(async () => {
   try {
@@ -295,8 +380,8 @@ async function uploadWithMeta() {
     videos.value.push(data.data)
     pendingFile.value = null
     Object.assign(newForm, { title: '', subject: '', class_level: '', medium: '' })
-    emit('saved')
-    toast.success('Video uploaded successfully.')
+    newSubjectOptions.value = []
+    emit('saved', true)
   } catch (err) {
     const msg = err.response?.data?.message || err.response?.data?.errors?.video?.[0] || 'Upload failed. Please try again.'
     toast.error(msg)
@@ -305,7 +390,7 @@ async function uploadWithMeta() {
   }
 }
 
-function startEdit(vid) {
+async function startEdit(vid) {
   editingId.value = vid.id
   Object.assign(editForm, {
     title:       vid.title       ?? '',
@@ -313,6 +398,9 @@ function startEdit(vid) {
     class_level: vid.class_level ?? '',
     medium:      vid.medium      ?? '',
   })
+  if (editForm.class_level) {
+    editSubjectOptions.value = await fetchSubjects(editForm.class_level)
+  }
 }
 
 async function saveEdit(id) {

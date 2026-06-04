@@ -232,28 +232,69 @@
           <h2 class="section-title">
             Teaching videos
             <span v-if="tutor.teaching_videos?.length" class="text-paper-400 font-body font-normal">({{ tutor.teaching_videos.length }})</span>
+            <span v-if="pendingVideoCount" class="ml-2 text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-pill">
+              {{ pendingVideoCount }} pending
+            </span>
           </h2>
           <div v-if="tutor.teaching_videos?.length" class="grid md:grid-cols-2 gap-4">
-            <div v-for="vid in tutor.teaching_videos" :key="vid.id" class="rounded-lg border border-paper-200 bg-paper-50 p-3">
+            <div v-for="vid in tutor.teaching_videos" :key="vid.id"
+              class="rounded-lg border bg-paper-50 p-3"
+              :class="vid.review_status === 'pending' ? 'border-amber-300' : 'border-paper-200'">
               <video :src="vid.file_url" controls
                 class="w-full rounded-lg bg-black max-h-60" preload="metadata" />
               <div class="mt-2">
                 <p v-if="vid.title" class="font-display font-semibold text-sm text-navy-900 mb-1.5">{{ vid.title }}</p>
-                <div class="flex items-center flex-wrap gap-2">
+                <div class="flex items-center flex-wrap gap-2 mb-2">
                   <span v-if="vid.subject" class="chip">{{ vid.subject }}</span>
                   <span v-if="vid.class_level" class="chip">Class {{ vid.class_level }}</span>
                   <span v-if="vid.medium" class="chip capitalize">{{ vid.medium.replace('_', ' & ') }}</span>
                   <span class="status-chip capitalize"
-                    :class="vid.review_status === 'approved' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">
+                    :class="vid.review_status === 'approved' ? 'bg-emerald-50 text-emerald-700' : vid.review_status === 'rejected' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'">
                     {{ vid.review_status }}
                   </span>
                   <span class="text-xs text-paper-400 font-body">{{ formatSize(vid.file_size) }}</span>
+                </div>
+                <p v-if="vid.review_note" class="text-xs text-paper-500 font-body italic mb-2">Note: {{ vid.review_note }}</p>
+                <div v-if="vid.review_status !== 'approved'" class="flex gap-2 pt-1 border-t border-paper-100">
+                  <button @click="openApproveVideoDialog(vid)" :disabled="videoActing === vid.id"
+                    class="flex-1 text-xs font-semibold font-display py-1.5 rounded-sm bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors">
+                    Approve
+                  </button>
+                  <button v-if="vid.review_status !== 'rejected'" @click="openRejectVideoDialog(vid)" :disabled="videoActing === vid.id"
+                    class="flex-1 text-xs font-semibold font-display py-1.5 rounded-sm bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors">
+                    Reject
+                  </button>
                 </div>
               </div>
             </div>
           </div>
           <p v-else class="empty-state">No teaching videos uploaded.</p>
         </div>
+
+        <!-- Video approve dialog -->
+        <AdminConfirmDialog
+          :show="showApproveVideoDialog"
+          title="Approve Video?"
+          :message="pendingApproveVideo ? `Approve &quot;${pendingApproveVideo.title}&quot;? It will appear on the tutor's public profile.` : ''"
+          confirm-label="Yes, Approve"
+          @confirm="confirmApproveVideo"
+          @cancel="showApproveVideoDialog = false"
+        />
+
+        <!-- Video reject dialog -->
+        <AdminConfirmDialog
+          :show="showRejectVideoDialog"
+          title="Reject Video"
+          message="The tutor will see this reason on their profile."
+          confirm-label="Reject Video"
+          :danger="true"
+          :with-input="true"
+          :input-required="false"
+          input-label="Rejection reason"
+          input-placeholder="e.g. Poor audio quality, unrelated content…"
+          @confirm="confirmRejectVideo"
+          @cancel="showRejectVideoDialog = false"
+        />
 
         <div class="card">
           <h2 class="section-title">Connection requests <span class="text-paper-400 font-body font-normal">({{ tutor.connection_requests?.length || 0 }})</span></h2>
@@ -342,6 +383,16 @@ const statusValue      = ref('active')
 const showApproveDialog = ref(false)
 const showRejectDialog  = ref(false)
 const pendingStatus     = ref(null)
+
+const videoActing           = ref(null)
+const showApproveVideoDialog = ref(false)
+const pendingApproveVideo    = ref(null)
+const showRejectVideoDialog  = ref(false)
+const pendingRejectVideo     = ref(null)
+
+const pendingVideoCount = computed(() =>
+  tutor.value?.teaching_videos?.filter(v => v.review_status === 'pending').length ?? 0
+)
 const accountStatusOptions = [
   { value: 'active', label: 'Active' },
   { value: 'inactive', label: 'Inactive' },
@@ -502,6 +553,56 @@ async function confirmStatusChange() {
 
 function cancelStatusChange() {
   pendingStatus.value = null
+}
+
+function openApproveVideoDialog(vid) {
+  pendingApproveVideo.value = vid
+  showApproveVideoDialog.value = true
+}
+
+async function confirmApproveVideo() {
+  showApproveVideoDialog.value = false
+  const vid = pendingApproveVideo.value
+  pendingApproveVideo.value = null
+  if (!vid) return
+  await reviewVideo(vid, 'approve')
+}
+
+async function reviewVideo(vid, action) {
+  videoActing.value = vid.id
+  try {
+    const { data } = await adminApi.reviewTutorVideo(tutor.value.id, vid.id, { action })
+    const idx = tutor.value.teaching_videos.findIndex(v => v.id === vid.id)
+    if (idx !== -1) tutor.value.teaching_videos[idx] = { ...tutor.value.teaching_videos[idx], ...data.data }
+    toast.success(action === 'approve' ? 'Video approved.' : 'Video rejected.')
+  } catch {
+    toast.error('Failed to update video status.')
+  } finally {
+    videoActing.value = null
+  }
+}
+
+function openRejectVideoDialog(vid) {
+  pendingRejectVideo.value = vid
+  showRejectVideoDialog.value = true
+}
+
+async function confirmRejectVideo(reason) {
+  showRejectVideoDialog.value = false
+  const vid = pendingRejectVideo.value
+  pendingRejectVideo.value = null
+  if (!vid) return
+  videoActing.value = vid.id
+  try {
+    const { data } = await adminApi.reviewTutorVideo(tutor.value.id, vid.id, { action: 'reject', review_note: reason || null })
+    const idx = tutor.value.teaching_videos.findIndex(v => v.id === vid.id)
+    if (idx !== -1) tutor.value.teaching_videos[idx] = { ...tutor.value.teaching_videos[idx], ...data.data }
+    toast.success('Video rejected.')
+  } catch {
+    toast.error('Failed to reject video.')
+  } finally {
+    videoActing.value = null
+  }
 }
 </script>
 
