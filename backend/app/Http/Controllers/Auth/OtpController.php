@@ -21,7 +21,7 @@ class OtpController extends Controller
 
         OtpCode::create([
             'phone'      => $request->phone,
-            'code'       => $code,
+            'code'       => hash('sha256', $code),
             'purpose'    => $request->purpose,
             'expires_at' => now()->addMinutes(10),
         ]);
@@ -49,7 +49,7 @@ class OtpController extends Controller
         }
 
         $otp = OtpCode::where('phone', $request->phone)
-            ->where('code', $request->code)
+            ->where('code', hash('sha256', $request->code))
             ->where('purpose', $request->purpose)
             ->whereNull('used_at')
             ->where('expires_at', '>', now())

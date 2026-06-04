@@ -4,27 +4,25 @@ import { authApi } from '@/api/auth.js'
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
-    // sessionStorage: cleared when the browser tab closes, reducing the persistent XSS window
-    token: sessionStorage.getItem('token') || null,
     loading: false,
   }),
   getters: {
-    isAuthenticated: (state) => !!state.token,
+    // Token lives in an httpOnly cookie — not readable from JS. Auth state = user object.
+    isAuthenticated: (state) => !!state.user,
     isTutor:         (state) => state.user?.role === 'tutor',
     isGuardian:      (state) => ['guardian', 'student'].includes(state.user?.role),
-    isAdmin:         (state) => ['admin', 'super_admin'].includes(state.user?.role),
+    isAdmin:         (state) => state.user?.role === 'super_admin',
   },
   actions: {
-    setAuth(user, token) {
-      this.user  = user
-      this.token = token
-      sessionStorage.setItem('token', token)
+    setAuth(user, _token = null) {
+      // _token ignored: backend sets httpOnly cookie, browser sends it automatically
+      this.user = user
     },
     async login(credentials) {
       this.loading = true
       try {
         const { data } = await authApi.login(credentials)
-        this.setAuth(data.data.user, data.data.token)
+        this.setAuth(data.data.user)
         return data
       } finally {
         this.loading = false
@@ -34,7 +32,6 @@ export const useAuthStore = defineStore('auth', {
       this.loading = true
       try {
         const { data } = await authApi.register(payload)
-        // token not issued yet — email verification required
         return data
       } finally {
         this.loading = false
@@ -44,8 +41,11 @@ export const useAuthStore = defineStore('auth', {
       try {
         const { data } = await authApi.me()
         this.user = data.data
-      } catch {
-        this.logout()
+      } catch (err) {
+        // Only clear user on auth failure; leave state intact on transient server errors
+        if (!err.response || err.response.status === 401) {
+          this.user = null
+        }
       }
     },
     async uploadAvatar(formData) {
@@ -58,9 +58,7 @@ export const useAuthStore = defineStore('auth', {
     },
     async logout() {
       try { await authApi.logout() } catch {}
-      this.token = null
-      this.user  = null
-      sessionStorage.removeItem('token')
+      this.user = null
     },
   },
 })

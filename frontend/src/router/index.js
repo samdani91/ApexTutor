@@ -36,13 +36,14 @@ const routes = [
   {
     path: '/admin',
     component: () => import('@/layouts/AdminLayout.vue'),
-    meta: { requiresAuth: true, role: ['admin', 'super_admin'] },
+    meta: { requiresAuth: true, role: ['super_admin'] },
     children: [
       { path: 'dashboard', component: () => import('@/views/admin/AdminDashboard.vue'), name: 'admin-dashboard' },
       { path: 'users', component: () => import('@/views/admin/AdminUsersList.vue'), name: 'admin-users' },
       { path: 'tutors/:id', component: () => import('@/views/admin/AdminTutorDetail.vue'), name: 'admin-tutor-detail' },
       { path: 'tutors/:id/edit', component: () => import('@/views/admin/AdminTutorEdit.vue'), name: 'admin-tutor-edit' },
       { path: 'guardians/:id', component: () => import('@/views/admin/AdminGuardianDetail.vue'), name: 'admin-guardian-detail' },
+      { path: 'admins/create', component: () => import('@/views/admin/AdminCreateAdmin.vue'), name: 'admin-create-admin' },
       { path: 'admins/:id', component: () => import('@/views/admin/AdminUserDetail.vue'), name: 'admin-user-detail' },
       { path: 'verifications', component: () => import('@/views/admin/TutorVerification.vue'), name: 'admin-verifications' },
       { path: 'connections', component: () => import('@/views/admin/ConnectionManagement.vue'), name: 'admin-connections' },
@@ -51,7 +52,6 @@ const routes = [
       { path: 'reference-data', component: () => import('@/views/admin/AdminReferenceData.vue'), name: 'admin-reference-data' },
       { path: 'analytics', component: () => import('@/views/admin/AdminAnalytics.vue'), name: 'admin-analytics' },
       { path: 'audit-log', component: () => import('@/views/admin/AdminAuditLog.vue'), name: 'admin-audit-log' },
-      { path: 'admins/create', component: () => import('@/views/admin/AdminCreateAdmin.vue'), name: 'admin-create-admin' },
       { path: 'notifications', component: () => import('@/views/admin/AdminNotifications.vue'), name: 'admin-notifications' },
       { path: 'settings', component: () => import('@/views/admin/AdminSettings.vue'), name: 'admin-settings' },
     ]
@@ -65,23 +65,16 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 }),
 })
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-
-  // Ensure user object is populated whenever a token exists
-  if (authStore.token && !authStore.user) {
-    await authStore.fetchMe()
-  }
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return next({ name: 'login', query: { redirect: to.fullPath } })
   }
 
-  if (to.meta.role && authStore.user) {
+  if (to.meta.role && authStore.isAuthenticated) {
     const roles = Array.isArray(to.meta.role) ? to.meta.role : [to.meta.role]
-    const userRole = authStore.user.role
-    const allowed = roles.includes(userRole) || (roles.includes('admin') && userRole === 'super_admin')
-    if (!allowed) return next({ name: 'home' })
+    if (!roles.includes(authStore.user.role)) return next({ name: 'home' })
   }
 
   next()

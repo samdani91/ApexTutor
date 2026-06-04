@@ -7,9 +7,9 @@ use App\Models\OtpCode;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
@@ -43,7 +43,7 @@ class UserProfileController extends Controller
         $code = str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
         OtpCode::create([
             'email'      => $request->email,
-            'code'       => $code,
+            'code'       => hash('sha256', $code),
             'purpose'    => 'email_change',
             'expires_at' => now()->addMinutes(15),
         ]);
@@ -71,8 +71,17 @@ class UserProfileController extends Controller
             return response()->json(['success' => false, 'message' => 'No pending email change found.'], 422);
         }
 
+        $rateLimitKey = 'otp_email_change:' . $user->id;
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 5)) {
+            $seconds = RateLimiter::availableIn($rateLimitKey);
+            return response()->json([
+                'success' => false,
+                'message' => "Too many attempts. Try again in {$seconds} seconds.",
+            ], 429);
+        }
+
         $otp = OtpCode::where('email', $user->pending_email)
-            ->where('code', $request->code)
+            ->where('code', hash('sha256', $request->code))
             ->where('purpose', 'email_change')
             ->whereNull('used_at')
             ->where('expires_at', '>', now())
@@ -80,9 +89,11 @@ class UserProfileController extends Controller
             ->first();
 
         if (!$otp) {
+            RateLimiter::hit($rateLimitKey, 600);
             return response()->json(['success' => false, 'message' => 'Invalid or expired code.'], 422);
         }
 
+        RateLimiter::clear($rateLimitKey);
         $otp->update(['used_at' => now()]);
         $user->update(['email' => $user->pending_email, 'pending_email' => null]);
 
@@ -101,15 +112,12 @@ class UserProfileController extends Controller
                     $fail('Current password is incorrect.');
                 }
             }],
-            'captcha_token' => 'required|string',
         ]);
 
-        $this->verifyCaptcha($request->captcha_token, $request->ip());
-
-        $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $code = str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
         OtpCode::create([
             'email'      => $user->email,
-            'code'       => $code,
+            'code'       => hash('sha256', $code),
             'purpose'    => 'password_change',
             'expires_at' => now()->addMinutes(10),
         ]);
@@ -146,8 +154,17 @@ class UserProfileController extends Controller
             'otp_code'         => 'required|string|size:6',
         ]);
 
+        $rateLimitKey = 'otp_change_password:' . $user->id;
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 5)) {
+            $seconds = RateLimiter::availableIn($rateLimitKey);
+            return response()->json([
+                'success' => false,
+                'message' => "Too many attempts. Try again in {$seconds} seconds.",
+            ], 429);
+        }
+
         $otp = OtpCode::where('email', $user->email)
-            ->where('code', $request->otp_code)
+            ->where('code', hash('sha256', $request->otp_code))
             ->where('purpose', 'password_change')
             ->whereNull('used_at')
             ->where('expires_at', '>', now())
@@ -155,45 +172,20 @@ class UserProfileController extends Controller
             ->first();
 
         if (!$otp) {
+            RateLimiter::hit($rateLimitKey, 600);
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid or expired verification code.',
             ], 422);
         }
 
+        RateLimiter::clear($rateLimitKey);
+
         $otp->update(['used_at' => now()]);
         $user->update(['password' => Hash::make($request->password)]);
         $user->tokens()->delete(); // Revoke all sessions for security
 
         return response()->json(['success' => true, 'message' => 'Password changed. Please log in again.']);
-    }
-
-    private function verifyCaptcha(string $token, string $ip): void
-    {
-        $secret = config('services.recaptcha.secret');
-        if (empty($secret)) {
-            Log::warning('reCAPTCHA secret not configured — skipping verification.');
-            return;
-        }
-
-        $result    = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
-            'secret'   => $secret,
-            'response' => $token,
-            'remoteip' => $ip,
-        ])->json();
-
-        $threshold = (float) config('services.recaptcha.threshold', 0.5);
-
-        if (!($result['success'] ?? false) || ($result['score'] ?? 0) < $threshold) {
-            Log::info('reCAPTCHA failed', [
-                'score'  => $result['score']   ?? 0,
-                'errors' => $result['error-codes'] ?? [],
-                'ip'     => $ip,
-            ]);
-            throw ValidationException::withMessages([
-                'captcha_token' => ['Security verification failed. Please refresh the page and try again.'],
-            ]);
-        }
     }
 
     private function maskEmail(string $email): string

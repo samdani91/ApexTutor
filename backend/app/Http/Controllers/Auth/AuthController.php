@@ -9,10 +9,11 @@ use App\Models\TutorProfile;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
@@ -26,10 +27,7 @@ class AuthController extends Controller
             'phone'           => ['required', 'string', 'max:20', 'regex:/^(\+88)?01[3-9]\d{8}$/'],
             'password'        => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
             'role'            => 'required|in:tutor,guardian,student',
-            'captcha_token'   => 'required|string',
         ]);
-
-        $this->verifyCaptcha($request->captcha_token, $request->ip());
 
         // Clean up stale unverified accounts older than 7 days so the user can re-register
         User::whereNull('email_verified_at')
@@ -48,20 +46,25 @@ class AuthController extends Controller
             'phone' => 'unique:users,phone',
         ]);
 
-        $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'phone'    => $request->phone,
-            'password' => Hash::make($request->password),
-            'role'     => $request->role,
-        ]);
+        $user = DB::transaction(function () use ($request) {
+            $user = User::create([
+                'name'     => $request->name,
+                'email'    => $request->email,
+                'phone'    => $request->phone,
+                'password' => Hash::make($request->password),
+                'role'     => $request->role,
+            ]);
 
-        if ($user->isTutor()) {
-            TutorProfile::create(['user_id' => $user->id]);
-        } else {
-            GuardianProfile::create(['user_id' => $user->id, 'account_type' => $user->role]);
-        }
+            if ($user->isTutor()) {
+                TutorProfile::create(['user_id' => $user->id]);
+            } else {
+                GuardianProfile::create(['user_id' => $user->id, 'account_type' => $user->role]);
+            }
 
+            return $user;
+        });
+
+        // Outside transaction — a mail failure should not roll back user creation
         $this->sendEmailOtp($user->email, 'email_verification');
 
         return response()->json([
@@ -77,12 +80,9 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'email'         => 'required|email',
-            'password'      => 'required|string',
-            'captcha_token' => 'required|string',
+            'email'    => 'required|email',
+            'password' => 'required|string',
         ]);
-
-        $this->verifyCaptcha($request->captcha_token, $request->ip());
 
         $user = User::where('email', $data['email'])->first();
         if (!$user || !Hash::check($data['password'], $user->password)) {
@@ -101,9 +101,9 @@ class AuthController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
         return response()->json([
             'success' => true,
-            'data'    => ['user' => $user, 'token' => $token],
+            'data'    => ['user' => $user],
             'message' => 'Login successful.',
-        ]);
+        ])->cookie('auth_token', $token, 60 * 24 * 7, '/', null, config('session.secure', false), true, false, 'Lax');
     }
 
     public function verifyEmail(Request $request): JsonResponse
@@ -113,8 +113,17 @@ class AuthController extends Controller
             'code'  => 'required|string|size:6',
         ]);
 
+        $rateLimitKey = 'otp_verify_email:' . $request->email;
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 5)) {
+            $seconds = RateLimiter::availableIn($rateLimitKey);
+            return response()->json([
+                'success' => false,
+                'message' => "Too many attempts. Try again in {$seconds} seconds.",
+            ], 429);
+        }
+
         $otp = OtpCode::where('email', $request->email)
-            ->where('code', $request->code)
+            ->where('code', hash('sha256', $request->code))
             ->where('purpose', 'email_verification')
             ->whereNull('used_at')
             ->where('expires_at', '>', now())
@@ -122,12 +131,14 @@ class AuthController extends Controller
             ->first();
 
         if (!$otp) {
+            RateLimiter::hit($rateLimitKey, 600);
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid or expired verification code.',
             ], 422);
         }
 
+        RateLimiter::clear($rateLimitKey);
         $otp->update(['used_at' => now()]);
         $user = User::where('email', $request->email)->first();
 
@@ -136,14 +147,14 @@ class AuthController extends Controller
         }
 
         $user->update(['email_verified_at' => now()]);
-        $user->tokens()->delete(); // Revoke any stale tokens from previous attempts
+        $user->tokens()->delete();
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'success' => true,
-            'data'    => ['user' => $user->fresh(), 'token' => $token],
+            'data'    => ['user' => $user->fresh()],
             'message' => 'Email verified. Welcome!',
-        ]);
+        ])->cookie('auth_token', $token, 60 * 24 * 7, '/', null, config('session.secure', false), true, false, 'Lax');
     }
 
     public function resendVerification(Request $request): JsonResponse
@@ -162,7 +173,8 @@ class AuthController extends Controller
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
-        return response()->json(['success' => true, 'message' => 'Logged out.']);
+        return response()->json(['success' => true, 'message' => 'Logged out.'])
+            ->withoutCookie('auth_token');
     }
 
     public function me(Request $request): JsonResponse
@@ -175,7 +187,7 @@ class AuthController extends Controller
         $code = str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
         OtpCode::create([
             'email'      => $email,
-            'code'       => $code,
+            'code'       => hash('sha256', $code),
             'purpose'    => $purpose,
             'expires_at' => now()->addMinutes(10),
         ]);
@@ -184,38 +196,6 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('OTP mail failed', ['email' => $email, 'error' => $e->getMessage()]);
             throw new \RuntimeException('Failed to send verification email. Please try again.');
-        }
-    }
-
-    private function verifyCaptcha(string $token, string $ip): void
-    {
-        $secret = config('services.recaptcha.secret');
-
-        // Skip verification if no secret is configured (local dev without keys)
-        if (empty($secret)) {
-            Log::warning('reCAPTCHA secret not configured — skipping verification.');
-            return;
-        }
-
-        $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
-            'secret'   => $secret,
-            'response' => $token,
-            'remoteip' => $ip,
-        ]);
-
-        $result    = $response->json();
-        $threshold = (float) config('services.recaptcha.threshold', 0.5);
-
-        if (!($result['success'] ?? false) || ($result['score'] ?? 0) < $threshold) {
-            Log::info('reCAPTCHA failed', [
-                'success'  => $result['success'] ?? false,
-                'score'    => $result['score']   ?? 0,
-                'errors'   => $result['error-codes'] ?? [],
-                'ip'       => $ip,
-            ]);
-            throw ValidationException::withMessages([
-                'captcha_token' => ['Security verification failed. Please refresh the page and try again.'],
-            ]);
         }
     }
 

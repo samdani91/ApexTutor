@@ -1,5 +1,4 @@
 import axios from 'axios'
-import { toast } from 'vue-sonner'
 
 const http = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
@@ -7,46 +6,47 @@ const http = axios.create({
   withCredentials: true,
 })
 
-http.interceptors.request.use(config => {
-  const token = sessionStorage.getItem('token')
-  if (token) config.headers.Authorization = `Bearer ${token}`
-  return config
-})
+// No Authorization header injection — auth_token httpOnly cookie is sent automatically
+// by the browser on every request because withCredentials: true is set above.
 
 http.interceptors.response.use(
   res => res,
   err => {
-    if (err.response?.status === 401) {
-      sessionStorage.removeItem('token')
-      // Dispatch a custom event so the router (not the API layer) handles navigation.
-      window.dispatchEvent(new CustomEvent('auth:expired'))
+    const status  = err.response?.status
+    const data    = err.response?.data
+
+    if (status === 401) {
+      emit('auth:expired')
       return Promise.reject(err)
     }
 
-    if (err.response?.status === 403 && err.response?.data?.suspended) {
-      sessionStorage.removeItem('token')
-      toast.error('Your account has been suspended. Please contact support.')
-      window.dispatchEvent(new CustomEvent('auth:suspended'))
+    if (status === 403 && data?.suspended) {
+      emit('auth:suspended', { message: 'Your account has been suspended. Please contact support.' })
       return Promise.reject(err)
     }
 
+    // Fire a generic error event so the UI layer (not the API client) shows toasts.
     if (!err.response) {
-      toast.error('Cannot connect to the server. Please check your connection.')
-      err._toasted = true
-    } else if (err.response.status === 503) {
-      toast.error('Service temporarily unavailable. Please try again.')
-      err._toasted = true
-    } else if (err.response.status >= 500) {
-      toast.error('Something went wrong on our end. Please try again.')
-      err._toasted = true
+      emit('api:error', { message: 'Cannot connect to the server. Please check your connection.' })
+      err._handled = true
+    } else if (status === 503) {
+      emit('api:error', { message: 'Service temporarily unavailable. Please try again.' })
+      err._handled = true
+    } else if (status >= 500) {
+      emit('api:error', { message: 'Something went wrong on our end. Please try again.' })
+      err._handled = true
     }
 
     if (import.meta.env.DEV) {
-      console.error('[API Error]', err.response?.status, err.config?.url, err.response?.data)
+      console.error('[API Error]', status, err.config?.url, data)
     }
 
     return Promise.reject(err)
   }
 )
+
+function emit(name, detail = {}) {
+  window.dispatchEvent(new CustomEvent(name, { detail }))
+}
 
 export default http

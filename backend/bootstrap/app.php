@@ -13,9 +13,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        // Inject auth_token cookie as Bearer header before Sanctum processes the request
+        $middleware->prependToGroup('api', \App\Http\Middleware\CookieTokenMiddleware::class);
         $middleware->alias([
             'role'        => \App\Http\Middleware\EnsureRole::class,
             'active.user' => \App\Http\Middleware\EnsureUserIsActive::class,
+            'verified'    => \App\Http\Middleware\EnsureVerified::class,
+            'log.admin'   => \App\Http\Middleware\LogAdminActivity::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
