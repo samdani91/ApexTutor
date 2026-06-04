@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen overflow-hidden bg-paper-100">
+  <div class="flex h-screen overflow-hidden bg-paper-50">
     <!-- Dark scrim (mobile) -->
     <Transition name="fade">
       <div v-if="sidebarOpen" class="fixed inset-0 z-40 bg-black/40 lg:hidden"
@@ -8,23 +8,28 @@
 
     <!-- ─── Sidebar ─────────────────────────────────────────── -->
     <aside
-      class="fixed lg:static inset-y-0 left-0 w-64 bg-white border-r border-paper-200 z-50
+      class="fixed lg:static inset-y-0 left-0 w-64 bg-navy-900 text-navy-100 z-50
              flex flex-col transition-transform duration-200 ease-in-out"
       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
     >
       <!-- Brand -->
-      <div class="flex items-center justify-between px-5 h-14 border-b border-paper-100 shrink-0">
-        <RouterLink to="/" class="group">
-          <p class="font-display font-bold text-navy-700 group-hover:text-navy-900 transition-colors text-base leading-tight">
-            Tutor<span class="text-blue-600">Khujo</span>
-          </p>
-          <p class="text-[10px] font-body text-paper-400 uppercase tracking-widest leading-none mt-0.5 capitalize">
-            {{ auth.user?.role }}
-          </p>
+      <div class="flex items-center justify-between px-5 h-16 border-b border-white/10 shrink-0">
+        <RouterLink to="/" class="group flex items-center gap-3">
+          <span class="flex h-10 w-10 items-center justify-center rounded-md bg-gold-400 font-display text-sm font-bold text-navy-900 shadow-sm">
+            TK
+          </span>
+          <span>
+            <span class="block font-display font-bold text-white group-hover:text-gold-200 transition-colors text-base leading-tight">
+              TutorKhujo
+            </span>
+            <span class="block text-[10px] font-body text-navy-300 uppercase tracking-widest leading-none mt-0.5 capitalize">
+              {{ auth.user?.role }}
+            </span>
+          </span>
         </RouterLink>
         <!-- Close button (mobile only) -->
         <button @click="sidebarOpen = false"
-          class="lg:hidden p-1.5 rounded-md text-paper-400 hover:text-navy-700 hover:bg-navy-50 transition-colors" aria-label="Close">
+          class="lg:hidden p-1.5 rounded-md text-navy-200 hover:text-white hover:bg-white/10 transition-colors" aria-label="Close">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
           </svg>
@@ -32,15 +37,15 @@
       </div>
 
       <!-- User profile -->
-      <div class="px-4 py-4 border-b border-paper-100 shrink-0">
+      <div class="px-4 py-4 border-b border-white/10 shrink-0">
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-navy-100 flex items-center justify-center overflow-hidden shrink-0 ring-2 ring-paper-100">
+          <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden shrink-0 ring-1 ring-white/15">
             <img v-if="auth.user?.avatar_url" :src="auth.user.avatar_url" class="w-full h-full object-cover" alt="" />
-            <span v-else class="font-display font-bold text-sm text-navy-700">{{ initials }}</span>
+            <span v-else class="font-display font-bold text-sm text-gold-200">{{ initials }}</span>
           </div>
           <div class="min-w-0">
-            <p class="font-display font-semibold text-sm text-navy-900 truncate leading-tight">{{ auth.user?.name }}</p>
-            <p class="text-xs text-paper-400 font-body capitalize mt-0.5">{{ auth.user?.role }}</p>
+            <p class="font-display font-semibold text-sm text-white truncate leading-tight">{{ auth.user?.name }}</p>
+            <p class="text-xs text-navy-300 font-body capitalize mt-0.5">{{ auth.user?.role }}</p>
           </div>
         </div>
       </div>
@@ -52,7 +57,7 @@
           :to="item.to"
           @click="sidebarOpen = false"
           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold font-display transition-colors"
-          :class="$route.path.startsWith(item.to) ? 'bg-navy-700 text-white' : 'text-navy-700 hover:bg-navy-50'"
+          :class="$route.path.startsWith(item.to) ? 'bg-gold-400 text-navy-900 shadow-sm' : 'text-navy-200 hover:bg-white/10 hover:text-white'"
         >
           <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
             <path v-if="item.icon === 'home'" stroke-linecap="round" stroke-linejoin="round"
@@ -67,6 +72,8 @@
               d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
             <path v-else-if="item.icon === 'bell'" stroke-linecap="round" stroke-linejoin="round"
               d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
+            <path v-else-if="item.icon === 'check'" stroke-linecap="round" stroke-linejoin="round"
+              d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
           {{ item.label }}
           <span v-if="item.badge && unreadCount > 0"
@@ -77,11 +84,11 @@
       </nav>
 
       <!-- Bottom: Settings + Home link + Logout -->
-      <div class="p-3 border-t border-paper-100 space-y-1 shrink-0">
+      <div class="p-3 border-t border-white/10 space-y-1 shrink-0">
         <RouterLink :to="settingsPath"
           @click="sidebarOpen = false"
           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold font-display transition-colors"
-          :class="$route.path.endsWith('/settings') ? 'bg-navy-700 text-white' : 'text-navy-700 hover:bg-navy-50'"
+          :class="$route.path.endsWith('/settings') ? 'bg-gold-400 text-navy-900 shadow-sm' : 'text-navy-200 hover:bg-white/10 hover:text-white'"
         >
           <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round"
@@ -91,7 +98,7 @@
         </RouterLink>
         <RouterLink to="/"
           @click="sidebarOpen = false"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold font-display text-navy-700 hover:bg-navy-50 transition-colors w-full"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold font-display text-navy-200 hover:bg-white/10 hover:text-white transition-colors w-full"
         >
           <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round"
@@ -106,7 +113,7 @@
             <path stroke-linecap="round" stroke-linejoin="round"
               d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/>
           </svg>
-          Log out
+          Log Out
         </button>
       </div>
     </aside>
@@ -114,22 +121,22 @@
     <!-- ─── Main area ─────────────────────────────────────────── -->
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
       <!-- Mobile top bar -->
-      <div class="lg:hidden bg-white border-b border-paper-200 h-14 flex items-center px-4 gap-3 shrink-0">
+      <div class="lg:hidden bg-navy-900 text-navy-100 h-14 flex items-center px-4 gap-3 shrink-0">
         <button @click="sidebarOpen = true"
-          class="p-1.5 rounded-md text-navy-700 hover:bg-navy-50 transition-colors" aria-label="Open menu">
+          class="p-1.5 rounded-md text-navy-100 hover:bg-white/10 transition-colors" aria-label="Open menu">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M3 12h18M3 18h18"/>
           </svg>
         </button>
-        <RouterLink to="/" class="font-display font-bold text-navy-700 hover:text-navy-900 transition-colors">
-          Tutor<span class="text-blue-600">Khujo</span>
+        <RouterLink to="/" class="font-display font-bold text-white hover:text-gold-200 transition-colors">
+          TutorKhujo
         </RouterLink>
-        <span class="text-paper-300 text-sm">·</span>
-        <span class="font-display font-semibold text-sm text-navy-800 truncate">{{ currentLabel }}</span>
+        <span class="text-white/25 text-sm">·</span>
+        <span class="font-display font-semibold text-sm text-navy-100 truncate">{{ currentLabel }}</span>
       </div>
 
       <!-- Scrollable content -->
-      <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+      <main class="dashboard-content relative flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
         <RouterView />
       </main>
     </div>
@@ -174,16 +181,18 @@ onMounted(async () => {
 
 const navItems = computed(() => {
   if (auth.isTutor) return [
-    { to: '/tutor/dashboard',      label: 'Dashboard',      icon: 'home'  },
-    { to: '/tutor/profile',        label: 'My Profile',     icon: 'user'  },
-    { to: '/tutor/notifications',  label: 'Notifications',  icon: 'bell', badge: true },
+    { to: '/tutor/dashboard',           label: 'Dashboard',          icon: 'home'    },
+    { to: '/tutor/profile',             label: 'My Profile',         icon: 'user'    },
+    { to: '/tutor/confirmed-tuitions',  label: 'Confirmed Tuitions', icon: 'check'   },
+    { to: '/tutor/notifications',       label: 'Notifications',      icon: 'bell', badge: true },
   ]
   if (auth.isGuardian) return [
-    { to: '/guardian/dashboard',     label: 'Dashboard',     icon: 'home'   },
-    { to: '/guardian/profile',       label: 'My Profile',    icon: 'user'   },
-    { to: '/search',                 label: 'Find Tutors',   icon: 'search' },
-    { to: '/guardian/shortlist',     label: 'Shortlist',     icon: 'heart'  },
-    { to: '/guardian/notifications', label: 'Notifications', icon: 'bell', badge: true },
+    { to: '/guardian/dashboard',            label: 'Dashboard',          icon: 'home'   },
+    { to: '/guardian/profile',              label: 'My Profile',         icon: 'user'   },
+    { to: '/search',                        label: 'Find Tutors',        icon: 'search' },
+    { to: '/guardian/shortlist',            label: 'Shortlist',          icon: 'heart'  },
+    { to: '/guardian/confirmed-tuitions',   label: 'Confirmed Tuitions', icon: 'check'  },
+    { to: '/guardian/notifications',        label: 'Notifications',      icon: 'bell', badge: true },
   ]
   return []
 })
@@ -212,6 +221,14 @@ async function confirmLogout() {
 </script>
 
 <style scoped>
+.dashboard-content {
+  background-color: #FBF9F3;
+  background-image:
+    linear-gradient(rgba(15, 46, 92, 0.032) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 46, 92, 0.032) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

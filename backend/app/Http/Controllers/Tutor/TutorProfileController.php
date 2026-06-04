@@ -52,7 +52,11 @@ class TutorProfileController extends Controller
                 'personalInfo',
                 'emergencyContact',
             ])
-            ->withCount(['connectionRequests', 'reviews'])
+            ->withCount([
+                'connectionRequests',
+                'reviews',
+                'connectionRequests as confirmed_tuitions_count' => fn($q) => $q->where('status', 'confirmed'),
+            ])
             ->first();
 
         if (!$profile) {
@@ -62,6 +66,7 @@ class TutorProfileController extends Controller
                 'is_verified'                => false,
                 'verification_status'        => 'not_started',
                 'connection_requests_count'  => 0,
+                'confirmed_tuitions_count'   => 0,
                 'reviews_count'              => 0,
                 'profile_views'              => 0,
                 'rating'                     => null,
@@ -80,6 +85,7 @@ class TutorProfileController extends Controller
             'is_verified'               => $profile->is_verified,
             'verification_status'       => $profile->verification_status,
             'connection_requests_count' => $profile->connection_requests_count,
+            'confirmed_tuitions_count'  => $profile->confirmed_tuitions_count,
             'reviews_count'             => $profile->reviews_count,
             'profile_views'             => $profile->profile_view_count,
             'rating'                    => $profile->rating,
@@ -96,6 +102,25 @@ class TutorProfileController extends Controller
                 'emergency_contact' => $profile->emergencyContact,
             ],
         ]]);
+    }
+
+    public function confirmedTuitions(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $profile = $request->user()->tutorProfile;
+        if (!$profile) {
+            return response()->json(['success' => true, 'data' => []]);
+        }
+
+        $tuitions = $profile->connectionRequests()
+            ->where('status', 'confirmed')
+            ->with([
+                'guardianProfile:id,user_id,guardian_id',
+                'guardianProfile.user:id,name,avatar,phone',
+            ])
+            ->latest('confirmed_at')
+            ->get();
+
+        return response()->json(['success' => true, 'data' => $tuitions]);
     }
 
     private function resolvePendingChanges(?array $changes): ?array

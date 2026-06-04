@@ -1,40 +1,56 @@
 <template>
-  <div>
-    <div class="mb-6">
-      <h1 class="font-display font-bold text-2xl text-navy-900">Dashboard</h1>
+  <div class="dashboard-page space-y-6">
+    <div class="dashboard-card reveal">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p class="font-display text-xs font-bold uppercase text-gold-600">Guardian Dashboard</p>
+          <h1 class="mt-1 font-display font-bold text-2xl text-navy-900 md:text-3xl">Dashboard</h1>
+          <p class="mt-2 max-w-2xl font-body text-sm leading-relaxed text-paper-600">
+            Shortlist suitable tutors, request connections and track confirmed tuition updates.
+          </p>
+        </div>
       <span v-if="guardianId"
-        class="inline-block mt-1 text-xs font-semibold font-display text-navy-700 bg-navy-50 border border-navy-200 px-2 py-0.5 rounded-pill">
+        class="inline-block self-start text-xs font-semibold font-display text-navy-700 bg-navy-50 border border-navy-200 px-3 py-1 rounded-pill sm:self-center">
         {{ guardianId }}
       </span>
+      </div>
     </div>
 
     <!-- Stats -->
-    <div class="grid sm:grid-cols-2 gap-5 mb-8">
-      <RouterLink to="/guardian/shortlist" class="card text-center block hover:shadow-md transition-shadow">
+    <div class="grid gap-4 sm:grid-cols-3">
+      <RouterLink to="/guardian/shortlist" class="metric-card reveal block transition-all hover:-translate-y-1 hover:shadow-lg">
         <p class="font-display font-bold text-3xl text-navy-700">{{ shortlistCount }}</p>
-        <p class="text-sm text-paper-500 font-body mt-1">Shortlisted tutors</p>
+        <p class="text-sm text-paper-500 font-body mt-1">Shortlisted Tutors</p>
       </RouterLink>
-      <div class="card flex flex-col items-center justify-center gap-3">
+      <RouterLink to="/guardian/confirmed-tuitions" class="metric-card reveal delay-1 block transition-all hover:-translate-y-1 hover:shadow-lg">
+        <p class="font-display font-bold text-3xl text-emerald-600">{{ confirmedCount }}</p>
+        <p class="text-sm text-paper-500 font-body mt-1">Confirmed Tuitions</p>
+      </RouterLink>
+      <div class="metric-card reveal delay-2 flex flex-col items-center justify-center gap-3">
         <p class="text-sm font-body text-paper-500 text-center">Browse verified tutors and shortlist the ones that fit your needs.</p>
         <RouterLink to="/search" class="btn-primary text-sm py-2 px-5">Find Tutors</RouterLink>
       </div>
     </div>
 
     <!-- How it works -->
-    <div class="card">
-      <h2 class="font-display font-semibold text-navy-700 text-base mb-4">How it works</h2>
+    <div class="dashboard-card reveal">
+      <h2 class="font-display font-bold text-navy-900 text-xl mb-4">How It Works</h2>
       <ol class="space-y-3">
         <li class="flex items-start gap-3">
           <span class="w-6 h-6 rounded-full bg-navy-700 text-white text-xs font-bold font-display flex items-center justify-center shrink-0 mt-0.5">1</span>
-          <p class="text-sm font-body text-paper-700">Browse tutors on the <RouterLink to="/search" class="font-semibold text-navy-700 hover:underline">Find Tutors</RouterLink> page and view their full profiles.</p>
+          <p class="text-sm font-body text-paper-700">Browse tutors on the <RouterLink to="/search" class="font-semibold text-navy-700 hover:underline">Find Tutors</RouterLink> page and shortlist the ones you like.</p>
         </li>
         <li class="flex items-start gap-3">
           <span class="w-6 h-6 rounded-full bg-navy-700 text-white text-xs font-bold font-display flex items-center justify-center shrink-0 mt-0.5">2</span>
-          <p class="text-sm font-body text-paper-700">Click <strong>Shortlist</strong> on any tutor profile you like — this notifies our admin team.</p>
+          <p class="text-sm font-body text-paper-700">From your <RouterLink to="/guardian/shortlist" class="font-semibold text-navy-700 hover:underline">Shortlist</RouterLink>, request a connection with any tutor.</p>
         </li>
         <li class="flex items-start gap-3">
           <span class="w-6 h-6 rounded-full bg-navy-700 text-white text-xs font-bold font-display flex items-center justify-center shrink-0 mt-0.5">3</span>
-          <p class="text-sm font-body text-paper-700">Our admin will contact both you and the tutor to arrange a mutually convenient tuition session.</p>
+          <p class="text-sm font-body text-paper-700">Our admin team reviews the request and contacts both parties to arrange the tuition.</p>
+        </li>
+        <li class="flex items-start gap-3">
+          <span class="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-bold font-display flex items-center justify-center shrink-0 mt-0.5">&#x2713;</span>
+          <p class="text-sm font-body text-paper-700">Once confirmed, the tutor appears in your <RouterLink to="/guardian/confirmed-tuitions" class="font-semibold text-emerald-700 hover:underline">Confirmed Tuitions</RouterLink> section.</p>
         </li>
       </ol>
     </div>
@@ -47,14 +63,56 @@ import { RouterLink } from 'vue-router'
 import { guardianApi } from '@/api/guardian.js'
 
 const shortlistCount = ref(0)
+const confirmedCount = ref(0)
 const guardianId     = ref('')
 
 onMounted(async () => {
-  const [shortRes, profileRes] = await Promise.all([
+  const [shortRes, confirmedRes, profileRes] = await Promise.all([
     guardianApi.getShortlist().catch(() => ({ data: { data: [] } })),
+    guardianApi.getConfirmedTuitions().catch(() => ({ data: { data: [] } })),
     guardianApi.getProfile().catch(() => ({ data: { data: null } })),
   ])
-  shortlistCount.value = (shortRes.data.data || []).length
+
+  const confirmed      = confirmedRes.data.data || []
+  const confirmedIds   = new Set(confirmed.map(c => c.tutor_profile_id))
+  const shortlist      = shortRes.data.data || []
+
+  shortlistCount.value = shortlist.filter(i => !confirmedIds.has(i.tutor_profile_id)).length
+  confirmedCount.value = confirmed.length
   guardianId.value     = profileRes.data.data?.guardian_id || ''
 })
 </script>
+
+<style scoped>
+.dashboard-card {
+  @apply rounded-md border border-paper-200 bg-white p-5 shadow-lg md:p-6;
+}
+
+.metric-card {
+  @apply rounded-md border border-paper-200 bg-white p-5 text-center shadow-sm;
+}
+
+.reveal {
+  animation: reveal-up 0.54s ease both;
+}
+
+.delay-1 { animation-delay: 70ms; }
+.delay-2 { animation-delay: 140ms; }
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    animation: none;
+  }
+}
+</style>

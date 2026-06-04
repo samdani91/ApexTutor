@@ -2,7 +2,8 @@ import http from './http.js'
 export const tutorApi = {
   getProfile: () => http.get('/tutor/profile'),
   updateProfile: (data) => http.put('/tutor/profile', data),
-  getDashboard: () => http.get('/tutor/dashboard'),
+  getDashboard:         () => http.get('/tutor/dashboard'),
+  getConfirmedTuitions: () => http.get('/tutor/confirmed-tuitions'),
   getEducation: () => http.get('/tutor/education'),
   addEducation: (data) => http.post('/tutor/education', data),
   updateEducation: (id, data) => http.put(`/tutor/education/${id}`, data),

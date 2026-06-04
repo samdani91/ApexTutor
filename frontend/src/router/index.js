@@ -12,10 +12,11 @@ const routes = [
     component: () => import('@/layouts/DashboardLayout.vue'),
     meta: { requiresAuth: true, role: 'tutor' },
     children: [
-      { path: 'dashboard',      component: () => import('@/views/tutor/TutorDashboard.vue'),       name: 'tutor-dashboard' },
-      { path: 'profile',        component: () => import('@/views/tutor/ProfileBuilder.vue'),        name: 'tutor-profile-builder' },
-      { path: 'notifications',  component: () => import('@/views/shared/NotificationsPage.vue'),   name: 'tutor-notifications' },
-      { path: 'settings',       component: () => import('@/views/shared/SettingsPage.vue'),         name: 'tutor-settings' },
+      { path: 'dashboard',           component: () => import('@/views/tutor/TutorDashboard.vue'),      name: 'tutor-dashboard' },
+      { path: 'profile',             component: () => import('@/views/tutor/ProfileBuilder.vue'),       name: 'tutor-profile-builder' },
+      { path: 'confirmed-tuitions',  component: () => import('@/views/tutor/ConfirmedTuitions.vue'),    name: 'tutor-confirmed-tuitions' },
+      { path: 'notifications',       component: () => import('@/views/shared/NotificationsPage.vue'),  name: 'tutor-notifications' },
+      { path: 'settings',            component: () => import('@/views/shared/SettingsPage.vue'),        name: 'tutor-settings' },
     ]
   },
   {
@@ -23,12 +24,13 @@ const routes = [
     component: () => import('@/layouts/DashboardLayout.vue'),
     meta: { requiresAuth: true, role: ['guardian', 'student'] },
     children: [
-      { path: 'dashboard',        component: () => import('@/views/guardian/GuardianDashboard.vue'),   name: 'guardian-dashboard' },
-      { path: 'profile',          component: () => import('@/views/guardian/GuardianProfilePage.vue'), name: 'guardian-profile' },
-      { path: 'shortlist',        component: () => import('@/views/guardian/Shortlist.vue'),            name: 'shortlist' },
-      { path: 'post-requirement', component: () => import('@/views/guardian/PostRequirement.vue'),      name: 'post-requirement' },
-      { path: 'notifications',    component: () => import('@/views/shared/NotificationsPage.vue'),     name: 'guardian-notifications' },
-      { path: 'settings',         component: () => import('@/views/shared/SettingsPage.vue'),           name: 'guardian-settings' },
+      { path: 'dashboard',           component: () => import('@/views/guardian/GuardianDashboard.vue'),    name: 'guardian-dashboard' },
+      { path: 'profile',             component: () => import('@/views/guardian/GuardianProfilePage.vue'),  name: 'guardian-profile' },
+      { path: 'shortlist',           component: () => import('@/views/guardian/Shortlist.vue'),             name: 'shortlist' },
+      { path: 'confirmed-tuitions',  component: () => import('@/views/guardian/ConfirmedTuitions.vue'),     name: 'guardian-confirmed-tuitions' },
+      { path: 'post-requirement',    component: () => import('@/views/guardian/PostRequirement.vue'),       name: 'post-requirement' },
+      { path: 'notifications',       component: () => import('@/views/shared/NotificationsPage.vue'),      name: 'guardian-notifications' },
+      { path: 'settings',            component: () => import('@/views/shared/SettingsPage.vue'),            name: 'guardian-settings' },
     ]
   },
   {
@@ -39,11 +41,17 @@ const routes = [
       { path: 'dashboard', component: () => import('@/views/admin/AdminDashboard.vue'), name: 'admin-dashboard' },
       { path: 'users', component: () => import('@/views/admin/AdminUsersList.vue'), name: 'admin-users' },
       { path: 'tutors/:id', component: () => import('@/views/admin/AdminTutorDetail.vue'), name: 'admin-tutor-detail' },
+      { path: 'tutors/:id/edit', component: () => import('@/views/admin/AdminTutorEdit.vue'), name: 'admin-tutor-edit' },
       { path: 'guardians/:id', component: () => import('@/views/admin/AdminGuardianDetail.vue'), name: 'admin-guardian-detail' },
       { path: 'admins/:id', component: () => import('@/views/admin/AdminUserDetail.vue'), name: 'admin-user-detail' },
       { path: 'verifications', component: () => import('@/views/admin/TutorVerification.vue'), name: 'admin-verifications' },
       { path: 'connections', component: () => import('@/views/admin/ConnectionManagement.vue'), name: 'admin-connections' },
       { path: 'pending-changes', component: () => import('@/views/admin/AdminPendingChanges.vue'), name: 'admin-pending-changes' },
+      { path: 'reviews', component: () => import('@/views/admin/AdminReviews.vue'), name: 'admin-reviews' },
+      { path: 'reference-data', component: () => import('@/views/admin/AdminReferenceData.vue'), name: 'admin-reference-data' },
+      { path: 'analytics', component: () => import('@/views/admin/AdminAnalytics.vue'), name: 'admin-analytics' },
+      { path: 'audit-log', component: () => import('@/views/admin/AdminAuditLog.vue'), name: 'admin-audit-log' },
+      { path: 'admins/create', component: () => import('@/views/admin/AdminCreateAdmin.vue'), name: 'admin-create-admin' },
       { path: 'notifications', component: () => import('@/views/admin/AdminNotifications.vue'), name: 'admin-notifications' },
       { path: 'settings', component: () => import('@/views/admin/AdminSettings.vue'), name: 'admin-settings' },
     ]

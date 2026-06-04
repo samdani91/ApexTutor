@@ -10,8 +10,8 @@ class TuitionRequirementController extends Controller
     // Valid transitions: only these moves are allowed
     private const STATUS_TRANSITIONS = [
         'open'        => ['in_progress', 'closed'],
-        'in_progress' => ['connected', 'closed'],
-        'connected'   => ['closed'],
+        'in_progress' => ['confirmed', 'closed'],
+        'confirmed'   => ['closed'],
         'closed'      => [],
     ];
 

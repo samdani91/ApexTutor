@@ -1,15 +1,15 @@
 <template>
-  <div>
+  <div class="dashboard-page space-y-6">
     <!-- Profile header -->
-    <div class="card mb-6">
+    <div class="dashboard-card reveal">
       <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
         <!-- Avatar -->
         <div class="relative shrink-0">
-          <div class="w-20 h-20 rounded-xl bg-navy-100 flex items-center justify-center overflow-hidden ring-4 ring-white shadow-md">
+          <div class="w-20 h-20 rounded-lg bg-navy-100 flex items-center justify-center overflow-hidden ring-4 ring-white shadow-lg">
             <img v-if="avatarUrl" :src="avatarUrl" :alt="auth.user?.name" class="w-full h-full object-cover" />
             <span v-else class="font-display font-bold text-3xl text-navy-700">{{ initials }}</span>
           </div>
-          <label class="absolute bottom-0 right-0 w-7 h-7 bg-navy-700 rounded-full flex items-center justify-center cursor-pointer hover:bg-navy-800 transition-colors shadow-md">
+          <label class="absolute bottom-0 right-0 w-7 h-7 bg-gold-400 rounded-full flex items-center justify-center cursor-pointer hover:bg-gold-500 transition-colors shadow-md">
             <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/>
               <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z"/>
@@ -21,7 +21,7 @@
 
         <!-- Info -->
         <div class="flex-1 min-w-0 text-center sm:text-left">
-          <p class="font-display font-bold text-navy-900 text-lg leading-tight truncate">{{ auth.user?.name }}</p>
+          <p class="font-display font-bold text-navy-900 text-xl leading-tight truncate">{{ auth.user?.name }}</p>
           <p class="text-xs text-paper-500 font-body mt-0.5 truncate">{{ auth.user?.email }}</p>
           <div class="flex items-center justify-center sm:justify-start gap-2 mt-1.5 flex-wrap">
             <span v-if="stats.tutor_id"
@@ -36,32 +36,32 @@
 
     <!-- Stats grid -->
     <div v-if="loading" class="text-paper-500 font-body text-sm">Loading…</div>
-    <div v-else class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6">
-      <div class="card text-center p-4">
+    <div v-else class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+      <div class="metric-card reveal">
         <p class="font-display font-bold text-2xl sm:text-3xl text-navy-700">{{ stats.profile_completion }}%</p>
-        <p class="text-xs sm:text-sm text-paper-500 font-body mt-1">Profile complete</p>
+        <p class="text-xs sm:text-sm text-paper-500 font-body mt-1">Profile Complete</p>
         <div class="mt-2 h-1.5 bg-paper-200 rounded-full overflow-hidden">
           <div class="h-full bg-gold-400 transition-all" :style="`width:${stats.profile_completion}%`"></div>
         </div>
       </div>
-      <div class="card text-center p-4">
+      <div class="metric-card reveal delay-1">
         <p class="font-display font-bold text-2xl sm:text-3xl text-navy-700">{{ stats.rating || '—' }}</p>
-        <p class="text-xs sm:text-sm text-paper-500 font-body mt-1">Average rating</p>
+        <p class="text-xs sm:text-sm text-paper-500 font-body mt-1">Average Rating</p>
       </div>
-      <div class="card text-center p-4">
-        <p class="font-display font-bold text-2xl sm:text-3xl text-navy-700">{{ stats.connection_requests_count }}</p>
-        <p class="text-xs sm:text-sm text-paper-500 font-body mt-1">Connections</p>
-      </div>
-      <div class="card text-center p-4">
+      <RouterLink to="/tutor/confirmed-tuitions" class="metric-card reveal delay-2 block hover:-translate-y-1 hover:shadow-lg transition-all">
+        <p class="font-display font-bold text-2xl sm:text-3xl text-emerald-600">{{ stats.confirmed_tuitions_count ?? 0 }}</p>
+        <p class="text-xs sm:text-sm text-paper-500 font-body mt-1">Confirmed Tuitions</p>
+      </RouterLink>
+      <div class="metric-card reveal delay-3">
         <p class="font-display font-bold text-2xl sm:text-3xl text-navy-700">{{ stats.profile_views }}</p>
-        <p class="text-xs sm:text-sm text-paper-500 font-body mt-1">Profile views</p>
+        <p class="text-xs sm:text-sm text-paper-500 font-body mt-1">Profile Views</p>
       </div>
     </div>
 
     <!-- Profile status card -->
-    <div v-if="!loading" class="card">
+    <div v-if="!loading" class="dashboard-card reveal">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-        <h2 class="font-display font-semibold text-navy-800 text-xl">Profile status</h2>
+        <h2 class="font-display font-bold text-navy-900 text-xl">Profile Status</h2>
         <span v-if="stats.verification_status" :class="verificationBadgeClass"
           class="text-xs font-semibold px-3 py-1 rounded-pill self-start sm:self-auto">
           {{ profileStatusLabel }}
@@ -75,7 +75,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
         <div>
-          <p class="font-display font-semibold text-blue-800 text-sm">Profile update pending review</p>
+          <p class="font-display font-semibold text-blue-800 text-sm">Profile Update Pending Review</p>
           <p class="text-xs text-blue-700 font-body mt-0.5 leading-relaxed">
             Your recent edits have been saved and are awaiting admin approval. They'll go live once reviewed.
           </p>
@@ -84,15 +84,15 @@
 
       <div v-if="pendingDiffRows.length" class="mb-4 rounded-lg border border-paper-200 overflow-hidden">
         <div class="bg-paper-50 px-4 py-2.5">
-          <p class="font-display font-semibold text-navy-800 text-base">Pending changes</p>
+          <p class="font-display font-semibold text-navy-800 text-base">Pending Changes</p>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
               <tr class="text-left text-sm font-semibold font-display text-paper-500 border-b border-paper-100">
                 <th class="py-2.5 px-4 w-1/4">Field</th>
-                <th class="py-2.5 px-4 w-[37.5%]">Current value</th>
-                <th class="py-2.5 px-4 w-[37.5%]">Proposed change</th>
+                <th class="py-2.5 px-4 w-[37.5%]">Current Value</th>
+                <th class="py-2.5 px-4 w-[37.5%]">Proposed Change</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-paper-100">
@@ -113,7 +113,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
         </svg>
         <div>
-          <p class="font-display font-semibold text-red-800 text-sm">Previous changes not approved</p>
+          <p class="font-display font-semibold text-red-800 text-sm">Previous Changes Not Approved</p>
           <p class="text-xs text-red-700 font-body mt-0.5">{{ stats.pending_note }}</p>
         </div>
       </div>
@@ -135,7 +135,7 @@
       </p>
 
       <RouterLink to="/tutor/profile" class="btn-primary text-sm py-2.5 px-5 inline-block">
-        Edit profile
+        Edit Profile
       </RouterLink>
     </div>
   </div>
@@ -407,3 +407,38 @@ function norm(val) {
   return String(val)
 }
 </script>
+
+<style scoped>
+.dashboard-card {
+  @apply rounded-md border border-paper-200 bg-white p-5 shadow-lg md:p-6;
+}
+
+.metric-card {
+  @apply rounded-md border border-paper-200 bg-white p-4 text-center shadow-sm;
+}
+
+.reveal {
+  animation: reveal-up 0.54s ease both;
+}
+
+.delay-1 { animation-delay: 60ms; }
+.delay-2 { animation-delay: 120ms; }
+.delay-3 { animation-delay: 180ms; }
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    animation: none;
+  }
+}
+</style>
