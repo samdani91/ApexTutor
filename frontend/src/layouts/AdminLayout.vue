@@ -80,9 +80,9 @@
               d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/>
           </svg>
           {{ item.label }}
-          <span v-if="item.badge && unreadCount > 0"
-            class="ml-auto text-[10px] font-bold font-display bg-red-500 text-white rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
-            {{ unreadCount > 99 ? '99+' : unreadCount }}
+          <span v-if="getNavCount(item.to) > 0"
+            class="ml-auto text-[10px] font-bold font-display bg-red-500 text-white rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none">
+            {{ getNavCount(item.to) > 99 ? '99+' : getNavCount(item.to) }}
           </span>
         </RouterLink>
       </nav>
@@ -152,7 +152,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import { getInitials } from '@/utils/helpers.js'
@@ -170,29 +170,54 @@ const unreadCount      = ref(0)
 const initials         = computed(() => getInitials(auth.user?.name))
 const logoutToast      = { id: 'auth-logout', position: 'top-right' }
 
+const pendingCounts = reactive({
+  verifications:   0,
+  pendingChanges:  0,
+  reviews:         0,
+})
+
+function getNavCount(to) {
+  if (to === '/admin/verifications')   return pendingCounts.verifications
+  if (to === '/admin/pending-changes') return pendingCounts.pendingChanges
+  if (to === '/admin/reviews')         return pendingCounts.reviews
+  if (to === '/admin/notifications')   return unreadCount.value
+  return 0
+}
+
+async function loadCounts() {
+  try {
+    const [dashRes, notifRes] = await Promise.all([
+      adminApi.getDashboard(),
+      adminApi.getNotifications(),
+    ])
+    const d = dashRes.data.data || {}
+    pendingCounts.verifications  = d.pending_verifications   ?? 0
+    pendingCounts.pendingChanges = d.pending_profile_changes ?? 0
+    pendingCounts.reviews        = d.pending_reviews         ?? 0
+    unreadCount.value            = notifRes.data.unread      ?? 0
+  } catch { /* counts are non-critical */ }
+}
+
 watch(() => $route.path, () => {
   sidebarOpen.value = false
-  if ($route.path.startsWith('/admin/notifications')) unreadCount.value = 0
+  // Re-fetch real counts on every navigation so badges always reflect actual DB state.
+  // This avoids badges zeroing out before items are actually processed.
+  loadCounts()
 })
 
-onMounted(async () => {
-  try {
-    const { data } = await adminApi.getNotifications()
-    unreadCount.value = data.unread
-  } catch { /* not critical */ }
-})
+onMounted(loadCounts)
 
 const navItems = [
-  { to: '/admin/dashboard',       label: 'Dashboard',          icon: 'chart'    },
-  { to: '/admin/analytics',       label: 'Analytics',           icon: 'analytics'},
-  { to: '/admin/users',           label: 'Users',               icon: 'users'    },
-  { to: '/admin/verifications',   label: 'Verifications',       icon: 'check'    },
-  { to: '/admin/connections',     label: 'Connections',         icon: 'link'     },
-  { to: '/admin/pending-changes', label: 'Pending Changes',     icon: 'unlock'   },
-  { to: '/admin/reviews',         label: 'Reviews',             icon: 'star'     },
-  { to: '/admin/reference-data',  label: 'Reference Data',      icon: 'database' },
-  { to: '/admin/audit-log',       label: 'Audit Log',           icon: 'shield'   },
-  { to: '/admin/notifications',   label: 'Shortlist Requests',  icon: 'heart', badge: true },
+  { to: '/admin/dashboard',       label: 'Dashboard',         icon: 'chart'    },
+  { to: '/admin/analytics',       label: 'Analytics',         icon: 'analytics'},
+  { to: '/admin/users',           label: 'Users',             icon: 'users'    },
+  { to: '/admin/verifications',   label: 'Verifications',     icon: 'check'    },
+  { to: '/admin/connections',     label: 'Connections',       icon: 'link'     },
+  { to: '/admin/pending-changes', label: 'Pending Changes',   icon: 'unlock'   },
+  { to: '/admin/reviews',         label: 'Reviews',           icon: 'star'     },
+  { to: '/admin/reference-data',  label: 'Reference Data',    icon: 'database' },
+  { to: '/admin/audit-log',       label: 'Audit Log',         icon: 'shield'   },
+  { to: '/admin/notifications',   label: 'Notifications',     icon: 'heart'    },
 ]
 
 function isActive(to) {

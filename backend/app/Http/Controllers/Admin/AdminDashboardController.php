@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ConnectionRequest;
 use App\Models\GuardianProfile;
 use App\Models\Review;
+use App\Models\TeachingVideo;
 use App\Models\TutorProfile;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -23,6 +24,7 @@ class AdminDashboardController extends Controller
             'total_guardians'         => GuardianProfile::count(),
             'pending_profile_changes' => TutorProfile::whereNotNull('pending_changes')->count(),
             'pending_reviews'         => Review::where('moderation_status', 'pending')->count(),
+            'pending_videos'          => TeachingVideo::where('review_status', 'pending')->count(),
         ]]);
     }
 

@@ -2,34 +2,40 @@
   <div @click="activeMenu = null">
 
     <!-- Header -->
-    <div class="flex items-center justify-between mb-5">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-6">
       <div>
-        <h1 class="font-display font-bold text-2xl text-navy-900">Notifications</h1>
-        <p v-if="notifStore.unreadCount > 0" class="text-sm text-paper-500 font-body mt-0.5">
-          {{ notifStore.unreadCount }} unread
+        <p class="text-xs font-bold font-display text-gold-600 uppercase tracking-wide mb-1">Inbox</p>
+        <h1 class="font-display font-bold text-3xl text-navy-900">Notifications</h1>
+        <p class="text-sm text-paper-500 font-body mt-1">
+          {{ notifStore.unreadCount > 0 ? `${notifStore.unreadCount} unread notification${notifStore.unreadCount === 1 ? '' : 's'}` : 'Everything is up to date' }}
         </p>
       </div>
       <button @click="markAll" :disabled="marking || notifStore.unreadCount === 0"
-        class="btn-outline text-sm py-2 px-4 disabled:opacity-40 disabled:cursor-not-allowed">
-        {{ marking ? 'Marking…' : 'Mark all as read' }}
+        class="inline-flex items-center justify-center gap-2 rounded-sm bg-navy-800 px-4 py-2.5 text-sm font-semibold font-display text-white shadow-sm hover:bg-navy-900 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.25" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+        </svg>
+        {{ marking ? 'Marking...' : 'Mark All As Read' }}
       </button>
     </div>
 
     <!-- Filter / Sort bar -->
-    <div class="flex items-center gap-3 mb-5">
-      <div class="w-44">
+    <div class="mb-6 rounded-lg border border-paper-200 bg-white p-3 shadow-sm">
+      <div class="grid gap-3 sm:grid-cols-[minmax(0,176px)_minmax(0,160px)_auto] sm:items-center">
+      <div>
         <DropSelect v-model="activeType" :options="typeOpts" placeholder="All types"
           @update:modelValue="onFilterChange" />
       </div>
-      <div class="w-40">
+      <div>
         <DropSelect v-model="sortOrder" :options="sortOpts" placeholder="Newest first"
           @update:modelValue="onFilterChange" />
       </div>
       <button v-if="activeType !== '' || sortOrder !== 'newest'"
         @click="activeType = ''; sortOrder = 'newest'; onFilterChange()"
-        class="px-3 py-[7px] text-xs font-semibold font-display bg-red-500 hover:bg-red-600 text-white rounded-sm transition-colors">
-        Reset
+        class="inline-flex h-10 items-center justify-center rounded-sm bg-red-500 px-4 text-xs font-semibold font-display text-white hover:bg-red-600 transition-colors">
+        Reset Filters
       </button>
+      </div>
     </div>
 
     <!-- Loading -->
@@ -58,15 +64,17 @@
 
     <!-- List -->
     <template v-else>
-      <div class="space-y-2">
+      <div class="space-y-3">
         <div v-for="n in items" :key="n.id"
-          class="card flex items-start gap-4"
-          :class="n.read_at ? '' : 'border-l-4 border-l-navy-600 bg-blue-50/30'">
+          class="group relative overflow-hidden rounded-lg border bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-5"
+          :class="n.read_at ? 'border-paper-200' : 'border-navy-200 ring-1 ring-navy-100'">
+          <div v-if="!n.read_at" class="absolute inset-y-0 left-0 w-1 bg-gold-500"></div>
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
 
           <!-- Icon -->
-          <div class="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
-            :class="iconBg(n.data.type)">
-            <svg v-if="n.data.type === 'pending_change_approved'"
+          <div class="shrink-0 w-11 h-11 rounded-lg flex items-center justify-center ring-1 ring-inset"
+            :class="iconBg(n.data.type, n.data)">
+            <svg v-if="n.data.type === 'pending_change_approved' || isConfirmedNotification(n)"
               class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round"
                 d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -89,6 +97,13 @@
 
           <!-- Body -->
           <div class="flex-1 min-w-0">
+            <div class="mb-2 flex flex-wrap items-center gap-2">
+              <span class="rounded-full px-2.5 py-1 text-[11px] font-bold font-display uppercase tracking-wide"
+                :class="typePill(n.data.type, n.data)">
+                {{ typeLabel(n.data.type, n.data) }}
+              </span>
+              <span class="text-xs text-paper-400 font-body">{{ timeAgo(n.created_at) }}</span>
+            </div>
 
             <!-- Approved -->
             <template v-if="n.data.type === 'pending_change_approved'">
@@ -156,16 +171,16 @@
               </p>
             </template>
 
-            <p class="text-xs text-paper-400 font-body mt-2">{{ timeAgo(n.created_at) }}</p>
+            <p class="text-xs text-paper-400 font-body mt-3">{{ formatDate(n.created_at) }}</p>
           </div>
 
           <!-- Right: badge + 3-dot -->
-          <div class="shrink-0 flex flex-col items-end gap-2">
+          <div class="shrink-0 flex flex-row items-center justify-between gap-3 sm:flex-col sm:items-end">
             <span v-if="!n.read_at"
-              class="text-[11px] font-bold font-display bg-navy-700 text-white px-2 py-0.5 rounded-pill">
+              class="text-[11px] font-bold font-display bg-navy-800 text-white px-2.5 py-1 rounded-pill">
               New
             </span>
-            <span v-else class="text-[11px] font-semibold font-display text-paper-400">Read</span>
+            <span v-else class="text-[11px] font-semibold font-display bg-paper-100 text-paper-500 px-2.5 py-1 rounded-pill">Read</span>
 
             <div class="relative" @click.stop>
               <button
@@ -197,6 +212,7 @@
             </div>
           </div>
 
+          </div>
         </div>
       </div>
 
@@ -332,11 +348,31 @@ async function markAll() {
   }
 }
 
-function iconBg(type) {
-  if (type === 'pending_change_approved') return 'bg-emerald-50'
-  if (type === 'pending_change_rejected') return 'bg-red-50'
-  if (type === 'tutor_shortlisted')       return 'bg-violet-50'
-  return 'bg-navy-50'
+function iconBg(type, data = null) {
+  if (type === 'pending_change_approved' || type === 'tuition_confirmed' || (type === 'connection_status_changed' && data?.status === 'confirmed')) return 'bg-emerald-50 text-emerald-600 ring-emerald-100'
+  if (type === 'pending_change_rejected') return 'bg-red-50 text-red-600 ring-red-100'
+  if (type === 'tutor_shortlisted')       return 'bg-gold-50 text-gold-700 ring-gold-100'
+  return 'bg-navy-50 text-navy-600 ring-navy-100'
+}
+
+function typeLabel(type, data = null) {
+  if (type === 'pending_change_approved') return 'Approved'
+  if (type === 'tuition_confirmed' || (type === 'connection_status_changed' && data?.status === 'confirmed')) return 'Confirmed'
+  if (type === 'pending_change_rejected') return 'Rejected'
+  if (type === 'tutor_shortlisted') return 'Shortlisted'
+  return 'Notification'
+}
+
+function typePill(type, data = null) {
+  if (type === 'pending_change_approved' || type === 'tuition_confirmed' || (type === 'connection_status_changed' && data?.status === 'confirmed')) return 'bg-emerald-50 text-emerald-700'
+  if (type === 'pending_change_rejected') return 'bg-red-50 text-red-700'
+  if (type === 'tutor_shortlisted') return 'bg-gold-50 text-gold-700'
+  return 'bg-navy-50 text-navy-700'
+}
+
+function isConfirmedNotification(n) {
+  return n?.data?.type === 'tuition_confirmed'
+    || (n?.data?.type === 'connection_status_changed' && n?.data?.status === 'confirmed')
 }
 
 function timeAgo(iso) {
@@ -345,6 +381,16 @@ function timeAgo(iso) {
   if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
   return `${Math.floor(diff / 86400)}d ago`
+}
+
+function formatDate(iso) {
+  return new Date(iso).toLocaleString([], {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
 }
 </script>
 

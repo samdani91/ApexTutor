@@ -20,6 +20,47 @@
       Loading…
     </div>
     <template v-else>
+
+      <!-- Action-required summary (only shown when there's something to do) -->
+      <div v-if="totalActionRequired > 0"
+        class="dashboard-card reveal border-amber-200 bg-amber-50/60 flex flex-col sm:flex-row sm:items-center gap-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-11 h-11 rounded-md bg-amber-100 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5 text-amber-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="font-display font-bold text-amber-900 text-lg leading-tight">
+              {{ totalActionRequired }} item{{ totalActionRequired === 1 ? '' : 's' }} need{{ totalActionRequired === 1 ? 's' : '' }} your attention
+            </p>
+            <p class="text-xs text-amber-700 font-body mt-0.5 leading-relaxed">
+              <span v-if="stats.pending_verifications">{{ stats.pending_verifications }} verification{{ stats.pending_verifications === 1 ? '' : 's' }}</span>
+              <span v-if="stats.pending_verifications && (stats.pending_profile_changes || stats.pending_reviews || stats.pending_videos)"> · </span>
+              <span v-if="stats.pending_profile_changes">{{ stats.pending_profile_changes }} profile change{{ stats.pending_profile_changes === 1 ? '' : 's' }}</span>
+              <span v-if="stats.pending_profile_changes && (stats.pending_reviews || stats.pending_videos)"> · </span>
+              <span v-if="stats.pending_reviews">{{ stats.pending_reviews }} review{{ stats.pending_reviews === 1 ? '' : 's' }}</span>
+              <span v-if="stats.pending_reviews && stats.pending_videos"> · </span>
+              <span v-if="stats.pending_videos">{{ stats.pending_videos }} video{{ stats.pending_videos === 1 ? '' : 's' }}</span>
+            </p>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2 sm:ml-auto shrink-0">
+          <RouterLink v-if="stats.pending_verifications" to="/admin/verifications"
+            class="text-xs font-semibold font-display px-3 py-1.5 rounded-sm bg-amber-600 text-white hover:bg-amber-700 transition-colors">
+            Verifications
+          </RouterLink>
+          <RouterLink v-if="stats.pending_profile_changes" to="/admin/pending-changes"
+            class="text-xs font-semibold font-display px-3 py-1.5 rounded-sm bg-amber-600 text-white hover:bg-amber-700 transition-colors">
+            Profile Changes
+          </RouterLink>
+          <RouterLink v-if="stats.pending_reviews" to="/admin/reviews"
+            class="text-xs font-semibold font-display px-3 py-1.5 rounded-sm bg-amber-600 text-white hover:bg-amber-700 transition-colors">
+            Reviews
+          </RouterLink>
+        </div>
+      </div>
+
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div class="metric-card reveal">
           <div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-navy-50 text-navy-700">
@@ -27,9 +68,9 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Z" />
             </svg>
           </div>
-          <p class="font-display font-bold text-3xl text-navy-700">{{ stats.total_tutors }}</p>
+          <p class="font-display font-bold text-3xl text-navy-700">{{ formatCount(animatedStats.total_tutors) }}</p>
           <p class="text-sm text-paper-500 font-body mt-1">Total Tutors</p>
-          <p class="text-xs text-emerald-600 font-semibold mt-0.5">{{ stats.verified_tutors }} Verified</p>
+          <p class="text-xs text-emerald-600 font-semibold mt-0.5">{{ formatCount(animatedStats.verified_tutors) }} Verified</p>
         </div>
         <div class="metric-card reveal delay-1">
           <div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-gold-50 text-gold-700">
@@ -37,7 +78,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M12 3.75l7.5 3.75v4.875c0 4.525-3.103 8.474-7.5 9.625-4.397-1.151-7.5-5.1-7.5-9.625V7.5L12 3.75Z" />
             </svg>
           </div>
-          <p class="font-display font-bold text-3xl text-gold-500">{{ stats.pending_verifications }}</p>
+          <p class="font-display font-bold text-3xl text-gold-500">{{ formatCount(animatedStats.pending_verifications) }}</p>
           <p class="text-sm text-paper-500 font-body mt-1">Pending Verifications</p>
           <RouterLink to="/admin/verifications" class="text-xs text-navy-700 font-semibold hover:underline mt-1 block">Review</RouterLink>
         </div>
@@ -47,9 +88,9 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
             </svg>
           </div>
-          <p class="font-display font-bold text-3xl text-emerald-600">{{ stats.active_connections }}</p>
+          <p class="font-display font-bold text-3xl text-emerald-600">{{ formatCount(animatedStats.active_connections) }}</p>
           <p class="text-sm text-paper-500 font-body mt-1">Active Connections</p>
-          <p class="text-xs text-amber-600 font-semibold mt-0.5">{{ stats.pending_connections }} Pending</p>
+          <p class="text-xs text-amber-600 font-semibold mt-0.5">{{ formatCount(animatedStats.pending_connections) }} Pending</p>
         </div>
         <div class="metric-card reveal delay-3">
           <div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-navy-50 text-navy-700">
@@ -57,20 +98,20 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72M12 15.75a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm0 0a6.75 6.75 0 0 0-6.75 6.75M12 15.75a6.75 6.75 0 0 1 6.75 6.75" />
             </svg>
           </div>
-          <p class="font-display font-bold text-3xl text-navy-700">{{ stats.total_users }}</p>
+          <p class="font-display font-bold text-3xl text-navy-700">{{ formatCount(animatedStats.total_users) }}</p>
           <p class="text-sm text-paper-500 font-body mt-1">Total Users</p>
-          <p class="text-xs text-paper-400 font-body mt-0.5">{{ stats.total_guardians }} Guardians</p>
+          <p class="text-xs text-paper-400 font-body mt-0.5">{{ formatCount(animatedStats.total_guardians) }} Guardians</p>
           <RouterLink to="/admin/users" class="text-xs text-navy-700 font-semibold hover:underline mt-1 block">Manage</RouterLink>
         </div>
       </div>
 
-      <div class="grid gap-4 md:grid-cols-2">
+      <div class="grid gap-4 md:grid-cols-3">
         <div class="action-card reveal">
           <div>
             <p class="font-display text-sm font-bold text-navy-900">Pending Profile Changes</p>
             <p class="mt-1 font-body text-sm text-paper-600">Review tutor edits before they go live.</p>
           </div>
-          <p class="font-display font-bold text-3xl text-amber-600">{{ stats.pending_profile_changes ?? 0 }}</p>
+          <p class="font-display font-bold text-3xl text-amber-600">{{ formatCount(animatedStats.pending_profile_changes) }}</p>
           <RouterLink to="/admin/pending-changes" class="btn-outline rounded-sm px-4 py-2 text-sm">Review</RouterLink>
         </div>
         <div class="action-card reveal delay-1">
@@ -78,8 +119,16 @@
             <p class="font-display text-sm font-bold text-navy-900">Pending Reviews</p>
             <p class="mt-1 font-body text-sm text-paper-600">Moderate new guardian reviews before publishing.</p>
           </div>
-          <p class="font-display font-bold text-3xl text-gold-500">{{ stats.pending_reviews ?? 0 }}</p>
+          <p class="font-display font-bold text-3xl text-gold-500">{{ formatCount(animatedStats.pending_reviews) }}</p>
           <RouterLink to="/admin/reviews" class="btn-outline rounded-sm px-4 py-2 text-sm">Moderate</RouterLink>
+        </div>
+        <div class="action-card reveal delay-2">
+          <div>
+            <p class="font-display text-sm font-bold text-navy-900">Pending Videos</p>
+            <p class="mt-1 font-body text-sm text-paper-600">Approve teaching videos before they go public.</p>
+          </div>
+          <p class="font-display font-bold text-3xl text-navy-600">{{ formatCount(animatedStats.pending_videos) }}</p>
+          <RouterLink to="/admin/users" class="btn-outline rounded-sm px-4 py-2 text-sm">Review</RouterLink>
         </div>
       </div>
     </template>
@@ -87,21 +136,79 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { RouterLink } from 'vue-router'
 import { adminApi } from '@/api/admin.js'
 
 const stats = ref({})
+const animatedStats = ref({
+  total_tutors: 0,
+  verified_tutors: 0,
+  pending_verifications: 0,
+  active_connections: 0,
+  pending_connections: 0,
+  total_users: 0,
+  total_guardians: 0,
+  pending_profile_changes: 0,
+  pending_reviews: 0,
+  pending_videos: 0,
+})
+
+const totalActionRequired = computed(() =>
+  (stats.value.pending_verifications   ?? 0) +
+  (stats.value.pending_profile_changes ?? 0) +
+  (stats.value.pending_reviews         ?? 0) +
+  (stats.value.pending_videos          ?? 0)
+)
 const loading = ref(true)
+let animationFrame = null
 
 onMounted(async () => {
   try {
     const { data } = await adminApi.getDashboard()
-    stats.value = data.data
+    stats.value = data.data || {}
+    animateCounts(stats.value)
   } finally {
     loading.value = false
   }
 })
+
+onBeforeUnmount(() => {
+  if (animationFrame) cancelAnimationFrame(animationFrame)
+})
+
+function animateCounts(targets) {
+  const keys = Object.keys(animatedStats.value)
+  const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+  if (reducedMotion) {
+    keys.forEach(key => { animatedStats.value[key] = Number(targets[key] ?? 0) })
+    return
+  }
+
+  const duration = 900
+  const startedAt = performance.now()
+
+  function tick(now) {
+    const progress = Math.min((now - startedAt) / duration, 1)
+    const eased = 1 - Math.pow(1 - progress, 3)
+
+    keys.forEach(key => {
+      const target = Number(targets[key] ?? 0)
+      animatedStats.value[key] = Math.round(target * eased)
+    })
+
+    if (progress < 1) {
+      animationFrame = requestAnimationFrame(tick)
+    }
+  }
+
+  animationFrame = requestAnimationFrame(tick)
+}
+
+function formatCount(value) {
+  return Number(value || 0).toLocaleString()
+}
 </script>
 
 <style scoped>
