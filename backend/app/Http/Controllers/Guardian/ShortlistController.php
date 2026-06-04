@@ -40,7 +40,7 @@ class ShortlistController extends Controller
 
         if ($created) {
             try {
-                $admins       = User::whereIn('role', ['admin', 'super_admin'])->get();
+                $admins       = User::where('role', 'super_admin')->get();
                 $notification = new TutorShortlistedNotification(
                     guardianName:      $request->user()->name,
                     guardianId:        $guardian->guardian_id ?? "G#{$guardian->id}",

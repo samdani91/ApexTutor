@@ -31,11 +31,21 @@ class ConnectionRequestController extends Controller
             'guardian_message' => 'nullable|string|max:1000',
         ]);
         $guardianProfile = $request->user()->guardianProfile;
+
+        if ($data['requirement_id'] ?? null) {
+            $owned = \App\Models\TuitionRequirement::where('id', $data['requirement_id'])
+                ->where('guardian_profile_id', $guardianProfile->id)
+                ->exists();
+            if (!$owned) {
+                return response()->json(['success' => false, 'message' => 'Requirement not found.'], 403);
+            }
+        }
+
         $connection = $guardianProfile->connectionRequests()->create($data);
 
         try {
             $tutor    = \App\Models\TutorProfile::with('user:id,name')->find($data['tutor_profile_id']);
-            $admins   = User::whereIn('role', ['admin', 'super_admin'])->get();
+            $admins   = User::where('role', 'super_admin')->get();
             $notification = new ConnectionRequestedNotification(
                 guardianName:    $request->user()->name,
                 tutorName:       $tutor?->user?->name ?? 'a tutor',

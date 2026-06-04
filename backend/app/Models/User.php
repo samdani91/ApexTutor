@@ -30,7 +30,7 @@ class User extends Authenticatable
 
     public function tutorProfile(): HasOne { return $this->hasOne(TutorProfile::class); }
     public function guardianProfile(): HasOne { return $this->hasOne(GuardianProfile::class); }
-    public function isAdmin(): bool { return in_array($this->role, ['admin', 'super_admin']); }
+    public function isAdmin(): bool { return $this->role === 'super_admin'; }
     public function isTutor(): bool { return $this->role === 'tutor'; }
     public function isGuardian(): bool { return in_array($this->role, ['guardian', 'student']); }
 }

@@ -74,8 +74,10 @@ Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
 
 // Public search & tutor profiles
 Route::middleware('throttle:60,1')->group(function () {
+    Route::get('landing/stats', [TutorSearchController::class, 'landingStats']);
     Route::prefix('search')->group(function () {
         Route::get('tutors',    [TutorSearchController::class, 'search']);
+        Route::get('resolve',   [TutorSearchController::class, 'resolve']);
         Route::get('subjects',  [TutorSearchController::class, 'subjects']);
         Route::get('districts', [TutorSearchController::class, 'districts']);
         Route::get('areas',     [TutorSearchController::class, 'areas']);
@@ -85,7 +87,7 @@ Route::middleware('throttle:60,1')->group(function () {
 });
 
 // Tutor routes
-Route::middleware(['auth:sanctum', 'active.user', 'role:tutor'])->prefix('tutor')->group(function () {
+Route::middleware(['auth:sanctum', 'active.user', 'verified', 'role:tutor'])->prefix('tutor')->group(function () {
     Route::get('profile',   [TutorProfileController::class, 'show']);
     Route::put('profile',   [TutorProfileController::class, 'update']);
     Route::get('dashboard',             [TutorProfileController::class, 'dashboard']);
@@ -108,7 +110,7 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:tutor'])->prefix('tutor'
 });
 
 // Guardian routes
-Route::middleware(['auth:sanctum', 'active.user', 'role:guardian,student'])->prefix('guardian')->group(function () {
+Route::middleware(['auth:sanctum', 'active.user', 'verified', 'role:guardian,student'])->prefix('guardian')->group(function () {
     Route::get('profile',    [GuardianProfileController::class, 'show']);
     Route::put('profile',    [GuardianProfileController::class, 'update']);
     Route::post('profile/nid',   [GuardianProfileController::class, 'uploadNid']);
@@ -128,7 +130,7 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:guardian,student'])->pre
 });
 
 // Admin routes
-Route::middleware(['auth:sanctum', 'role:admin,super_admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'active.user', 'role:super_admin', 'log.admin'])->prefix('admin')->group(function () {
     Route::get('dashboard',           [AdminDashboardController::class, 'index']);
     Route::get('dashboard/analytics', [AdminDashboardController::class, 'analytics']);
 
@@ -140,9 +142,14 @@ Route::middleware(['auth:sanctum', 'role:admin,super_admin'])->prefix('admin')->
     Route::delete('admins/{id}',    [AdminUserController::class, 'destroy']);
 
     Route::get('tutors',             [AdminTutorController::class, 'index']);
-    Route::get('tutors/{id}',        [AdminTutorController::class, 'show']);
-    Route::put('tutors/{id}',        [AdminTutorController::class, 'update']);
-    Route::put('tutors/{id}/status', [AdminTutorController::class, 'updateStatus']);
+    Route::get('tutors/{id}',                          [AdminTutorController::class, 'show']);
+    Route::put('tutors/{id}',                          [AdminTutorController::class, 'update']);
+    Route::put('tutors/{id}/status',                   [AdminTutorController::class, 'updateStatus']);
+    Route::post('tutors/{id}/documents',               [AdminTutorController::class, 'uploadDocument']);
+    Route::delete('tutors/{id}/documents/{docId}',     [AdminTutorController::class, 'deleteDocument']);
+    Route::put('tutors/{id}/videos/{videoId}',          [AdminTutorController::class, 'updateVideo']);
+    Route::put('tutors/{id}/videos/{videoId}/review',  [AdminTutorController::class, 'reviewVideo']);
+    Route::delete('tutors/{id}/videos/{videoId}',      [AdminTutorController::class, 'deleteVideo']);
 
     Route::get('guardians',              [AdminGuardianController::class, 'index']);
     Route::get('guardians/{id}',         [AdminGuardianController::class, 'show']);
