@@ -2,10 +2,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\TeachingVideo;
+use App\Models\TutorDocument;
 use App\Models\TutorProfile;
+use App\Notifications\TutorProfileEditedByAdminNotification;
+use App\Notifications\TutorVideoReviewedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class AdminTutorController extends Controller
 {
@@ -101,7 +107,7 @@ class AdminTutorController extends Controller
 
         DB::transaction(function () use ($request, $tutor) {
             if ($userData = $request->input('user')) {
-                $tutor->user->update(array_filter($userData, fn($v) => $v !== null || in_array($v, ['phone','address'])));
+                $tutor->user->update(array_filter($userData, fn($v, $k) => $v !== null || in_array($k, ['phone', 'address']), ARRAY_FILTER_USE_BOTH));
             }
 
             if ($profileData = $request->input('profile')) {
@@ -142,7 +148,135 @@ class AdminTutorController extends Controller
             }
         });
 
+        try {
+            if ($tutor->user) {
+                $tutor->user->notify(new TutorProfileEditedByAdminNotification());
+            }
+        } catch (\Exception $e) {
+            Log::error('Admin profile edit notification failed', ['error' => $e->getMessage(), 'tutor' => $id]);
+        }
+
         return response()->json(['success' => true, 'message' => 'Tutor profile updated.']);
+    }
+
+    // ── Document management ───────────────────────────────────────────────────
+
+    public function uploadDocument(Request $request, int $id): JsonResponse
+    {
+        $tutor = TutorProfile::findOrFail($id);
+
+        $request->validate([
+            'type' => 'required|in:nid,ssc_marksheet,hsc_marksheet,emergency_contact_nid',
+            'file' => 'required|file|max:5120|mimes:pdf,jpg,jpeg,png',
+        ]);
+
+        $file     = $request->file('file');
+        $realMime = mime_content_type($file->getRealPath());
+        $allowed  = ['application/pdf', 'image/jpeg', 'image/png'];
+
+        if (!in_array($realMime, $allowed, true)) {
+            return response()->json(['success' => false, 'message' => 'Invalid file type. Only PDF, JPG, and PNG are accepted.'], 422);
+        }
+
+        $path    = $file->store('documents', 'public');
+        $payload = [
+            'type'      => $request->type,
+            'file_path' => $path,
+            'file_name' => $file->getClientOriginalName(),
+            'file_size' => $file->getSize(),
+            'mime_type' => $realMime,
+            'review_status' => 'approved',
+        ];
+
+        // Remove any existing document of this type
+        foreach ($tutor->documents()->where('type', $request->type)->get() as $old) {
+            Storage::disk('public')->delete($old->file_path);
+            $old->delete();
+        }
+
+        $doc = $tutor->documents()->create($payload);
+        $doc->file_url = Storage::disk('public')->url($doc->file_path);
+
+        return response()->json(['success' => true, 'data' => $doc, 'message' => 'Document uploaded.'], 201);
+    }
+
+    public function deleteDocument(int $id, int $docId): JsonResponse
+    {
+        $tutor = TutorProfile::findOrFail($id);
+        $doc   = $tutor->documents()->findOrFail($docId);
+
+        Storage::disk('public')->delete($doc->file_path);
+        $doc->delete();
+
+        return response()->json(['success' => true, 'message' => 'Document deleted.']);
+    }
+
+    // ── Teaching video management ─────────────────────────────────────────────
+
+    public function updateVideo(Request $request, int $id, int $videoId): JsonResponse
+    {
+        $tutor = TutorProfile::findOrFail($id);
+        $video = $tutor->teachingVideos()->findOrFail($videoId);
+
+        $data = $request->validate([
+            'title'       => 'sometimes|string|max:200',
+            'subject'     => 'sometimes|string|max:100',
+            'class_level' => 'sometimes|string|max:100',
+            'medium'      => 'sometimes|string|max:50',
+        ]);
+
+        $video->update($data);
+        if ($video->file_path) {
+            $video->file_url = Storage::disk('public')->url($video->file_path);
+        }
+
+        return response()->json(['success' => true, 'data' => $video, 'message' => 'Video updated.']);
+    }
+
+    public function reviewVideo(Request $request, int $id, int $videoId): JsonResponse
+    {
+        $data  = $request->validate([
+            'action'      => 'required|in:approve,reject',
+            'review_note' => 'nullable|string|max:500',
+        ]);
+
+        $tutor = TutorProfile::with('user')->findOrFail($id);
+        $video = $tutor->teachingVideos()->findOrFail($videoId);
+
+        $reviewStatus = $data['action'] === 'approve' ? 'approved' : 'rejected';
+
+        $video->update([
+            'review_status' => $reviewStatus,
+            'review_note'   => $data['review_note'] ?? null,
+            'reviewed_by'   => $request->user()->id,
+            'reviewed_at'   => now(),
+        ]);
+
+        try {
+            if ($tutor->user) {
+                $tutor->user->notify(new TutorVideoReviewedNotification(
+                    videoTitle:  $video->title,
+                    action:      $reviewStatus,
+                    reviewNote:  $data['review_note'] ?? null,
+                ));
+            }
+        } catch (\Exception $e) {
+            Log::error('Tutor video review notification failed', ['error' => $e->getMessage(), 'video' => $video->id]);
+        }
+
+        $message = $data['action'] === 'approve' ? 'Video approved.' : 'Video rejected.';
+        return response()->json(['success' => true, 'data' => $video, 'message' => $message]);
+    }
+
+    public function deleteVideo(int $id, int $videoId): JsonResponse
+    {
+        $tutor = TutorProfile::findOrFail($id);
+        $video = $tutor->teachingVideos()->findOrFail($videoId);
+
+        Storage::disk('public')->delete($video->file_path);
+        $video->delete();
+
+        return response()->json(['success' => true, 'message' => 'Video deleted.']);
     }
 
     public function updateStatus(Request $request, int $id): JsonResponse

@@ -2,6 +2,10 @@
 namespace App\Services;
 
 use App\Models\TutorProfile;
+use App\Models\User;
+use App\Notifications\AdminPendingProfileChangeNotification;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * Centralises all "merge into pending_changes" logic so every tutor controller
@@ -94,7 +98,23 @@ class PendingProfileChangeService
 
     private function save(TutorProfile $profile, array $pending): void
     {
+        // Only notify on the first submission in a new review cycle.
+        // If pending_changes is already set the admin was already notified.
+        $isNewSubmission = is_null($profile->pending_changes);
+
         $pending['submitted_at'] = now()->toISOString();
         $profile->update(['pending_changes' => $pending, 'pending_note' => null]);
+
+        if ($isNewSubmission) {
+            try {
+                $admins    = User::where('role', 'super_admin')->get();
+                $tutorName = $profile->user->name ?? 'A tutor';
+                if ($admins->isNotEmpty()) {
+                    Notification::send($admins, new AdminPendingProfileChangeNotification($tutorName, $profile->id));
+                }
+            } catch (\Exception $e) {
+                Log::error('Admin pending-change notification failed', ['error' => $e->getMessage(), 'profile' => $profile->id]);
+            }
+        }
     }
 }

@@ -3,8 +3,12 @@ namespace App\Http\Controllers\Tutor;
 
 use App\Http\Controllers\Controller;
 use App\Models\TeachingVideo;
+use App\Models\User;
+use App\Notifications\AdminPendingVideoNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 class TeachingVideoController extends Controller
@@ -39,14 +43,27 @@ class TeachingVideoController extends Controller
         $path = $file->store('teaching_videos', 'public');
 
         $video = $profile->teachingVideos()->create([
-            'title'       => $request->title,
-            'subject'     => $request->subject,
-            'class_level' => $request->class_level,
-            'medium'      => $request->medium,
-            'file_path'   => $path,
-            'file_size'   => $file->getSize(),
+            'title'         => $request->title,
+            'subject'       => $request->subject,
+            'class_level'   => $request->class_level,
+            'medium'        => $request->medium,
+            'file_path'     => $path,
+            'file_size'     => $file->getSize(),
             'review_status' => 'pending',
         ]);
+
+        try {
+            $admins = User::where('role', 'super_admin')->get();
+            if ($admins->isNotEmpty()) {
+                Notification::send($admins, new AdminPendingVideoNotification(
+                    tutorName:      $request->user()->name,
+                    tutorProfileId: $profile->id,
+                    videoTitle:     $request->title,
+                ));
+            }
+        } catch (\Exception $e) {
+            Log::error('Admin video notification failed', ['error' => $e->getMessage()]);
+        }
 
         return response()->json(['success' => true, 'data' => $this->withUrl($video), 'message' => 'Video uploaded.'], 201);
     }
