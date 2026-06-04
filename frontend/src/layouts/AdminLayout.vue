@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen overflow-hidden bg-paper-100">
+  <div class="flex h-screen overflow-hidden bg-paper-50">
     <!-- Dark scrim (mobile) -->
     <Transition name="fade">
       <div v-if="sidebarOpen" class="fixed inset-0 z-40 bg-black/40 lg:hidden"
@@ -8,19 +8,24 @@
 
     <!-- ─── Sidebar ─────────────────────────────────────────── -->
     <aside
-      class="fixed lg:static inset-y-0 left-0 w-64 bg-white border-r border-paper-200 z-50
+      class="fixed lg:static inset-y-0 left-0 w-64 bg-navy-900 text-navy-100 z-50
              flex flex-col transition-transform duration-200 ease-in-out"
       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
     >
       <!-- Brand -->
-      <div class="flex items-center justify-between px-5 h-14 border-b border-paper-100 shrink-0">
-        <div>
-          <p class="font-display font-bold text-navy-700 text-base leading-tight">TutorKhujo</p>
-          <p class="text-[10px] font-body text-paper-400 uppercase tracking-widest leading-none mt-0.5">Admin Panel</p>
+      <div class="flex items-center justify-between px-5 h-16 border-b border-white/10 shrink-0">
+        <div class="flex items-center gap-3">
+          <span class="flex h-10 w-10 items-center justify-center rounded-md bg-gold-400 font-display text-sm font-bold text-navy-900 shadow-sm">
+            TK
+          </span>
+          <div>
+            <p class="font-display font-bold text-white text-base leading-tight">TutorKhujo</p>
+            <p class="text-[10px] font-body text-navy-300 uppercase tracking-widest leading-none mt-0.5">Admin Panel</p>
+          </div>
         </div>
         <!-- Close button (mobile only) -->
         <button @click="sidebarOpen = false"
-          class="lg:hidden p-1.5 rounded-md text-paper-400 hover:text-navy-700 hover:bg-navy-50 transition-colors" aria-label="Close">
+          class="lg:hidden p-1.5 rounded-md text-navy-200 hover:text-white hover:bg-white/10 transition-colors" aria-label="Close">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
           </svg>
@@ -28,15 +33,15 @@
       </div>
 
       <!-- Admin profile (top) -->
-      <div class="px-4 py-4 border-b border-paper-100 shrink-0">
+      <div class="px-4 py-4 border-b border-white/10 shrink-0">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-navy-700 flex items-center justify-center overflow-hidden shrink-0 ring-2 ring-navy-100">
+          <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center overflow-hidden shrink-0 ring-1 ring-white/15">
             <img v-if="auth.user?.avatar_url" :src="auth.user.avatar_url" class="w-full h-full object-cover" alt="" />
-            <span v-else class="font-display font-bold text-sm text-white">{{ initials }}</span>
+            <span v-else class="font-display font-bold text-sm text-gold-200">{{ initials }}</span>
           </div>
           <div class="min-w-0">
-            <p class="font-display font-semibold text-sm text-navy-900 truncate leading-tight">{{ auth.user?.name }}</p>
-            <p class="text-xs text-paper-400 font-body capitalize mt-0.5">{{ auth.user?.role?.replace('_', ' ') }}</p>
+            <p class="font-display font-semibold text-sm text-white truncate leading-tight">{{ auth.user?.name }}</p>
+            <p class="text-xs text-navy-300 font-body mt-0.5">Admin</p>
           </div>
         </div>
       </div>
@@ -48,7 +53,7 @@
           :to="item.to"
           @click="sidebarOpen = false"
           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold font-display transition-colors"
-          :class="isActive(item.to) ? 'bg-navy-700 text-white' : 'text-navy-700 hover:bg-navy-50'"
+          :class="isActive(item.to) ? 'bg-gold-400 text-navy-900 shadow-sm' : 'text-navy-200 hover:bg-white/10 hover:text-white'"
         >
           <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
             <path v-if="item.icon === 'chart'" stroke-linecap="round" stroke-linejoin="round"
@@ -63,6 +68,16 @@
               d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
             <path v-else-if="item.icon === 'heart'" stroke-linecap="round" stroke-linejoin="round"
               d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/>
+            <path v-else-if="item.icon === 'star'" stroke-linecap="round" stroke-linejoin="round"
+              d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/>
+            <path v-else-if="item.icon === 'analytics'" stroke-linecap="round" stroke-linejoin="round"
+              d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/>
+            <path v-else-if="item.icon === 'list'" stroke-linecap="round" stroke-linejoin="round"
+              d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/>
+            <path v-else-if="item.icon === 'database'" stroke-linecap="round" stroke-linejoin="round"
+              d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"/>
+            <path v-else-if="item.icon === 'shield'" stroke-linecap="round" stroke-linejoin="round"
+              d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/>
           </svg>
           {{ item.label }}
           <span v-if="item.badge && unreadCount > 0"
@@ -73,10 +88,10 @@
       </nav>
 
       <!-- Bottom: Homepage + Settings + Logout -->
-      <div class="p-3 border-t border-paper-100 space-y-1 shrink-0">
+      <div class="p-3 border-t border-white/10 space-y-1 shrink-0">
         <RouterLink to="/"
           @click="sidebarOpen = false"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold font-display text-navy-700 hover:bg-navy-50 transition-colors w-full"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold font-display text-navy-200 hover:bg-white/10 hover:text-white transition-colors w-full"
         >
           <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round"
@@ -88,7 +103,7 @@
         <RouterLink to="/admin/settings"
           @click="sidebarOpen = false"
           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold font-display transition-colors w-full"
-          :class="$route.path.startsWith('/admin/settings') ? 'bg-navy-700 text-white' : 'text-navy-700 hover:bg-navy-50'"
+          :class="$route.path.startsWith('/admin/settings') ? 'bg-gold-400 text-navy-900 shadow-sm' : 'text-navy-200 hover:bg-white/10 hover:text-white'"
         >
           <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round"
@@ -104,7 +119,7 @@
             <path stroke-linecap="round" stroke-linejoin="round"
               d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/>
           </svg>
-          Log out
+          Log Out
         </button>
       </div>
     </aside>
@@ -112,18 +127,18 @@
     <!-- ─── Main area ─────────────────────────────────────────── -->
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
       <!-- Mobile top bar -->
-      <div class="lg:hidden bg-white border-b border-paper-200 h-14 flex items-center px-4 gap-3 shrink-0">
+      <div class="lg:hidden bg-navy-900 text-navy-100 h-14 flex items-center px-4 gap-3 shrink-0">
         <button @click="sidebarOpen = true"
-          class="p-1.5 rounded-md text-navy-700 hover:bg-navy-50 transition-colors" aria-label="Open menu">
+          class="p-1.5 rounded-md text-navy-100 hover:bg-white/10 transition-colors" aria-label="Open menu">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M3 12h18M3 18h18"/>
           </svg>
         </button>
-        <span class="font-display font-bold text-navy-800">TutorKhujo Admin</span>
+        <span class="font-display font-bold text-white">TutorKhujo Admin</span>
       </div>
 
       <!-- Scrollable content -->
-      <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+      <main class="admin-content flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
         <RouterView />
       </main>
     </div>
@@ -168,11 +183,15 @@ onMounted(async () => {
 })
 
 const navItems = [
-  { to: '/admin/dashboard',       label: 'Dashboard',          icon: 'chart'  },
-  { to: '/admin/users',           label: 'Users',               icon: 'users'  },
-  { to: '/admin/verifications',   label: 'Verifications',       icon: 'check'  },
-  { to: '/admin/connections',     label: 'Connections',         icon: 'link'   },
-  { to: '/admin/pending-changes', label: 'Pending Changes',      icon: 'unlock' },
+  { to: '/admin/dashboard',       label: 'Dashboard',          icon: 'chart'    },
+  { to: '/admin/analytics',       label: 'Analytics',           icon: 'analytics'},
+  { to: '/admin/users',           label: 'Users',               icon: 'users'    },
+  { to: '/admin/verifications',   label: 'Verifications',       icon: 'check'    },
+  { to: '/admin/connections',     label: 'Connections',         icon: 'link'     },
+  { to: '/admin/pending-changes', label: 'Pending Changes',     icon: 'unlock'   },
+  { to: '/admin/reviews',         label: 'Reviews',             icon: 'star'     },
+  { to: '/admin/reference-data',  label: 'Reference Data',      icon: 'database' },
+  { to: '/admin/audit-log',       label: 'Audit Log',           icon: 'shield'   },
   { to: '/admin/notifications',   label: 'Shortlist Requests',  icon: 'heart', badge: true },
 ]
 
@@ -197,6 +216,14 @@ async function confirmLogout() {
 </script>
 
 <style scoped>
+.admin-content {
+  background-color: #FBF9F3;
+  background-image:
+    linear-gradient(rgba(15, 46, 92, 0.032) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 46, 92, 0.032) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

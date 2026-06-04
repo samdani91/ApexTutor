@@ -1,6 +1,8 @@
 <?php
+use App\Http\Controllers\Admin\AdminAuditLogController;
 use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminPendingChangesController;
+use App\Http\Controllers\Admin\AdminReferenceDataController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminConnectionController;
 use App\Http\Controllers\Admin\AdminDashboardController;
@@ -12,6 +14,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\OtpController;
 use App\Http\Controllers\Guardian\ConnectionRequestController;
 use App\Http\Controllers\Guardian\GuardianProfileController;
+use App\Http\Controllers\Guardian\GuardianReviewController;
 use App\Http\Controllers\Guardian\ShortlistController;
 use App\Http\Controllers\Guardian\TuitionRequirementController;
 use App\Http\Controllers\Public\TutorPublicProfileController;
@@ -85,7 +88,8 @@ Route::middleware('throttle:60,1')->group(function () {
 Route::middleware(['auth:sanctum', 'active.user', 'role:tutor'])->prefix('tutor')->group(function () {
     Route::get('profile',   [TutorProfileController::class, 'show']);
     Route::put('profile',   [TutorProfileController::class, 'update']);
-    Route::get('dashboard', [TutorProfileController::class, 'dashboard']);
+    Route::get('dashboard',             [TutorProfileController::class, 'dashboard']);
+    Route::get('confirmed-tuitions',    [TutorProfileController::class, 'confirmedTuitions']);
     Route::apiResource('education', EducationController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::get('preferences', [TuitionPreferenceController::class, 'show']);
     Route::put('preferences', [TuitionPreferenceController::class, 'upsert']);
@@ -110,39 +114,74 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:guardian,student'])->pre
     Route::post('profile/nid',   [GuardianProfileController::class, 'uploadNid']);
     Route::delete('profile/nid', [GuardianProfileController::class, 'deleteNid']);
     Route::apiResource('requirements', TuitionRequirementController::class)->except(['show']);
-    Route::get('connections',     [ConnectionRequestController::class, 'index']);
-    Route::post('connections',    [ConnectionRequestController::class, 'store']);
-    Route::get('connections/{id}',[ConnectionRequestController::class, 'show']);
+    Route::get('connections',              [ConnectionRequestController::class, 'index']);
+    Route::post('connections',             [ConnectionRequestController::class, 'store']);
+    Route::get('connections/{id}',         [ConnectionRequestController::class, 'show']);
+    Route::get('confirmed-tuitions',       [ConnectionRequestController::class, 'confirmed']);
     Route::get('shortlist',    [ShortlistController::class, 'index']);
     Route::post('shortlist/{tutor_profile_id}',   [ShortlistController::class, 'store'])
         ->middleware('throttle:10,1');
     Route::delete('shortlist/{tutor_profile_id}', [ShortlistController::class, 'destroy'])
         ->middleware('throttle:10,1');
+    Route::get('reviews/eligibility/{tutor_profile_id}', [GuardianReviewController::class, 'eligibility']);
+    Route::post('reviews', [GuardianReviewController::class, 'store'])->middleware('throttle:5,1');
 });
 
 // Admin routes
 Route::middleware(['auth:sanctum', 'role:admin,super_admin'])->prefix('admin')->group(function () {
-    Route::get('dashboard', [AdminDashboardController::class, 'index']);
-    Route::get('admins',    [AdminUserController::class, 'index']);
-    Route::get('admins/{id}', [AdminUserController::class, 'show']);
-    Route::get('tutors',    [AdminTutorController::class, 'index']);
-    Route::get('tutors/{id}', [AdminTutorController::class, 'show']);
+    Route::get('dashboard',           [AdminDashboardController::class, 'index']);
+    Route::get('dashboard/analytics', [AdminDashboardController::class, 'analytics']);
+
+    // Admin user management (create/update/delete = super_admin only, enforced in controller)
+    Route::get('admins',            [AdminUserController::class, 'index']);
+    Route::get('admins/{id}',       [AdminUserController::class, 'show']);
+    Route::post('admins',           [AdminUserController::class, 'store']);
+    Route::put('admins/{id}',       [AdminUserController::class, 'update']);
+    Route::delete('admins/{id}',    [AdminUserController::class, 'destroy']);
+
+    Route::get('tutors',             [AdminTutorController::class, 'index']);
+    Route::get('tutors/{id}',        [AdminTutorController::class, 'show']);
+    Route::put('tutors/{id}',        [AdminTutorController::class, 'update']);
     Route::put('tutors/{id}/status', [AdminTutorController::class, 'updateStatus']);
-    Route::get('guardians',     [AdminGuardianController::class, 'index']);
-    Route::get('guardians/{id}',[AdminGuardianController::class, 'show']);
+
+    Route::get('guardians',              [AdminGuardianController::class, 'index']);
+    Route::get('guardians/{id}',         [AdminGuardianController::class, 'show']);
+    Route::put('guardians/{id}',         [AdminGuardianController::class, 'update']);
+    Route::put('guardians/{id}/status',  [AdminGuardianController::class, 'updateStatus']);
+
     Route::get('verifications',              [AdminVerificationController::class, 'queue']);
     Route::put('verifications/{id}/approve', [AdminVerificationController::class, 'approve']);
     Route::put('verifications/{id}/reject',  [AdminVerificationController::class, 'reject']);
-    Route::get('connections',        [AdminConnectionController::class, 'index']);
-    Route::get('connections/{id}',   [AdminConnectionController::class, 'show']);
-    Route::put('connections/{id}/status', [AdminConnectionController::class, 'updateStatus']);
-    Route::post('connections/{id}/notes', [AdminConnectionController::class, 'addNotes']);
+
+    Route::get('connections',              [AdminConnectionController::class, 'index']);
+    Route::get('connections/{id}',         [AdminConnectionController::class, 'show']);
+    Route::put('connections/{id}/status',  [AdminConnectionController::class, 'updateStatus']);
+    Route::post('connections/{id}/notes',  [AdminConnectionController::class, 'addNotes']);
+
     Route::get('pending-changes',              [AdminPendingChangesController::class, 'index']);
     Route::put('pending-changes/{id}/approve', [AdminPendingChangesController::class, 'approve']);
     Route::put('pending-changes/{id}/reject',  [AdminPendingChangesController::class, 'reject']);
-    Route::get('reviews/pending',      [AdminReviewController::class, 'pending']);
-    Route::put('reviews/{id}/approve', [AdminReviewController::class, 'approve']);
-    Route::put('reviews/{id}/reject',  [AdminReviewController::class, 'reject']);
+
+    Route::get('reviews',             [AdminReviewController::class, 'all']);
+    Route::get('reviews/pending',     [AdminReviewController::class, 'pending']);
+    Route::put('reviews/{id}/approve',[AdminReviewController::class, 'approve']);
+    Route::put('reviews/{id}/reject', [AdminReviewController::class, 'reject']);
+
+    Route::get('reference/subjects',              [AdminReferenceDataController::class, 'subjects']);
+    Route::post('reference/subjects',             [AdminReferenceDataController::class, 'storeSubject']);
+    Route::put('reference/subjects/{id}',         [AdminReferenceDataController::class, 'updateSubject']);
+    Route::delete('reference/subjects/{id}',      [AdminReferenceDataController::class, 'destroySubject']);
+    Route::get('reference/districts',             [AdminReferenceDataController::class, 'districts']);
+    Route::post('reference/districts',            [AdminReferenceDataController::class, 'storeDistrict']);
+    Route::put('reference/districts/{id}',        [AdminReferenceDataController::class, 'updateDistrict']);
+    Route::delete('reference/districts/{id}',     [AdminReferenceDataController::class, 'destroyDistrict']);
+    Route::post('reference/areas',                [AdminReferenceDataController::class, 'storeArea']);
+    Route::put('reference/areas/{id}',            [AdminReferenceDataController::class, 'updateArea']);
+    Route::delete('reference/areas/{id}',         [AdminReferenceDataController::class, 'destroyArea']);
+
+    Route::get('audit-log',         [AdminAuditLogController::class, 'index']);
+    Route::get('audit-log/actions', [AdminAuditLogController::class, 'actions']);
+
     Route::get('notifications',             [AdminNotificationController::class, 'index']);
     Route::put('notifications/read-all',    [AdminNotificationController::class, 'markAllRead']);
     Route::put('notifications/{id}/read',   [AdminNotificationController::class, 'markRead']);

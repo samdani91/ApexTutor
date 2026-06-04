@@ -1,6 +1,12 @@
 <template>
   <div>
-    <h1 class="font-display font-bold text-2xl text-navy-900 mb-6">Users</h1>
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="font-display font-bold text-2xl text-navy-900">Users</h1>
+      <RouterLink to="/admin/admins/create"
+        class="text-sm font-semibold font-display px-4 py-2 rounded-md bg-navy-700 text-white hover:bg-navy-900 transition-colors">
+        + Create admin
+      </RouterLink>
+    </div>
 
     <!-- Search + tabs + filters -->
     <div class="card mb-5 space-y-3">
@@ -33,13 +39,6 @@
               @update:modelValue="load()" />
           </div>
 
-          <!-- Role filter (admins) -->
-          <div v-if="activeTab === 'admins'" class="flex flex-col gap-1">
-            <span class="text-xs font-semibold font-display text-navy-700">Role</span>
-            <DropSelect v-model="statusFilter" :options="adminRoleOptions" placeholder="All"
-              @update:modelValue="load()" />
-          </div>
-
           <!-- Sort by ID -->
           <div class="flex flex-col gap-1">
             <span class="text-xs font-semibold font-display text-navy-700">Sort by</span>
@@ -51,7 +50,7 @@
           <button v-if="statusFilter || sortOrder !== 'id_desc'"
             @click="clearFilters"
             class="hidden sm:inline-flex sm:ml-auto text-xs font-semibold font-display text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 px-4 py-1.5 rounded-sm transition-colors self-end">
-            Clear filters
+            Clear Filters
           </button>
         </div>
 
@@ -59,7 +58,7 @@
         <button v-if="statusFilter || sortOrder !== 'id_desc'"
           @click="clearFilters"
           class="sm:hidden mt-3 w-full text-xs font-semibold font-display text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 px-4 py-1.5 rounded-sm transition-colors">
-          Clear filters
+          Clear Filters
         </button>
       </div>
     </div>
@@ -188,9 +187,8 @@
               <p class="font-display font-semibold text-navy-900 text-sm truncate">{{ row.name }}</p>
               <p class="text-xs text-paper-400 truncate">{{ row.email }}</p>
               <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
-                <span class="text-xs font-semibold px-1.5 py-0.5 rounded-pill capitalize whitespace-nowrap"
-                  :class="row.role === 'super_admin' ? 'bg-gold-50 text-gold-700 border border-gold-200' : 'bg-navy-50 text-navy-700 border border-navy-200'">
-                  {{ row.role === 'super_admin' ? 'Super Admin' : 'Admin' }}
+                <span class="text-xs font-semibold px-1.5 py-0.5 rounded-pill capitalize whitespace-nowrap bg-navy-50 text-navy-700 border border-navy-200">
+                  Admin
                 </span>
                 <span class="text-xs font-semibold px-1.5 py-0.5 rounded-pill whitespace-nowrap"
                   :class="row.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">
@@ -234,9 +232,8 @@
                 </td>
                 <td class="py-3 pr-6 text-paper-500 whitespace-nowrap">{{ row.phone || '—' }}</td>
                 <td class="py-3 pr-6">
-                  <span class="text-xs font-semibold px-2 py-0.5 rounded-pill capitalize whitespace-nowrap"
-                    :class="row.role === 'super_admin' ? 'bg-gold-50 text-gold-700 border border-gold-200' : 'bg-navy-50 text-navy-700 border border-navy-200'">
-                    {{ row.role === 'super_admin' ? 'Super Admin' : 'Admin' }}
+                  <span class="text-xs font-semibold px-2 py-0.5 rounded-pill capitalize whitespace-nowrap bg-navy-50 text-navy-700 border border-navy-200">
+                    Admin
                   </span>
                 </td>
                 <td class="py-3 pr-6">
@@ -314,11 +311,6 @@ const tutorStatusOptions = [
   { value: 'approved', label: 'Approved' },
   { value: 'rejected', label: 'Rejected' },
 ]
-const adminRoleOptions = [
-  { value: '', label: 'All' },
-  { value: 'admin', label: 'Admin' },
-  { value: 'super_admin', label: 'Super Admin' },
-]
 const sortOptions = [
   { value: 'id_desc', label: 'Newest first' },
   { value: 'id_asc', label: 'Oldest first' },
@@ -381,6 +373,7 @@ async function load(page = 1) {
   try {
     const params = {
       page,
+      per_page: 10,
       search: searchInput.value || undefined,
       sort:   sortOrder.value !== 'id_desc' ? sortOrder.value : undefined,
     }

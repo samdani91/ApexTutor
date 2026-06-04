@@ -62,6 +62,10 @@
           </div>
           <!-- Admin actions -->
           <div class="flex flex-col gap-2 w-full lg:w-36">
+            <RouterLink :to="{ name: 'admin-tutor-edit', params: { id: tutor.id } }"
+              class="text-sm font-semibold font-display px-4 py-1.5 rounded-md bg-navy-700 text-white hover:bg-navy-900 transition-colors text-center w-full">
+              Edit Profile
+            </RouterLink>
             <template v-if="tutor.verification_status === 'pending'">
               <button @click="openApprove" :disabled="acting"
                 class="btn-primary text-sm py-1.5 px-4 w-full">Approve</button>
@@ -286,9 +290,9 @@
     <!-- Approve confirm -->
     <AdminConfirmDialog
       :show="showApproveDialog"
-      title="Approve tutor?"
+      title="Approve Tutor?"
       :message="tutor ? `Approve ${tutor.user?.name} and mark their profile as verified?` : ''"
-      confirm-label="Yes, approve"
+      confirm-label="Yes, Approve"
       @confirm="confirmApprove"
       @cancel="showApproveDialog = false"
     />
@@ -296,7 +300,7 @@
     <!-- Reject confirm -->
     <AdminConfirmDialog
       :show="showRejectDialog"
-      title="Reject tutor?"
+      title="Reject Tutor?"
       :message="tutor ? `Reject ${tutor.user?.name}'s verification request.` : ''"
       confirm-label="Reject"
       danger
@@ -310,9 +314,9 @@
     <!-- Status change confirm -->
     <AdminConfirmDialog
       :show="!!pendingStatus"
-      title="Update account status?"
+      title="Update Account Status?"
       :message="pendingStatus ? `Change ${tutor?.user?.name}'s status to &quot;${pendingStatus}&quot;?` : ''"
-      confirm-label="Yes, update"
+      confirm-label="Yes, Update"
       @confirm="confirmStatusChange"
       @cancel="cancelStatusChange"
     />
@@ -415,7 +419,7 @@ function verificationClass(status) {
 }
 
 function connStatusClass(status) {
-  if (status === 'connected') return 'bg-emerald-50 text-emerald-700'
+  if (status === 'confirmed') return 'bg-emerald-50 text-emerald-700'
   if (status === 'pending')   return 'bg-amber-50 text-amber-700'
   if (status === 'declined')  return 'bg-red-50 text-red-700'
   return 'bg-blue-50 text-blue-700'

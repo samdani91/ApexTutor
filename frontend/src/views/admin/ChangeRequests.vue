@@ -51,11 +51,11 @@
     <!-- Approve confirm -->
     <AdminConfirmDialog
       :show="!!approveTarget"
-      :title="approveTarget?.status === 'review_pending' ? 'Re-verify tutor profile?' : 'Approve change request?'"
+      :title="approveTarget?.status === 'review_pending' ? 'Re-verify Tutor Profile?' : 'Approve Change Request?'"
       :message="approveTarget?.status === 'review_pending'
         ? `Re-verify ${approveTarget?.tutor_profile?.user?.name}'s updated profile and mark them as verified?`
         : `Allow ${approveTarget?.tutor_profile?.user?.name} to edit their profile?`"
-      confirm-label="Yes, approve"
+      confirm-label="Yes, Approve"
       @confirm="confirmApprove"
       @cancel="approveTarget = null"
     />
@@ -63,7 +63,7 @@
     <!-- Reject confirm -->
     <AdminConfirmDialog
       :show="!!rejectTarget"
-      title="Reject change request?"
+      title="Reject Change Request?"
       :message="`Reject ${rejectTarget?.tutor_profile?.user?.name}'s request to edit their profile.`"
       confirm-label="Reject"
       danger

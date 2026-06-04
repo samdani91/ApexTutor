@@ -44,7 +44,7 @@
           <div class="flex gap-2 shrink-0">
             <button @click="toggleExpand(item.id)"
               class="btn-outline text-sm py-1.5 px-3">
-              {{ expanded.has(item.id) ? 'Hide diff' : 'Review' }}
+              {{ expanded.has(item.id) ? 'Hide Diff' : 'Review' }}
             </button>
             <button @click="openApprove(item)"
               class="btn-primary text-sm py-1.5 px-3">
@@ -121,7 +121,7 @@
                 <button @click="approveTarget = null" class="btn-outline flex-1 py-2.5 text-sm">Cancel</button>
                 <button @click="confirmApprove" :disabled="actionLoading"
                   class="flex-1 inline-flex items-center justify-center bg-emerald-600 text-white font-semibold font-display py-2.5 rounded-md text-sm hover:bg-emerald-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
-                  {{ actionLoading ? 'Approving…' : 'Yes, approve' }}
+                  {{ actionLoading ? 'Approving…' : 'Yes, Approve' }}
                 </button>
               </div>
             </div>

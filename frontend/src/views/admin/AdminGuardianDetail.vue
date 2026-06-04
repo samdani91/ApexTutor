@@ -10,7 +10,27 @@
 
     <div v-if="loading" class="text-paper-500 font-body py-12 text-center">Loading…</div>
 
-    <template v-else-if="guardian">
+    <AdminConfirmDialog
+      :show="saveConfirmOpen"
+      title="Save Guardian Profile?"
+      message="Apply these changes to the guardian's account directly?"
+      confirm-label="Save Changes"
+      @confirm="saveConfirmOpen = false; saveEdit()"
+      @cancel="saveConfirmOpen = false"
+    />
+    <AdminConfirmDialog
+      :show="!!statusConfirmTarget"
+      :title="statusConfirmTarget?.isActive ? 'Reactivate Account?' : 'Suspend Account?'"
+      :message="statusConfirmTarget?.isActive
+        ? `Reactivate ${guardian?.user?.name}'s account? They will regain full platform access.`
+        : `Suspend ${guardian?.user?.name}'s account? They will lose access until reactivated.`"
+      :confirm-label="statusConfirmTarget?.isActive ? 'Reactivate' : 'Suspend'"
+      :danger="!statusConfirmTarget?.isActive"
+      @confirm="doToggleStatus"
+      @cancel="statusConfirmTarget = null"
+    />
+
+    <template v-if="!loading && guardian">
       <!-- Header card -->
       <div class="card mb-5">
         <div class="flex gap-5 items-start flex-wrap">
@@ -23,6 +43,11 @@
           <div class="flex-1 min-w-0">
             <div class="flex flex-wrap items-center gap-2 mb-1">
               <h1 class="font-display font-bold text-xl text-navy-900">{{ guardian.user?.name }}</h1>
+              <button @click="editing ? (editing = false) : (startEdit(), editing = true)"
+                class="text-xs font-semibold font-display px-3 py-1 rounded-md border transition-colors"
+                :class="editing ? 'bg-paper-100 border-paper-300 text-paper-600' : 'bg-navy-700 text-white border-navy-700 hover:bg-navy-900'">
+                {{ editing ? 'Cancel Edit' : 'Edit Profile' }}
+              </button>
               <span v-if="guardian.guardian_id"
                 class="text-xs font-semibold font-display text-navy-600 bg-navy-50 border border-navy-200 px-2 py-0.5 rounded-pill">
                 {{ guardian.guardian_id }}
@@ -68,6 +93,78 @@
                 NID not uploaded
               </span>
             </div>
+            <!-- Account status -->
+            <div class="sm:col-span-3 pt-3 border-t border-paper-100">
+              <p class="text-xs font-semibold font-display text-paper-400 uppercase tracking-wide mb-2">Account status</p>
+              <div class="flex items-center gap-3 flex-wrap">
+                <span class="text-sm font-semibold font-display px-3 py-1 rounded-pill"
+                  :class="guardian.user?.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">
+                  {{ guardian.user?.is_active ? 'Active' : 'Suspended' }}
+                </span>
+                <button v-if="guardian.user?.is_active" @click="statusConfirmTarget = { isActive: false }"
+                  :disabled="statusSaving"
+                  class="text-sm font-semibold font-display px-4 py-1.5 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50">
+                  {{ statusSaving ? 'Saving…' : 'Suspend account' }}
+                </button>
+                <button v-else @click="statusConfirmTarget = { isActive: true }"
+                  :disabled="statusSaving"
+                  class="text-sm font-semibold font-display px-4 py-1.5 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-50">
+                  {{ statusSaving ? 'Saving…' : 'Reactivate account' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inline edit form -->
+        <div v-if="editing" class="mt-5 pt-5 border-t border-paper-200 space-y-4">
+          <p class="text-xs font-semibold font-display text-paper-400 uppercase tracking-wide">Edit profile</p>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold font-display text-paper-500 mb-1">Full name</label>
+              <input v-model="editForm.user.name" class="input text-sm w-full" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold font-display text-paper-500 mb-1">Email</label>
+              <input v-model="editForm.user.email" type="email" class="input text-sm w-full" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold font-display text-paper-500 mb-1">Phone</label>
+              <input v-model="editForm.user.phone" class="input text-sm w-full" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold font-display text-paper-500 mb-1">Address</label>
+              <input v-model="editForm.user.address" class="input text-sm w-full" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold font-display text-paper-500 mb-1">Occupation</label>
+              <input v-model="editForm.profile.occupation" class="input text-sm w-full" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold font-display text-paper-500 mb-1">Relationship to student</label>
+              <input v-model="editForm.profile.relationship_to_student" class="input text-sm w-full" placeholder="e.g. parent, sibling" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold font-display text-paper-500 mb-1">NID number</label>
+              <input v-model="editForm.profile.nid_number" class="input text-sm w-full" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold font-display text-paper-500 mb-1">Account type</label>
+              <select v-model="editForm.profile.account_type" class="input text-sm w-full">
+                <option value="guardian">Guardian</option>
+                <option value="student">Student</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex gap-3 pt-1">
+            <button @click="saveConfirmOpen = true" :disabled="editSaving"
+              class="text-sm font-semibold font-display px-5 py-2 rounded-md bg-navy-700 text-white hover:bg-navy-900 transition-colors disabled:opacity-50">
+              {{ editSaving ? 'Saving…' : 'Save Changes' }}
+            </button>
+            <button @click="editing = false"
+              class="text-sm font-semibold font-display px-4 py-2 rounded-md border border-paper-300 text-paper-600 hover:bg-paper-100 transition-colors">
+              Cancel
+            </button>
           </div>
         </div>
       </div>
@@ -192,14 +289,22 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { adminApi } from '@/api/admin.js'
 import { getInitials } from '@/utils/helpers.js'
+import { toast } from 'vue-sonner'
+import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog.vue'
 
-const route    = useRoute()
-const guardian = ref(null)
-const loading  = ref(true)
+const route              = useRoute()
+const guardian           = ref(null)
+const loading            = ref(true)
+const statusSaving       = ref(false)
+const editing            = ref(false)
+const editSaving         = ref(false)
+const saveConfirmOpen    = ref(false)
+const statusConfirmTarget = ref(null) // { isActive: bool }
+const editForm           = reactive({ user: { name: '', email: '', phone: '', address: '' }, profile: { occupation: '', relationship_to_student: '', nid_number: '', account_type: '' } })
 
 const initials = computed(() => getInitials(guardian.value?.user?.name))
 
@@ -212,13 +317,50 @@ onMounted(async () => {
   }
 })
 
+function startEdit() {
+  const g = guardian.value
+  Object.assign(editForm.user, { name: g.user?.name ?? '', email: g.user?.email ?? '', phone: g.user?.phone ?? '', address: g.user?.address ?? '' })
+  Object.assign(editForm.profile, { occupation: g.occupation ?? '', relationship_to_student: g.relationship_to_student ?? '', nid_number: g.nid_number ?? '', account_type: g.account_type ?? 'guardian' })
+}
+
+async function saveEdit() {
+  editSaving.value = true
+  try {
+    await adminApi.updateGuardian(route.params.id, { ...editForm })
+    // Refresh
+    const { data } = await adminApi.getGuardian(route.params.id)
+    guardian.value = data.data
+    editing.value = false
+    toast.success('Guardian profile updated.')
+  } catch (e) {
+    toast.error(e.response?.data?.message ?? 'Could not save changes.')
+  } finally {
+    editSaving.value = false
+  }
+}
+
+async function doToggleStatus() {
+  const { isActive } = statusConfirmTarget.value
+  statusConfirmTarget.value = null
+  statusSaving.value = true
+  try {
+    await adminApi.updateGuardianStatus(route.params.id, { is_active: isActive })
+    guardian.value.user.is_active = isActive
+    toast.success(isActive ? 'Guardian reactivated.' : 'Guardian suspended.')
+  } catch {
+    toast.error('Could not update status.')
+  } finally {
+    statusSaving.value = false
+  }
+}
+
 function formatDate(iso) {
   if (!iso) return ''
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 function connStatusClass(status) {
-  if (status === 'connected') return 'bg-emerald-50 text-emerald-700'
+  if (status === 'confirmed') return 'bg-emerald-50 text-emerald-700'
   if (status === 'pending')   return 'bg-amber-50 text-amber-700'
   if (status === 'declined')  return 'bg-red-50 text-red-700'
   return 'bg-blue-50 text-blue-700'
