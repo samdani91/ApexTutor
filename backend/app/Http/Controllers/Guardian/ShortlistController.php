@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Guardian;
 use App\Http\Controllers\Controller;
 use App\Models\Shortlist;
 use App\Models\User;
+use App\Notifications\TutorRemovedFromShortlistNotification;
 use App\Notifications\TutorShortlistedByGuardianNotification;
 use App\Notifications\TutorShortlistedNotification;
 use Illuminate\Http\JsonResponse;
@@ -25,7 +26,7 @@ class ShortlistController extends Controller
     public function store(Request $request, int $tutorProfileId): JsonResponse
     {
         $guardian = $request->user()->guardianProfile;
-        $tutor    = \App\Models\TutorProfile::with('user:id,name')->findOrFail($tutorProfileId);
+        $tutor    = \App\Models\TutorProfile::with('user:id,name,email')->findOrFail($tutorProfileId);
 
         [$shortlist, $created] = [
             Shortlist::firstOrCreate([
@@ -70,8 +71,29 @@ class ShortlistController extends Controller
 
     public function destroy(Request $request, int $tutorProfileId): JsonResponse
     {
-        Shortlist::where('guardian_profile_id', $request->user()->guardianProfile->id)
+        $guardian = $request->user()->guardianProfile;
+
+        $deleted = Shortlist::where('guardian_profile_id', $guardian->id)
             ->where('tutor_profile_id', $tutorProfileId)->delete();
+
+        if ($deleted) {
+            try {
+                $tutor = \App\Models\TutorProfile::with('user:id,name,email')->find($tutorProfileId);
+                if ($tutor?->user) {
+                    $tutor->user->notify(new TutorRemovedFromShortlistNotification(
+                        guardianName:      $request->user()->name,
+                        guardianProfileId: $guardian->id,
+                    ));
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Shortlist removal notification failed', [
+                    'error'    => $e->getMessage(),
+                    'tutor'    => $tutorProfileId,
+                    'guardian' => $guardian->id,
+                ]);
+            }
+        }
+
         return response()->json(['success' => true, 'message' => 'Removed from shortlist.']);
     }
 }

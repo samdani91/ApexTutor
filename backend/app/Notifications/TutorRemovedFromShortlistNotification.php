@@ -6,7 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class TutorShortlistedByGuardianNotification extends Notification implements ShouldQueue
+class TutorRemovedFromShortlistNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -23,8 +23,8 @@ class TutorShortlistedByGuardianNotification extends Notification implements Sho
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("{$this->guardianName} shortlisted you — TutorKhujo")
-            ->view('emails.tutor-shortlisted', [
+            ->subject("{$this->guardianName} removed you from their shortlist — TutorKhujo")
+            ->view('emails.tutor-removed-from-shortlist', [
                 'name'         => $notifiable->name,
                 'guardianName' => $this->guardianName,
             ]);
@@ -33,10 +33,10 @@ class TutorShortlistedByGuardianNotification extends Notification implements Sho
     public function toArray(object $notifiable): array
     {
         return [
-            'type'                => 'tutor_shortlisted',
+            'type'                => 'tutor_removed_from_shortlist',
             'guardian_name'       => $this->guardianName,
             'guardian_profile_id' => $this->guardianProfileId,
-            'message'             => "{$this->guardianName} has added you to their shortlist.",
+            'message'             => "{$this->guardianName} has removed you from their shortlist.",
         ];
     }
 }

@@ -6,7 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class PendingChangeApprovedNotification extends Notification implements ShouldQueue
+class TutorVerificationApprovedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -18,8 +18,8 @@ class PendingChangeApprovedNotification extends Notification implements ShouldQu
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Your profile changes have been approved — TutorKhujo')
-            ->view('emails.pending-approved', [
+            ->subject('Your profile has been verified — TutorKhujo')
+            ->view('emails.tutor-verified', [
                 'name' => $notifiable->name,
             ]);
     }
@@ -27,8 +27,8 @@ class PendingChangeApprovedNotification extends Notification implements ShouldQu
     public function toArray(object $notifiable): array
     {
         return [
-            'type'    => 'pending_change_approved',
-            'message' => 'Your profile changes have been approved and are now live.',
+            'type'    => 'tutor_verified',
+            'message' => 'Congratulations! Your tutor profile has been verified and is now live.',
         ];
     }
 }

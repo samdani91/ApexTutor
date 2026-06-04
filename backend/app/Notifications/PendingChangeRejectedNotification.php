@@ -2,10 +2,14 @@
 namespace App\Notifications;
 
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class PendingChangeRejectedNotification extends Notification
+class PendingChangeRejectedNotification extends Notification implements ShouldQueue
 {
+    use Queueable;
+
     public function __construct(
         public readonly ?string $note      = null,
         public readonly array   $sections  = [],
