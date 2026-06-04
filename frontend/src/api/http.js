@@ -18,19 +18,19 @@ http.interceptors.response.use(
   err => {
     if (err.response?.status === 401) {
       sessionStorage.removeItem('token')
-      window.location.href = '/login'
+      // Dispatch a custom event so the router (not the API layer) handles navigation.
+      window.dispatchEvent(new CustomEvent('auth:expired'))
       return Promise.reject(err)
     }
 
     if (err.response?.status === 403 && err.response?.data?.suspended) {
       sessionStorage.removeItem('token')
       toast.error('Your account has been suspended. Please contact support.')
-      window.location.href = '/login'
+      window.dispatchEvent(new CustomEvent('auth:suspended'))
       return Promise.reject(err)
     }
 
     if (!err.response) {
-      // Network error or server unreachable
       toast.error('Cannot connect to the server. Please check your connection.')
       err._toasted = true
     } else if (err.response.status === 503) {

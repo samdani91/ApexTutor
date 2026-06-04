@@ -3,11 +3,14 @@ namespace App\Http\Controllers\Tutor;
 
 use App\Http\Controllers\Controller;
 use App\Models\TutorEmergencyContact;
+use App\Services\PendingProfileChangeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class TutorEmergencyContactController extends Controller
 {
+    public function __construct(private readonly PendingProfileChangeService $pending) {}
+
     public function show(Request $request): JsonResponse
     {
         $contact = $request->user()->tutorProfile->emergencyContact;

@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Tutor;
 
 use App\Http\Controllers\Controller;
+use App\Services\PendingProfileChangeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -9,6 +10,11 @@ use Illuminate\Support\Facades\Storage;
 class DocumentController extends Controller
 {
     private const ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+
+    // university_id removed from platform — only school/college-level documents accepted
+    private const ALLOWED_DOC_TYPES = ['nid', 'ssc_marksheet', 'hsc_marksheet', 'emergency_contact_nid'];
+
+    public function __construct(private readonly PendingProfileChangeService $pending) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -18,7 +24,7 @@ class DocumentController extends Controller
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'type' => 'required|in:university_id,nid,ssc_marksheet,hsc_marksheet,emergency_contact_nid',
+            'type' => 'required|in:' . implode(',', self::ALLOWED_DOC_TYPES),
             'file' => 'required|file|max:5120|mimes:pdf,jpg,jpeg,png',
         ]);
 
@@ -29,7 +35,7 @@ class DocumentController extends Controller
             return response()->json(['success' => false, 'message' => 'Invalid file type. Only PDF, JPG, and PNG are accepted.'], 422);
         }
 
-        $path = $file->store('documents', 'public');
+        $path    = $file->store('documents', 'public');
         $profile = $request->user()->tutorProfile;
         $payload = [
             'type'      => $request->type,
@@ -39,18 +45,12 @@ class DocumentController extends Controller
             'mime_type' => $realMime,
         ];
 
-        if ($profile->is_verified) {
-            $pending = $profile->pending_changes ?? [];
-            $pending['documents'] ??= [];
-            $pending['documents']['upsert'] ??= [];
-            $pending['documents']['upsert'][$request->type] = $payload;
-            $pending['submitted_at'] = now()->toISOString();
-            $profile->update(['pending_changes' => $pending, 'pending_note' => null]);
-
+        if ($this->pending->requiresPendingFlow($profile)) {
+            $this->pending->stageDocumentUpsert($profile, $request->type, $payload);
             return response()->json([
                 'success' => true,
                 'pending' => true,
-                'data' => $payload + ['id' => null, 'review_status' => 'pending_review'],
+                'data'    => $payload + ['id' => null, 'review_status' => 'pending_review'],
                 'message' => 'Document uploaded — pending admin review.',
             ], 202);
         }
@@ -61,7 +61,7 @@ class DocumentController extends Controller
             $doc->delete();
         }
 
-        $doc  = $profile->documents()->create($payload);
+        $doc = $profile->documents()->create($payload);
 
         return response()->json(['success' => true, 'data' => $doc, 'message' => 'Document uploaded.'], 201);
     }
@@ -69,21 +69,16 @@ class DocumentController extends Controller
     public function destroy(Request $request, int $id): JsonResponse
     {
         $profile = $request->user()->tutorProfile;
-        $doc = $profile->documents()->findOrFail($id);
-        if ($profile->is_verified) {
-            $pending = $profile->pending_changes ?? [];
-            $pending['documents'] ??= [];
-            $pending['documents']['delete'] ??= [];
-            $pending['documents']['delete'][] = $doc->id;
-            $pending['documents']['delete'] = array_values(array_unique($pending['documents']['delete']));
-            $pending['submitted_at'] = now()->toISOString();
-            $profile->update(['pending_changes' => $pending, 'pending_note' => null]);
+        $doc     = $profile->documents()->findOrFail($id);
 
+        if ($this->pending->requiresPendingFlow($profile)) {
+            $this->pending->stageDocumentDelete($profile, $doc->id);
             return response()->json(['success' => true, 'pending' => true, 'message' => 'Document removal saved — pending admin review.']);
         }
 
         Storage::disk('public')->delete($doc->file_path);
         $doc->delete();
+
         return response()->json(['success' => true, 'message' => 'Document deleted.']);
     }
 }

@@ -5,11 +5,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Area;
 use App\Models\District;
 use App\Models\Subject;
+use App\Services\PendingProfileChangeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class TutorProfileController extends Controller
 {
+    public function __construct(private readonly PendingProfileChangeService $pending) {}
+
     public function show(Request $request): JsonResponse
     {
         $profile = $request->user()->tutorProfile()->with([
@@ -26,13 +29,8 @@ class TutorProfileController extends Controller
         $data    = $request->validate(['bio' => 'nullable|string|max:2000', 'status' => 'nullable|in:active,inactive']);
         $profile = $request->user()->tutorProfile()->firstOrCreate(['user_id' => $request->user()->id]);
 
-        if ($profile->is_verified) {
-            $pending = $profile->pending_changes ?? [];
-            foreach ($data as $key => $value) {
-                $pending[$key] = $value;
-            }
-            $pending['submitted_at'] = now()->toISOString();
-            $profile->update(['pending_changes' => $pending, 'pending_note' => null]);
+        if ($this->pending->requiresPendingFlow($profile)) {
+            $this->pending->mergeTopLevel($profile, $data);
             return response()->json(['success' => true, 'pending' => true, 'message' => 'Changes saved — pending admin review.']);
         }
 
