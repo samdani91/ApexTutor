@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\Area;
+use App\Models\ConnectionRequest;
 use App\Models\District;
 use App\Models\Subject;
 use App\Models\TutorProfile;
@@ -11,6 +12,20 @@ use Illuminate\Http\Request;
 
 class TutorSearchController extends Controller
 {
+    public function landingStats(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'verified_tutors' => TutorProfile::where('status', 'active')
+                    ->where('is_verified', true)
+                    ->count(),
+                'districts' => District::count(),
+                'student_matches' => ConnectionRequest::where('status', 'confirmed')->count(),
+            ],
+        ]);
+    }
+
     public function search(Request $request): JsonResponse
     {
         $filters = $request->validate([
@@ -120,6 +135,113 @@ class TutorSearchController extends Controller
 
         $results = $query->paginate($filters['per_page'] ?? 12);
         return response()->json(['success' => true, 'data' => $results]);
+    }
+
+    /**
+     * Resolve a free-text search term into structured search filters.
+     * Recognises medium, class level, subject, area and district so a typed
+     * query like "physics" or "dhanmondi" auto-selects the matching filters.
+     */
+    public function resolve(Request $request): JsonResponse
+    {
+        $request->validate(['q' => 'nullable|string|max:100']);
+        $term = trim((string) $request->query('q', ''));
+        if ($term === '') {
+            return response()->json(['success' => true, 'data' => []]);
+        }
+
+        // Padded with spaces so phrase removal leaves clean word boundaries.
+        $remaining = ' ' . mb_strtolower($term) . ' ';
+        $filters   = [];
+
+        // 1. Medium — requires an explicit "medium"/"version" word so a bare
+        //    "english" stays available as a subject match below.
+        $mediumAliases = [
+            'english_version' => ['english version'],
+            'english_medium'  => ['english medium'],
+            'bangla_medium'   => ['bangla medium', 'bengali medium'],
+        ];
+        foreach ($mediumAliases as $value => $aliases) {
+            foreach ($aliases as $alias) {
+                if (str_contains($remaining, $alias)) {
+                    $filters['medium'] = $value;
+                    $remaining = str_replace($alias, ' ', $remaining);
+                    break 2;
+                }
+            }
+        }
+
+        // 2. Class level — higher/longer aliases first so "class 1" never
+        //    swallows "class 10".
+        $classAliases = [
+            'hsc'      => ['hsc', 'higher secondary', 'intermediate'],
+            'ssc'      => ['ssc'],
+            'a_level'  => ['a level', 'a-level', 'alevel'],
+            'o_level'  => ['o level', 'o-level', 'olevel'],
+            'class_10' => ['class 10', 'class-10', 'grade 10'],
+            'class_9'  => ['class 9', 'class-9', 'grade 9'],
+            'class_8'  => ['class 8', 'grade 8'],
+            'class_7'  => ['class 7', 'grade 7'],
+            'class_6'  => ['class 6', 'grade 6'],
+            'class_5'  => ['class 5', 'grade 5'],
+            'class_4'  => ['class 4', 'grade 4'],
+            'class_3'  => ['class 3', 'grade 3'],
+            'class_2'  => ['class 2', 'grade 2'],
+            'class_1'  => ['class 1', 'grade 1'],
+        ];
+        foreach ($classAliases as $value => $aliases) {
+            foreach ($aliases as $alias) {
+                if (str_contains($remaining, $alias)) {
+                    $filters['class_level'] = $value;
+                    $remaining = str_replace($alias, ' ', $remaining);
+                    break 2;
+                }
+            }
+        }
+
+        $remaining = trim(preg_replace('/\s+/', ' ', $remaining));
+
+        if ($remaining !== '') {
+            // 3. Subject — restricted to the per-class taxonomy the filter UI
+            //    understands (the keys above), so legacy range rows like
+            //    "9-12" or "University" are never adopted as a class_level.
+            $subjectQuery = Subject::query()
+                ->whereIn('class_level', array_keys($classAliases));
+            if (!empty($filters['class_level'])) {
+                $subjectQuery->where('class_level', $filters['class_level']);
+            }
+            $subject = (clone $subjectQuery)->whereRaw('LOWER(name) = ?', [$remaining])->first()
+                ?? $subjectQuery
+                    ->where(fn($q) => $q->where('name', 'like', "%{$remaining}%")
+                        ->orWhere('name_bn', 'like', "%{$remaining}%"))
+                    ->orderByRaw('LENGTH(name)')
+                    ->first();
+
+            if ($subject) {
+                $filters['subject_ids'] = (string) $subject->id;
+                if (empty($filters['class_level'])) {
+                    $filters['class_level'] = $subject->class_level;
+                }
+            }
+
+            // 4. Area (also fixes the parent district) then district fallback.
+            $area = Area::where('name', 'like', "%{$remaining}%")
+                ->orderByRaw('LENGTH(name)')
+                ->first();
+            if ($area) {
+                $filters['area_id']     = $area->id;
+                $filters['district_id'] = $area->district_id;
+            } elseif (empty($filters['district_id'])) {
+                $district = District::where('name', 'like', "%{$remaining}%")
+                    ->orderByRaw('LENGTH(name)')
+                    ->first();
+                if ($district) {
+                    $filters['district_id'] = $district->id;
+                }
+            }
+        }
+
+        return response()->json(['success' => true, 'data' => $filters]);
     }
 
     public function subjects(Request $request): JsonResponse

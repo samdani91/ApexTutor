@@ -43,11 +43,11 @@
             <div class="mt-5 flex flex-wrap gap-2">
               <button
                 v-for="chip in quickChips"
-                :key="chip"
+                :key="chip.label"
                 @click="quickSearch(chip)"
                 class="rounded-pill border border-paper-200 bg-white px-3 py-1.5 font-display text-xs font-semibold text-navy-700 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-gold-300 hover:text-navy-900"
               >
-                {{ chip }}
+                {{ chip.label }}
               </button>
             </div>
           </div>
@@ -55,8 +55,14 @@
           <div class="reveal reveal-delay">
             <div class="relative mx-auto max-w-md">
               <div class="absolute -left-4 top-8 hidden rounded-md border border-paper-200 bg-white px-4 py-3 shadow-md sm:block float-card">
-                <p class="font-display text-2xl font-bold text-navy-900">{{ stats[0].display }}{{ stats[0].suffix }}</p>
-                <p class="font-body text-xs text-paper-600">verified tutors</p>
+                <Transition name="hero-stat" mode="out-in">
+                  <div :key="heroMetric.label" class="min-w-[8.5rem]">
+                    <p class="font-display text-2xl font-bold text-navy-900">
+                      {{ heroMetric.value }}<span v-if="heroMetric.suffix">{{ heroMetric.suffix }}</span>
+                    </p>
+                    <p class="font-body text-xs text-paper-600">{{ heroMetric.label }}</p>
+                  </div>
+                </Transition>
               </div>
 
               <div class="rounded-lg border border-paper-200 bg-white p-4 shadow-xl">
@@ -115,8 +121,12 @@
               </div>
 
               <div class="absolute -bottom-5 right-3 rounded-md border border-paper-200 bg-white px-4 py-3 shadow-md float-card-delayed">
-                <p class="font-display text-sm font-bold text-navy-900">Fast shortlist</p>
-                <p class="mt-1 font-body text-xs text-paper-600">Compare profiles side by side</p>
+                <Transition name="hero-stat" mode="out-in">
+                  <div :key="heroFeature.title" class="min-w-[11.25rem] max-w-[13rem]">
+                    <p class="font-display text-sm font-bold text-navy-900">{{ heroFeature.title }}</p>
+                    <p class="mt-1 font-body text-xs leading-snug text-paper-600">{{ heroFeature.description }}</p>
+                  </div>
+                </Transition>
               </div>
             </div>
           </div>
@@ -124,12 +134,18 @@
       </section>
 
       <section ref="statsRef" class="bg-white/82 px-4 py-8 backdrop-blur-[1px] sm:px-6 md:py-10">
-        <div class="mx-auto grid max-w-6xl gap-3 sm:grid-cols-3">
+        <div class="mx-auto max-w-6xl">
+          <div class="mb-5 text-left">
+            <p class="font-display text-xs font-bold uppercase text-gold-600">Platform Activity</p>
+            <h2 class="mt-2 font-display text-2xl font-bold text-navy-900 md:text-3xl">Trusted by tutors and guardians</h2>
+          </div>
+          <div class="grid gap-3 sm:grid-cols-3">
           <div v-for="stat in stats" :key="stat.label" class="reveal rounded-md border border-paper-200 bg-paper-50 px-5 py-5 shadow-xs">
             <p class="font-display text-3xl font-bold text-navy-900 md:text-4xl">
               {{ stat.display }}<span v-if="stat.suffix">{{ stat.suffix }}</span>
             </p>
             <p class="mt-1 font-body text-sm text-paper-600">{{ stat.label }}</p>
+          </div>
           </div>
         </div>
       </section>
@@ -198,13 +214,21 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import { useLandingStats } from '@/composables/useLandingStats.js'
 
 const router = useRouter()
 const query = ref('')
 const statsRef = ref(null)
 const countersStarted = ref(false)
 
-const quickChips = ['Class 9 Math', 'HSC Physics', 'English Medium', 'O Level', 'A Level']
+const quickChips = [
+  { label: 'Class 9',         query: { class_level: 'class_9'      } },
+  { label: 'Class 10',        query: { class_level: 'class_10'     } },
+  { label: 'HSC',             query: { class_level: 'hsc'          } },
+  { label: 'English Medium',  query: { medium:      'english_medium'} },
+  { label: 'O Level',         query: { class_level: 'o_level'      } },
+  { label: 'A Level',         query: { class_level: 'a_level'      } },
+]
 
 const heroChecks = [
   'Verified education and document details',
@@ -225,10 +249,55 @@ const counterValues = reactive({
   students: 0,
 })
 
+const { statTargets, loadLandingStats: fetchLandingStats } = useLandingStats()
+const activeHeroMetric = ref(0)
+const activeHeroFeature = ref(0)
+
+const heroMetrics = computed(() => [
+  {
+    label: 'verified tutors',
+    value: Math.round(statTargets.tutors).toLocaleString(),
+    suffix: '+',
+  },
+  {
+    label: 'districts covered',
+    value: Math.round(statTargets.districts).toLocaleString(),
+    suffix: '',
+  },
+  {
+    label: 'confirmed tuitions',
+    value: Math.round(statTargets.students).toLocaleString(),
+    suffix: '+',
+  },
+])
+
+const heroMetric = computed(() => heroMetrics.value[activeHeroMetric.value] ?? heroMetrics.value[0])
+
+const heroFeatures = [
+  {
+    title: 'Fast Shortlist',
+    description: 'Compare profiles side by side',
+  },
+  {
+    title: 'Smart Filters',
+    description: 'Narrow by class, subject and area',
+  },
+  {
+    title: 'Profile Review',
+    description: 'Admin review before connection',
+  },
+  {
+    title: 'Clear Tutor Info',
+    description: 'See salary, subjects and documents',
+  },
+]
+
+const heroFeature = computed(() => heroFeatures[activeHeroFeature.value] ?? heroFeatures[0])
+
 const stats = computed(() => [
   { label: 'Verified tutor profiles', display: Math.round(counterValues.tutors).toLocaleString(), suffix: '+' },
   { label: 'Districts covered', display: Math.round(counterValues.districts).toLocaleString(), suffix: '' },
-  { label: 'Student matches supported', display: Math.round(counterValues.students).toLocaleString(), suffix: '+' },
+  { label: 'Confirmed tuitions', display: Math.round(counterValues.students).toLocaleString(), suffix: '+' },
 ])
 
 const steps = [
@@ -245,8 +314,18 @@ const tutorBenefits = [
 ]
 
 let observer
+let heroMetricTimer
+let heroFeatureTimer
 
 onMounted(() => {
+  loadLandingStats()
+  heroMetricTimer = window.setInterval(() => {
+    activeHeroMetric.value = (activeHeroMetric.value + 1) % heroMetrics.value.length
+  }, 2600)
+  heroFeatureTimer = window.setInterval(() => {
+    activeHeroFeature.value = (activeHeroFeature.value + 1) % heroFeatures.length
+  }, 3400)
+
   observer = new IntersectionObserver((entries) => {
     if (entries.some(entry => entry.isIntersecting)) startCounters()
   }, { threshold: 0.25 })
@@ -256,22 +335,25 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   observer?.disconnect()
+  if (heroMetricTimer) window.clearInterval(heroMetricTimer)
+  if (heroFeatureTimer) window.clearInterval(heroFeatureTimer)
 })
 
 function startCounters() {
   if (countersStarted.value) return
   countersStarted.value = true
-  animateCounter('tutors', 500, 900)
-  animateCounter('districts', 64, 760)
-  animateCounter('students', 1200, 1050)
+  animateCounter('tutors', statTargets.tutors, 900)
+  animateCounter('districts', statTargets.districts, 760)
+  animateCounter('students', statTargets.students, 1050)
 }
 
 function animateCounter(key, target, duration) {
   const started = performance.now()
+  const from = Number(counterValues[key] || 0)
   const tick = (now) => {
     const progress = Math.min((now - started) / duration, 1)
     const eased = 1 - Math.pow(1 - progress, 3)
-    counterValues[key] = target * eased
+    counterValues[key] = from + ((target - from) * eased)
     if (progress < 1) requestAnimationFrame(tick)
     else counterValues[key] = target
   }
@@ -279,11 +361,21 @@ function animateCounter(key, target, duration) {
 }
 
 function goSearch() {
-  router.push({ name: 'search', query: query.value ? { q: query.value } : {} })
+  const q = query.value.trim()
+  router.push({ name: 'search', query: q ? { q } : {} })
 }
 
 function quickSearch(chip) {
-  router.push({ name: 'search', query: { q: chip } })
+  router.push({ name: 'search', query: chip.query })
+}
+
+async function loadLandingStats() {
+  const loaded = await fetchLandingStats()
+  if (loaded && countersStarted.value) {
+    animateCounter('tutors', statTargets.tutors, 500)
+    animateCounter('districts', statTargets.districts, 500)
+    animateCounter('students', statTargets.students, 500)
+  }
 }
 </script>
 
@@ -311,6 +403,21 @@ function quickSearch(chip) {
   animation: float-soft 4.5s ease-in-out 0.8s infinite;
 }
 
+.hero-stat-enter-active,
+.hero-stat-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.hero-stat-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.hero-stat-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
 @keyframes reveal-up {
   from {
     opacity: 0;
@@ -334,8 +441,11 @@ function quickSearch(chip) {
 @media (prefers-reduced-motion: reduce) {
   .reveal,
   .float-card,
-  .float-card-delayed {
+  .float-card-delayed,
+  .hero-stat-enter-active,
+  .hero-stat-leave-active {
     animation: none;
+    transition: none;
   }
 }
 </style>

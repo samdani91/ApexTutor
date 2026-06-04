@@ -204,23 +204,27 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import SearchFilters from '@/components/search/SearchFilters.vue'
 import TutorCard from '@/components/tutor/TutorCard.vue'
-import { useSearchStore } from '@/stores/search.js'
-import { MEDIUMS, CLASS_LEVELS } from '@/utils/constants.js'
+import { useTutorSearch } from '@/composables/useTutorSearch.js'
+import { searchApi } from '@/api/search.js'
 
-const searchStore = useSearchStore()
 const route = useRoute()
+const {
+  searchStore, lastFilters, currentSort,
+  pagination, totalTutors, shownFrom, shownTo, pageButtons,
+  handleSearch, removeChip, clearAll, onSortChange, goPage, buildActiveChips, init,
+} = useTutorSearch()
 
-const filtersRef = ref(null)
+const filtersRef       = ref(null)
 const mobileFiltersRef = ref(null)
-const drawerOpen = ref(false)
-const currentSort = ref('relevance')
-const lastFilters = ref({})
-const PER_PAGE = 9
+const drawerOpen       = ref(false)
+
+const activeChips = computed(() => buildActiveChips(filtersRef.value, mobileFiltersRef.value))
+
 const sortOptions = [
   { value: 'relevance', label: 'Best match' },
   { value: 'rating', label: 'Highest rated' },
@@ -249,118 +253,37 @@ onUnmounted(() => { document.body.style.overflow = '' })
 
 // ── Active filter count (from exposed ref) ──────────────────
 const activeFilterCount = computed(() => {
-  const ref = filtersRef.value || mobileFiltersRef.value
-  return ref?.activeCount ?? 0
+  const f = filtersRef.value || mobileFiltersRef.value
+  return f?.activeCount ?? 0
 })
-
-const pagination = computed(() => searchStore.pagination || { current_page: 1, last_page: 1 })
-const totalTutors = computed(() => Number(pagination.value.total ?? searchStore.results.length ?? 0))
-const shownFrom = computed(() => {
-  if (!totalTutors.value) return 0
-  const perPage = Number(pagination.value.per_page || PER_PAGE)
-  const page = Number(pagination.value.current_page || 1)
-  return ((page - 1) * perPage) + 1
-})
-const shownTo = computed(() => Math.min(
-  shownFrom.value + searchStore.results.length - 1,
-  totalTutors.value
-))
-const pageButtons = computed(() => {
-  const total = Number(pagination.value.last_page || 1)
-  const current = Number(pagination.value.current_page || 1)
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
-  const pages = []
-  const addRange = (from, to) => { for (let i = from; i <= to; i++) pages.push(i) }
-  pages.push(1)
-  if (current > 3) pages.push('...')
-  addRange(Math.max(2, current - 1), Math.min(total - 1, current + 1))
-  if (current < total - 2) pages.push('...')
-  pages.push(total)
-  return pages
-})
-
-// ── Active chips for mobile summary row ────────────────────
-const activeChips = computed(() => {
-  const f = lastFilters.value
-  const chips = []
-  if (f.medium) chips.push({ key: 'medium', label: MEDIUMS.find(m => m.value === f.medium)?.label || f.medium })
-  if (f.class_level) chips.push({ key: 'class_level', label: CLASS_LEVELS.find(c => c.value === f.class_level)?.label || f.class_level })
-  if (f.subject_ids?.length) {
-    const selectedSubjectIds = normalizeSubjectIds(f.subject_ids)
-    const subjectNames = (filtersRef.value?.allSubjects || mobileFiltersRef.value?.allSubjects || [])
-      .filter(subject => selectedSubjectIds.includes(Number(subject.id)))
-      .map(subject => subject.name)
-    chips.push({
-      key: 'subject_ids',
-      label: subjectNames.length ? `Subjects: ${subjectNames.slice(0, 2).join(', ')}${subjectNames.length > 2 ? ` +${subjectNames.length - 2}` : ''}` : `${selectedSubjectIds.length} subjects`,
-    })
-  }
-  if (f.district_id) chips.push({ key: 'district_id', label: searchStore.districts.find(d => d.id === f.district_id)?.name || 'District' })
-  if (f.area_id) {
-    const areaName = (filtersRef.value?.allAreas || mobileFiltersRef.value?.allAreas || []).find(a => a.id === f.area_id)?.name || 'Area'
-    chips.push({ key: 'area_id', label: areaName })
-  }
-  if (f.tutor_gender) chips.push({ key: 'tutor_gender', label: f.tutor_gender === 'male' ? 'Male tutor' : 'Female tutor' })
-  if (f.days_per_week) chips.push({ key: 'days_per_week', label: `${f.days_per_week}d/wk` })
-  if (f.salary_max) chips.push({ key: 'salary_max', label: `≤ ৳${Number(f.salary_max).toLocaleString()}` })
-  if (f.verified_only) chips.push({ key: 'verified_only', label: 'Verified only' })
-  return chips
-})
-
-function removeChip(key) {
-  const updated = { ...lastFilters.value }
-  if (key === 'verified_only') updated[key] = false
-  else if (key === 'days_per_week' || key === 'salary_max' || key === 'area_id') updated[key] = null
-  else if (key === 'subject_ids') updated[key] = []
-  else {
-    updated[key] = ''
-    if (key === 'class_level') updated.subject_ids = []
-  }
-  handleSearch(updated)
-}
-
-function clearAll() {
-  lastFilters.value = {}
-  searchStore.search({ per_page: PER_PAGE })
-}
-
-// ── Search handlers ─────────────────────────────────────────
-function handleSearch(filters, page = 1) {
-  lastFilters.value = filters
-  searchStore.search({ ...filters, sort: currentSort.value, per_page: PER_PAGE, page })
-}
 
 function handleMobileSearch(filters) {
-  // Update results in background — drawer stays open so user can keep selecting filters
   handleSearch(filters)
 }
 
-// Triggered from the "Show Results" button inside the drawer — flush any pending debounce and close
 function submitMobileFilters() {
   mobileFiltersRef.value?.applyFilters?.()
   closeDrawer()
 }
 
-function onSortChange() {
-  searchStore.search({ ...lastFilters.value, sort: currentSort.value, per_page: PER_PAGE, page: 1 })
-}
+onMounted(async () => {
+  const filters = {}
+  // Tag links pass exact filter params directly.
+  if (route.query.class_level) filters.class_level = route.query.class_level
+  if (route.query.medium)      filters.medium      = route.query.medium
 
-function goPage(page) {
-  if (page < 1 || page > pagination.value.last_page || page === pagination.value.current_page) return
-  handleSearch(lastFilters.value, page)
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
+  // Free-text search bar passes ?q=… — resolve it into real filters
+  // (subject, area, district, class, medium) so the panel auto-selects them.
+  if (route.query.q) {
+    try {
+      const { data } = await searchApi.resolve(route.query.q)
+      Object.assign(filters, data.data || {})
+    } catch {
+      // resolution is best-effort; fall through with whatever we have
+    }
+  }
 
-function normalizeSubjectIds(value) {
-  if (Array.isArray(value)) return value.map(Number).filter(Boolean)
-  if (typeof value === 'string') return value.split(',').map(Number).filter(Boolean)
-  return []
-}
-
-onMounted(() => {
-  searchStore.loadDistricts()
-  const initial = route.query.q ? { q: route.query.q } : {}
-  handleSearch(initial)
+  init(filters)
 })
 </script>
 
