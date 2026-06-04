@@ -102,6 +102,124 @@
       </section>
       </div>
 
+      <!-- ── Documents ───────────────────────────────────────────── -->
+      <section class="card mt-4">
+        <h2 class="section-title">Documents</h2>
+
+        <div v-if="!documents.length" class="text-sm text-paper-400 font-body italic mb-4">No documents uploaded.</div>
+
+        <div v-else class="grid gap-3 sm:grid-cols-2 mb-4">
+          <div v-for="doc in documents" :key="doc.id"
+            class="flex items-start justify-between gap-3 rounded-sm border border-paper-200 bg-paper-50 px-3 py-2.5">
+            <div class="min-w-0">
+              <p class="text-xs font-semibold font-display text-navy-700 uppercase tracking-wide">
+                {{ docLabel(doc.type) }}
+              </p>
+              <p class="text-xs text-paper-500 font-body truncate mt-0.5">{{ doc.file_name }}</p>
+              <a v-if="doc.file_url" :href="doc.file_url" target="_blank"
+                class="text-xs font-semibold font-display text-navy-600 hover:underline mt-0.5 inline-block">
+                View document
+              </a>
+            </div>
+            <button @click="confirmDeleteDoc(doc)"
+              :disabled="docDeleting[doc.id]"
+              class="shrink-0 text-xs font-semibold font-display px-2.5 py-1.5 rounded-sm bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50">
+              {{ docDeleting[doc.id] ? '…' : 'Remove' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Upload new document -->
+        <div class="border-t border-paper-100 pt-4">
+          <p class="text-xs font-semibold font-display text-paper-500 uppercase tracking-wide mb-3">Upload / replace document</p>
+          <div class="grid sm:grid-cols-3 gap-3 items-end">
+            <div>
+              <label class="block text-xs font-semibold font-display text-paper-500 mb-1">Document type</label>
+              <select v-model="docUpload.type" class="input text-sm w-full">
+                <option value="">Select type…</option>
+                <option value="nid">National ID (NID)</option>
+                <option value="ssc_marksheet">SSC / O Level Marksheet</option>
+                <option value="hsc_marksheet">HSC / A Level Marksheet</option>
+                <option value="emergency_contact_nid">Emergency Contact NID</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold font-display text-paper-500 mb-1">File (PDF / JPG / PNG, max 5 MB)</label>
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png" @change="onDocFile" class="input text-sm w-full" />
+            </div>
+            <button @click="uploadDoc"
+              :disabled="!docUpload.type || !docUpload.file || docUploading"
+              class="inline-flex min-h-[42px] items-center justify-center rounded-sm bg-navy-700 px-4 text-sm font-semibold font-display text-white transition-colors hover:bg-navy-900 disabled:opacity-50">
+              {{ docUploading ? 'Uploading…' : 'Upload' }}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Teaching videos ──────────────────────────────────────── -->
+      <section class="card mt-4">
+        <h2 class="section-title">Teaching videos</h2>
+
+        <div v-if="!videos.length" class="text-sm text-paper-400 font-body italic">No teaching videos uploaded.</div>
+
+        <div v-else class="space-y-3">
+          <div v-for="vid in videos" :key="vid.id"
+            class="rounded-sm border border-paper-200 bg-paper-50 p-3">
+            <div class="flex items-start gap-3">
+              <!-- Thumbnail / play icon -->
+              <div class="w-24 h-16 shrink-0 rounded bg-navy-100 flex items-center justify-center overflow-hidden">
+                <img v-if="vid.thumbnail_url" :src="vid.thumbnail_url" class="w-full h-full object-cover" />
+                <svg v-else class="w-7 h-7 text-navy-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"/>
+                </svg>
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <template v-if="videoEditing[vid.id]">
+                  <div class="grid sm:grid-cols-2 gap-2 mb-2">
+                    <input v-model="videoEditing[vid.id].title"       placeholder="Title"       class="input text-xs w-full" />
+                    <input v-model="videoEditing[vid.id].subject"     placeholder="Subject"     class="input text-xs w-full" />
+                    <input v-model="videoEditing[vid.id].class_level" placeholder="Class level" class="input text-xs w-full" />
+                    <input v-model="videoEditing[vid.id].medium"      placeholder="Medium"      class="input text-xs w-full" />
+                  </div>
+                  <div class="flex gap-2">
+                    <button @click="saveVideo(vid)" :disabled="videoSaving[vid.id]"
+                      class="text-xs font-semibold font-display bg-navy-700 text-white px-3 py-1.5 rounded-sm hover:bg-navy-900 disabled:opacity-50 transition-colors">
+                      {{ videoSaving[vid.id] ? 'Saving…' : 'Save' }}
+                    </button>
+                    <button @click="cancelEditVideo(vid)"
+                      class="text-xs font-semibold font-display border border-paper-300 text-paper-600 px-3 py-1.5 rounded-sm hover:bg-paper-100 transition-colors">
+                      Cancel
+                    </button>
+                  </div>
+                </template>
+                <template v-else>
+                  <p class="text-sm font-semibold font-display text-navy-900 truncate">{{ vid.title }}</p>
+                  <p class="text-xs text-paper-500 font-body mt-0.5">
+                    {{ vid.subject }} · {{ vid.class_level }} · {{ vid.medium }}
+                  </p>
+                  <a v-if="vid.file_url" :href="vid.file_url" target="_blank"
+                    class="text-xs font-semibold font-display text-navy-600 hover:underline mt-1 inline-block">
+                    Play video
+                  </a>
+                </template>
+              </div>
+
+              <div class="flex flex-col gap-1.5 shrink-0">
+                <button v-if="!videoEditing[vid.id]" @click="startEditVideo(vid)"
+                  class="text-xs font-semibold font-display px-2.5 py-1.5 rounded-sm border border-navy-200 text-navy-700 hover:bg-navy-50 transition-colors">
+                  Edit
+                </button>
+                <button @click="confirmDeleteVideo(vid)" :disabled="videoDeleting[vid.id]"
+                  class="text-xs font-semibold font-display px-2.5 py-1.5 rounded-sm bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50">
+                  {{ videoDeleting[vid.id] ? '…' : 'Remove' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Save button (bottom) -->
       <div class="flex flex-col-reverse gap-3 mt-4 sm:flex-row sm:items-center sm:justify-end">
         <button @click="saveConfirmOpen = true" :disabled="saving"
@@ -132,6 +250,26 @@
         @confirm="confirmCancel"
         @cancel="cancelConfirmOpen = false"
       />
+
+      <AdminConfirmDialog
+        :show="!!deleteDocTarget"
+        title="Delete document?"
+        :message="`Permanently delete the ${deleteDocTarget ? docLabel(deleteDocTarget.type) : ''} document? This cannot be undone.`"
+        confirm-label="Delete"
+        danger
+        @confirm="doDeleteDoc"
+        @cancel="deleteDocTarget = null"
+      />
+
+      <AdminConfirmDialog
+        :show="!!deleteVideoTarget"
+        title="Delete video?"
+        :message="`Permanently delete '${deleteVideoTarget?.title}'? This cannot be undone.`"
+        confirm-label="Delete"
+        danger
+        @confirm="doDeleteVideo"
+        @cancel="deleteVideoTarget = null"
+      />
     </template>
   </div>
 </template>
@@ -160,6 +298,30 @@ const loading = ref(true)
 const saving  = ref(false)
 const saveConfirmOpen = ref(false)
 const cancelConfirmOpen = ref(false)
+
+// ── Documents ─────────────────────────────────────────────
+const documents       = ref([])
+const docUpload       = reactive({ type: '', file: null })
+const docUploading    = ref(false)
+const docDeleting     = reactive({})
+const deleteDocTarget = ref(null)
+
+// ── Teaching videos ───────────────────────────────────────
+const videos            = ref([])
+const videoEditing      = reactive({})   // { [id]: { title, subject, class_level, medium } }
+const videoSaving       = reactive({})
+const videoDeleting     = reactive({})
+const deleteVideoTarget = ref(null)
+
+const DOC_LABELS = {
+  nid: 'National ID (NID)',
+  ssc_marksheet: 'SSC / O Level Marksheet',
+  hsc_marksheet: 'HSC / A Level Marksheet',
+  emergency_contact_nid: 'Emergency Contact NID',
+}
+function docLabel(type) {
+  return DOC_LABELS[type] ?? String(type || 'Document').replace(/_/g, ' ')
+}
 
 const form = reactive({
   user:              { name: '', email: '', phone: '', address: '' },
@@ -191,6 +353,106 @@ function populate(t) {
 
   const pref = t.tuition_preference ?? {}
   Object.assign(form.preference, { expected_salary_min: pref.expected_salary_min ?? '', expected_salary_max: pref.expected_salary_max ?? '', total_experience_years: pref.total_experience_years ?? '', days_per_week: pref.days_per_week ?? '', hours_per_day: pref.hours_per_day ?? '', experience_details: pref.experience_details ?? '', tutoring_method_description: pref.tutoring_method_description ?? '' })
+
+  documents.value = t.documents ?? []
+  videos.value    = t.teaching_videos ?? t.teachingVideos ?? []
+}
+
+// ── Document handlers ─────────────────────────────────────
+
+function onDocFile(e) {
+  docUpload.file = e.target.files[0] ?? null
+}
+
+async function uploadDoc() {
+  if (!docUpload.type || !docUpload.file) return
+  docUploading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('type', docUpload.type)
+    fd.append('file', docUpload.file)
+    const { data } = await adminApi.uploadTutorDocument(route.params.id, fd)
+    // Replace any existing doc of the same type, then add the new one
+    documents.value = documents.value.filter(d => d.type !== data.data.type)
+    documents.value.push(data.data)
+    docUpload.type = ''
+    docUpload.file = null
+    toast.success('Document uploaded.')
+  } catch (e) {
+    toast.error(e.response?.data?.message ?? 'Could not upload document.')
+  } finally {
+    docUploading.value = false
+  }
+}
+
+function confirmDeleteDoc(doc) {
+  deleteDocTarget.value = doc
+}
+
+async function doDeleteDoc() {
+  const doc = deleteDocTarget.value
+  deleteDocTarget.value = null
+  if (!doc) return
+  docDeleting[doc.id] = true
+  try {
+    await adminApi.deleteTutorDocument(route.params.id, doc.id)
+    documents.value = documents.value.filter(d => d.id !== doc.id)
+    toast.success('Document deleted.')
+  } catch (e) {
+    toast.error(e.response?.data?.message ?? 'Could not delete document.')
+  } finally {
+    docDeleting[doc.id] = false
+  }
+}
+
+// ── Video handlers ────────────────────────────────────────
+
+function startEditVideo(vid) {
+  videoEditing[vid.id] = {
+    title:       vid.title ?? '',
+    subject:     vid.subject ?? '',
+    class_level: vid.class_level ?? '',
+    medium:      vid.medium ?? '',
+  }
+}
+
+function cancelEditVideo(vid) {
+  delete videoEditing[vid.id]
+}
+
+async function saveVideo(vid) {
+  videoSaving[vid.id] = true
+  try {
+    const { data } = await adminApi.updateTutorVideo(route.params.id, vid.id, { ...videoEditing[vid.id] })
+    const idx = videos.value.findIndex(v => v.id === vid.id)
+    if (idx !== -1) videos.value[idx] = { ...videos.value[idx], ...data.data }
+    delete videoEditing[vid.id]
+    toast.success('Video updated.')
+  } catch (e) {
+    toast.error(e.response?.data?.message ?? 'Could not update video.')
+  } finally {
+    videoSaving[vid.id] = false
+  }
+}
+
+function confirmDeleteVideo(vid) {
+  deleteVideoTarget.value = vid
+}
+
+async function doDeleteVideo() {
+  const vid = deleteVideoTarget.value
+  deleteVideoTarget.value = null
+  if (!vid) return
+  videoDeleting[vid.id] = true
+  try {
+    await adminApi.deleteTutorVideo(route.params.id, vid.id)
+    videos.value = videos.value.filter(v => v.id !== vid.id)
+    toast.success('Video deleted.')
+  } catch (e) {
+    toast.error(e.response?.data?.message ?? 'Could not delete video.')
+  } finally {
+    videoDeleting[vid.id] = false
+  }
 }
 
 async function save() {

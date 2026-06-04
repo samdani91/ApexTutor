@@ -49,7 +49,7 @@
           <!-- Clear filters — inline on desktop (ml-auto pushes to far right), hidden here on mobile -->
           <button v-if="statusFilter || sortOrder !== 'id_desc'"
             @click="clearFilters"
-            class="hidden sm:inline-flex sm:ml-auto text-xs font-semibold font-display text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 px-4 py-1.5 rounded-sm transition-colors self-end">
+            class="hidden sm:inline-flex sm:ml-auto text-xs font-semibold font-display text-white bg-red-600 hover:bg-red-700 px-4 py-1.5 rounded-sm transition-colors self-end">
             Clear Filters
           </button>
         </div>
@@ -57,7 +57,7 @@
         <!-- Clear filters — mobile only, full width below the grid -->
         <button v-if="statusFilter || sortOrder !== 'id_desc'"
           @click="clearFilters"
-          class="sm:hidden mt-3 w-full text-xs font-semibold font-display text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 px-4 py-1.5 rounded-sm transition-colors">
+          class="sm:hidden mt-3 w-full text-xs font-semibold font-display text-white bg-red-600 hover:bg-red-700 px-4 py-1.5 rounded-sm transition-colors">
           Clear Filters
         </button>
       </div>

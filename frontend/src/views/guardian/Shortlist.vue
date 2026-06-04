@@ -67,7 +67,7 @@
           <div class="flex items-center gap-2 sm:justify-end">
             <button @click="removeTarget = item.tutor_profile_id"
               :disabled="removing[item.tutor_profile_id]"
-              class="inline-flex min-h-[40px] items-center justify-center rounded-sm border border-paper-200 px-3 text-xs font-semibold font-display text-paper-600 hover:border-red-200 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-50">
+              class="inline-flex min-h-[40px] items-center justify-center rounded-sm px-3 text-xs font-semibold font-display bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50">
               {{ removing[item.tutor_profile_id] ? 'Removing…' : 'Remove' }}
             </button>
 
