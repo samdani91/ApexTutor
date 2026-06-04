@@ -10,44 +10,26 @@
     <div v-if="loading" class="text-paper-500 font-body py-12 text-center">Loading…</div>
 
     <template v-else-if="admin">
-      <div class="card max-w-lg">
-        <!-- Header -->
-        <div class="flex items-start gap-5 mb-6 pb-5 border-b border-paper-100">
-          <div class="w-16 h-16 rounded-xl bg-navy-700 flex items-center justify-center shrink-0 overflow-hidden ring-2 ring-white shadow">
+      <div class="card">
+        <div class="flex flex-col gap-5 sm:flex-row sm:items-start">
+          <div class="w-16 h-16 rounded-sm bg-navy-700 flex items-center justify-center shrink-0 overflow-hidden ring-2 ring-white shadow">
             <img v-if="admin.avatar_url" :src="admin.avatar_url" class="w-full h-full object-cover" alt="" />
             <span v-else class="font-display font-bold text-xl text-white">{{ initials }}</span>
           </div>
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center gap-2 mb-1">
-              <h1 class="font-display font-bold text-xl text-navy-900">{{ admin.name }}</h1>
-              <span class="text-xs font-semibold px-2 py-0.5 rounded-pill capitalize"
-                :class="admin.role === 'super_admin' ? 'bg-gold-50 text-gold-700 border border-gold-200' : 'bg-navy-50 text-navy-700 border border-navy-200'">
-                {{ admin.role === 'super_admin' ? 'Super Admin' : 'Admin' }}
+              <h1 class="font-display font-bold text-2xl text-navy-900">{{ admin.name }}</h1>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded-pill bg-navy-50 text-navy-700 border border-navy-200">Admin</span>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded-pill"
+                :class="admin.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">
+                {{ admin.is_active ? 'Active' : 'Inactive' }}
               </span>
             </div>
-            <p class="text-sm text-paper-500 font-body">{{ admin.email }}</p>
-            <span class="inline-block mt-1.5 text-xs font-semibold px-2 py-0.5 rounded-pill"
-              :class="admin.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">
-              {{ admin.is_active ? 'Active' : 'Inactive' }}
-            </span>
+            <p class="text-sm text-paper-500 font-body break-words">{{ admin.email }}</p>
+            <p class="text-xs font-body text-paper-400 mt-0.5">{{ admin.phone || 'No phone' }}</p>
+            <p class="mt-2 text-xs font-body text-paper-400">Joined {{ formatDate(admin.created_at) }}</p>
           </div>
         </div>
-
-        <!-- Details -->
-        <dl class="space-y-3 text-sm">
-          <div class="flex gap-3">
-            <dt class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-28 shrink-0 pt-0.5">Mobile</dt>
-            <dd class="text-navy-800 font-body">{{ admin.phone || '—' }}</dd>
-          </div>
-          <div class="flex gap-3">
-            <dt class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-28 shrink-0 pt-0.5">Address</dt>
-            <dd class="text-navy-800 font-body leading-relaxed">{{ admin.address || '—' }}</dd>
-          </div>
-          <div class="flex gap-3">
-            <dt class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide w-28 shrink-0 pt-0.5">Joined</dt>
-            <dd class="text-navy-800 font-body">{{ formatDate(admin.created_at) }}</dd>
-          </div>
-        </dl>
       </div>
     </template>
 
