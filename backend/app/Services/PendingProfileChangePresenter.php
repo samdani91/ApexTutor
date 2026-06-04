@@ -112,6 +112,47 @@ class PendingProfileChangePresenter
         return $changes;
     }
 
+    // ── Rejection summary ─────────────────────────────────────────────────────
+
+    /**
+     * Build a human-readable list of submitted field values for the rejection notification.
+     * Called by AdminPendingChangesController::reject().
+     */
+    public function buildRejectionSummary(array $pending): array
+    {
+        static $labels = [
+            'bio' => 'Bio', 'status' => 'Status',
+            'additional_phone' => 'Additional Phone', 'present_address' => 'Present Address',
+            'permanent_address' => 'Permanent Address', 'national_id' => 'National ID',
+            'fathers_name' => "Father's Name", 'fathers_phone' => "Father's Phone",
+            'mothers_name' => "Mother's Name", 'mothers_phone' => "Mother's Phone",
+            'gender' => 'Gender', 'date_of_birth' => 'Date of Birth',
+            'religion' => 'Religion', 'nationality' => 'Nationality',
+            'facebook_url' => 'Facebook URL', 'linkedin_url' => 'LinkedIn URL',
+            'name' => 'Name', 'relation' => 'Relation', 'phone' => 'Phone', 'address' => 'Address',
+        ];
+
+        $rows = [];
+
+        foreach (['bio', 'status'] as $field) {
+            if (!empty($pending[$field])) {
+                $rows[] = ['field' => $labels[$field], 'value' => (string) $pending[$field]];
+            }
+        }
+        foreach ($pending['personal_info'] ?? [] as $field => $value) {
+            if ($value !== null && $value !== '') {
+                $rows[] = ['field' => $labels[$field] ?? ucwords(str_replace('_', ' ', $field)), 'value' => (string) $value];
+            }
+        }
+        foreach ($pending['emergency_contact'] ?? [] as $field => $value) {
+            if ($value !== null && $value !== '') {
+                $rows[] = ['field' => $labels[$field] ?? ucwords(str_replace('_', ' ', $field)), 'value' => (string) $value];
+            }
+        }
+
+        return $rows;
+    }
+
     // ── Lookup map builder ────────────────────────────────────────────────────
 
     private function buildLookupMaps(Collection $profiles): array
