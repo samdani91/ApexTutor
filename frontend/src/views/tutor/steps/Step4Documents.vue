@@ -93,7 +93,6 @@ import { tutorApi } from '@/api/tutor.js'
 const emit = defineEmits(['saved'])
 
 const DOC_SLOTS = [
-  { type: 'university_id',       label: 'University ID',                      hint: 'Current student ID card from your university' },
   { type: 'nid',                 label: 'National ID (NID)',                  hint: 'Bangladesh National Identity Card' },
   { type: 'ssc_marksheet',       label: 'SSC / O Level Marksheet',           hint: 'Secondary school certificate or O Level result sheet' },
   { type: 'hsc_marksheet',       label: 'HSC / A Level Marksheet',           hint: 'Higher secondary certificate or A Level result sheet' },

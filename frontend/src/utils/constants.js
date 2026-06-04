@@ -6,7 +6,6 @@ export const CLASS_LEVELS = [
   { value: 'class_9', label: 'Class 9' }, { value: 'class_10', label: 'Class 10' },
   { value: 'ssc', label: 'SSC' }, { value: 'hsc', label: 'HSC' },
   { value: 'o_level', label: 'O Level' }, { value: 'a_level', label: 'A Level' },
-  { value: 'university', label: 'University' },
 ]
 
 export const MEDIUMS = [
