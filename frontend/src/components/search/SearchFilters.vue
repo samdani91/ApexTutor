@@ -5,7 +5,7 @@
       <h2 class="font-display font-semibold text-navy-700 text-base">Filters</h2>
       <button v-if="activeCount > 0" @click="clearFilters"
         class="rounded-sm bg-red-600 px-3 py-1.5 text-xs font-semibold font-display text-white shadow-sm transition-colors hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-100">
-        Clear all ({{ activeCount }})
+        Clear All ({{ activeCount }})
       </button>
     </div>
 

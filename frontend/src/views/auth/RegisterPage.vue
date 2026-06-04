@@ -176,7 +176,7 @@
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                 </svg>
-                {{ auth.loading ? 'Creating account…' : 'Create account' }}
+                {{ auth.loading ? 'Creating Account…' : 'Create Account' }}
               </button>
             </form>
 
@@ -184,7 +184,7 @@
               <p class="text-sm text-paper-400 font-body">
                 Already have an account?
                 <RouterLink to="/login" class="text-navy-700 font-semibold hover:text-navy-900 transition-colors">
-                  Log in
+                  Log In
                 </RouterLink>
               </p>
             </div>

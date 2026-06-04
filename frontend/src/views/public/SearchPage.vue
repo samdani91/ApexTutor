@@ -1,12 +1,20 @@
 <template>
   <DefaultLayout>
-    <div class="max-w-7xl mx-auto px-4 py-5 md:py-8">
+    <main class="public-grid-page relative isolate overflow-hidden bg-paper-50">
+      <div class="pointer-events-none absolute inset-0 -z-10 public-grid"></div>
+      <div class="max-w-7xl mx-auto px-4 py-6 md:py-10">
 
       <!-- ── Page header row ─────────────────────────────────── -->
-      <div class="flex items-center justify-between gap-3 mb-4 md:mb-6">
-        <h1 class="font-display font-bold text-xl md:text-3xl text-navy-900 leading-tight">
-          Find tutors
-        </h1>
+      <div class="reveal mb-5 flex items-start justify-between gap-3 md:mb-7">
+        <div>
+          <p class="font-display text-xs font-bold uppercase text-gold-600">Tutor search</p>
+          <h1 class="mt-1 font-display font-bold text-2xl md:text-4xl text-navy-900 leading-tight">
+            Find Tutors
+          </h1>
+          <p class="mt-2 hidden max-w-2xl font-body text-sm leading-relaxed text-paper-600 md:block">
+            Filter verified tutor profiles by subject, class, area, salary and teaching preference.
+          </p>
+        </div>
 
         <!-- Mobile: filter + sort inline -->
         <div class="ml-auto grid min-w-0 grid-cols-[minmax(8.75rem,1fr)_auto] items-stretch gap-2 lg:hidden">
@@ -30,7 +38,7 @@
       </div>
 
       <!-- ── Active filter chips (mobile) ───────────────────── -->
-      <div v-if="activeChips.length" class="flex gap-2 flex-wrap mb-4 lg:hidden">
+      <div v-if="activeChips.length" class="reveal flex gap-2 flex-wrap mb-4 lg:hidden">
         <span v-for="chip in activeChips" :key="chip.key"
           class="inline-flex items-center gap-1 bg-navy-50 text-navy-700 text-xs font-semibold font-display px-2.5 py-1 rounded-pill border border-navy-100">
           {{ chip.label }}
@@ -39,22 +47,22 @@
       </div>
 
       <!-- ── Main layout ─────────────────────────────────────── -->
-      <div class="flex gap-7">
+      <div class="flex items-stretch gap-7">
 
         <!-- Desktop sidebar -->
-        <aside class="w-80 shrink-0 hidden lg:block">
-          <div class="bg-white border border-paper-200 rounded-sm shadow-sm p-5 sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto">
+        <aside class="reveal hidden w-80 shrink-0 self-stretch lg:block">
+          <div class="h-full rounded-md border border-paper-200 bg-white p-5 shadow-lg">
             <SearchFilters ref="filtersRef" :model-value="lastFilters" @search="handleSearch" />
           </div>
         </aside>
 
         <!-- Results area -->
-        <section class="flex-1 min-w-0">
+        <section class="min-w-0 flex-1">
 
           <!-- Desktop result meta + sort -->
-          <div class="hidden lg:flex items-center justify-between mb-4 gap-4">
-            <div class="rounded-sm border border-paper-200 bg-white px-3 py-2 shadow-sm">
-              <p class="font-display text-sm font-semibold text-navy-800">
+          <div class="reveal hidden lg:flex items-center justify-between mb-4 gap-4">
+            <div class="rounded-md border border-paper-200 bg-white px-4 py-3 shadow-sm">
+              <p class="font-display text-base font-bold text-navy-900">
                 {{ totalTutors }} tutor{{ totalTutors === 1 ? '' : 's' }} found
               </p>
               <p v-if="totalTutors" class="mt-0.5 font-body text-xs text-paper-500">
@@ -69,15 +77,15 @@
 
           <!-- Loading spinner -->
           <div v-if="searchStore.loading"
-            class="flex flex-col items-center justify-center py-24 gap-3">
+            class="reveal rounded-md border border-paper-200 bg-white/88 flex flex-col items-center justify-center py-24 gap-3 shadow-sm backdrop-blur-sm">
             <div class="w-9 h-9 border-4 border-navy-100 border-t-navy-700 rounded-full animate-spin"></div>
             <p class="text-sm text-paper-500 font-body">Searching tutors…</p>
           </div>
 
           <!-- Empty state -->
           <div v-else-if="!searchStore.results.length"
-            class="flex flex-col items-center justify-center py-20 text-center px-4">
-            <div class="w-16 h-16 bg-navy-50 rounded-2xl flex items-center justify-center mb-5">
+            class="reveal rounded-md border border-paper-200 bg-white/90 flex flex-col items-center justify-center py-20 text-center px-4 shadow-sm backdrop-blur-sm">
+            <div class="w-16 h-16 bg-navy-50 rounded-lg flex items-center justify-center mb-5">
               <svg class="w-8 h-8 text-navy-200" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 15.803a7.5 7.5 0 0 0 10.607 0Z"/>
               </svg>
@@ -86,19 +94,25 @@
             <p class="text-paper-500 text-sm font-body max-w-xs leading-relaxed">
               Try broadening your filters — fewer subjects, a wider district, or a higher budget.
             </p>
-            <button @click="clearAll" class="mt-5 btn-outline text-sm py-2 px-5">Clear filters</button>
+            <button @click="clearAll" class="mt-5 btn-outline text-sm py-2 px-5">Clear Filters</button>
           </div>
 
           <!-- Tutor grid — 1 col mobile, 2 col tablet, 3 col desktop -->
           <div v-else class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
-            <TutorCard v-for="tutor in searchStore.results" :key="tutor.id" :tutor="tutor" />
+            <TutorCard
+              v-for="(tutor, index) in searchStore.results"
+              :key="tutor.id"
+              :tutor="tutor"
+              class="reveal"
+              :style="{ animationDelay: `${Math.min(index, 8) * 45}ms` }"
+            />
           </div>
 
           <!-- Pagination -->
           <div v-if="pagination.last_page > 1 && !searchStore.loading"
-            class="mt-8 md:mt-10 flex items-center justify-center gap-1 flex-wrap">
+            class="reveal mt-8 md:mt-10 flex items-center justify-center gap-1 flex-wrap">
             <button @click="goPage(pagination.current_page - 1)" :disabled="pagination.current_page === 1"
-              class="w-8 h-8 flex items-center justify-center rounded-md border border-paper-300 text-navy-700 hover:bg-navy-50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
+              class="w-9 h-9 flex items-center justify-center rounded-md border border-paper-300 bg-white text-navy-700 shadow-xs hover:bg-navy-50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
               aria-label="Previous page">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/>
@@ -111,16 +125,16 @@
                 …
               </span>
               <button v-else @click="goPage(page)"
-                class="w-8 h-8 flex items-center justify-center rounded-md text-sm font-semibold font-display border transition-colors"
+                class="w-9 h-9 flex items-center justify-center rounded-md text-sm font-semibold font-display border shadow-xs transition-colors"
                 :class="page === pagination.current_page
                   ? 'bg-navy-700 text-white border-navy-700'
-                  : 'border-paper-300 text-navy-700 hover:bg-navy-50'">
+                  : 'border-paper-300 bg-white text-navy-700 hover:bg-navy-50'">
                 {{ page }}
               </button>
             </template>
 
             <button @click="goPage(pagination.current_page + 1)" :disabled="pagination.current_page === pagination.last_page"
-              class="w-8 h-8 flex items-center justify-center rounded-md border border-paper-300 text-navy-700 hover:bg-navy-50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
+              class="w-9 h-9 flex items-center justify-center rounded-md border border-paper-300 bg-white text-navy-700 shadow-xs hover:bg-navy-50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
               aria-label="Next page">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/>
@@ -130,6 +144,7 @@
         </section>
       </div>
     </div>
+    </main>
 
     <!-- ── Mobile filter drawer ─────────────────────────────── -->
     <Teleport to="body">
@@ -179,7 +194,7 @@
           <div class="shrink-0 px-5 pb-6 pt-3 border-t border-paper-200 bg-white">
             <button @click="submitMobileFilters"
               class="btn-primary w-full py-3.5 text-sm">
-              Show results
+              Show Results
             </button>
           </div>
         </div>
@@ -320,7 +335,7 @@ function handleMobileSearch(filters) {
   handleSearch(filters)
 }
 
-// Triggered from the "Show results" button inside the drawer — flush any pending debounce and close
+// Triggered from the "Show Results" button inside the drawer — flush any pending debounce and close
 function submitMobileFilters() {
   mobileFiltersRef.value?.applyFilters?.()
   closeDrawer()
@@ -350,6 +365,28 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.public-grid {
+  background-image:
+    linear-gradient(rgba(15, 46, 92, 0.038) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 46, 92, 0.038) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
+.reveal {
+  animation: reveal-up 0.56s ease both;
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Scrim */
 .fade-enter-active, .fade-leave-active { transition: opacity 0.25s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
@@ -359,4 +396,10 @@ onMounted(() => {
 .slide-up-leave-active { transition: transform 0.22s ease-in; }
 .slide-up-enter-from  { transform: translateY(100%); }
 .slide-up-leave-to    { transform: translateY(100%); }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    animation: none;
+  }
+}
 </style>

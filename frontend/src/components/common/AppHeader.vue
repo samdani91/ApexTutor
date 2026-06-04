@@ -1,41 +1,44 @@
 <template>
-  <header class="bg-white border-b border-paper-200 sticky top-0 z-50 shrink-0">
+  <header class="sticky top-0 z-50 shrink-0 bg-navy-900 text-navy-100 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between gap-4">
 
       <!-- Logo -->
-      <RouterLink to="/" class="flex items-center gap-1.5 shrink-0 group">
-        <span class="font-display font-bold text-xl text-navy-700 group-hover:text-navy-900 transition-colors">
-          Tutor<span class="text-blue-600">Khujo</span>
+      <RouterLink to="/" class="flex items-center gap-2 shrink-0 group">
+        <span class="flex h-9 w-9 items-center justify-center rounded-md bg-gold-400 font-display text-sm font-bold text-navy-900 shadow-sm">
+          TK
+        </span>
+        <span class="font-display font-bold text-xl text-white transition-colors group-hover:text-gold-200">
+          TutorKhujo
         </span>
       </RouterLink>
 
       <!-- Desktop nav -->
       <nav class="hidden md:flex items-center gap-1">
-        <!-- Always: Find tutors -->
+        <!-- Always: Find Tutors -->
         <RouterLink to="/search"
-          class="px-3 py-2 rounded-lg text-sm font-semibold font-display text-navy-600 hover:text-navy-900 hover:bg-navy-50 transition-colors"
-          :class="$route.path === '/search' ? 'text-navy-900 bg-navy-50' : ''">
-          Find tutors
+          class="px-3 py-2 rounded-lg text-sm font-semibold font-display text-navy-200 hover:text-white hover:bg-white/10 transition-colors"
+          :class="$route.path === '/search' ? 'text-white bg-white/10' : ''">
+          Find Tutors
         </RouterLink>
 
         <!-- Not authenticated -->
         <template v-if="!auth.isAuthenticated">
-          <div class="w-px h-5 bg-paper-200 mx-1" />
+          <div class="w-px h-5 bg-white/15 mx-1" />
           <RouterLink to="/login"
-            class="px-3 py-2 rounded-lg text-sm font-semibold font-display text-navy-600 hover:text-navy-900 hover:bg-navy-50 transition-colors">
-            Log in
+            class="px-3 py-2 rounded-lg text-sm font-semibold font-display text-navy-200 hover:text-white hover:bg-white/10 transition-colors">
+            Log In
           </RouterLink>
           <RouterLink to="/register"
-            class="ml-1 inline-flex items-center gap-1.5 bg-navy-700 text-white px-4 py-2 rounded-lg text-sm font-semibold font-display hover:bg-navy-800 transition-colors">
-            Sign up
+            class="ml-1 inline-flex items-center gap-1.5 bg-gold-400 text-navy-900 px-4 py-2 rounded-lg text-sm font-semibold font-display hover:bg-gold-300 transition-colors">
+            Sign Up
           </RouterLink>
         </template>
 
         <!-- Authenticated but NOT in dashboard — show Go to Dashboard + Logout -->
         <template v-else-if="!inDashboard">
-          <div class="w-px h-5 bg-paper-200 mx-1" />
+          <div class="w-px h-5 bg-white/15 mx-1" />
           <RouterLink :to="dashboardPath"
-            class="relative px-3 py-2 rounded-lg text-sm font-semibold font-display text-navy-600 hover:text-navy-900 hover:bg-navy-50 transition-colors inline-flex items-center gap-1.5">
+            class="relative px-3 py-2 rounded-lg text-sm font-semibold font-display text-navy-200 hover:text-white hover:bg-white/10 transition-colors inline-flex items-center gap-1.5">
             My Dashboard
             <span v-if="notifStore.unreadCount > 0"
               class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold font-display bg-red-500 text-white rounded-full leading-none">
@@ -44,7 +47,7 @@
           </RouterLink>
           <button @click="showLogoutDialog = true"
             class="ml-1 px-3 py-2 rounded-lg text-sm font-semibold font-display bg-red-600 text-white hover:bg-red-700 transition-colors">
-            Log out
+            Log Out
           </button>
         </template>
         <!-- In dashboard: sidebar handles navigation — show nothing extra -->
@@ -52,7 +55,7 @@
 
       <!-- Mobile: hamburger ONLY shown outside dashboard context -->
       <button v-if="!inDashboard" @click="mobileOpen = !mobileOpen"
-        class="md:hidden p-2 rounded-lg text-navy-600 hover:bg-navy-50 transition-colors" aria-label="Menu">
+        class="md:hidden p-2 rounded-lg text-navy-100 hover:bg-white/10 transition-colors" aria-label="Menu">
         <svg v-if="!mobileOpen" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M3 12h18M3 18h18"/>
         </svg>
@@ -65,24 +68,24 @@
     <!-- Mobile dropdown (non-dashboard only) -->
     <Transition name="slide-down">
       <div v-if="mobileOpen && !inDashboard"
-        class="md:hidden bg-white border-t border-paper-100 px-4 pb-4 pt-2 space-y-1">
+        class="md:hidden border-t border-white/10 bg-navy-900 px-4 pb-4 pt-2 space-y-1 shadow-lg">
         <RouterLink @click="mobileOpen = false" to="/search"
-          class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold font-display text-navy-700 hover:bg-navy-50 transition-colors">
-          Find tutors
+          class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold font-display text-navy-100 hover:bg-white/10 transition-colors">
+          Find Tutors
         </RouterLink>
         <template v-if="!auth.isAuthenticated">
           <RouterLink @click="mobileOpen = false" to="/login"
-            class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold font-display text-navy-700 hover:bg-navy-50 transition-colors">
-            Log in
+            class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold font-display text-navy-100 hover:bg-white/10 transition-colors">
+            Log In
           </RouterLink>
           <RouterLink @click="mobileOpen = false" to="/register"
-            class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold font-display bg-navy-700 text-white hover:bg-navy-800 transition-colors">
-            Sign up
+            class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold font-display bg-gold-400 text-navy-900 hover:bg-gold-300 transition-colors">
+            Sign Up
           </RouterLink>
         </template>
         <template v-else>
           <RouterLink @click="mobileOpen = false" :to="dashboardPath"
-            class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold font-display text-navy-700 hover:bg-navy-50 transition-colors">
+            class="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold font-display text-navy-100 hover:bg-white/10 transition-colors">
             My Dashboard
             <span v-if="notifStore.unreadCount > 0"
               class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold font-display bg-red-500 text-white rounded-full leading-none">
@@ -91,7 +94,7 @@
           </RouterLink>
           <button @click="mobileOpen = false; showLogoutDialog = true"
             class="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold font-display bg-red-600 text-white hover:bg-red-700 transition-colors">
-            Log out
+            Log Out
           </button>
         </template>
       </div>

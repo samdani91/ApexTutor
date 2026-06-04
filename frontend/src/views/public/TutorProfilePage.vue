@@ -1,12 +1,20 @@
 <template>
   <DefaultLayout>
-    <div v-if="loading" class="text-center py-20 text-paper-500 font-body">Loading…</div>
+    <main class="profile-page relative isolate overflow-hidden bg-white">
+      <div class="pointer-events-none absolute inset-0 -z-10 profile-grid"></div>
+
+    <div v-if="loading" class="mx-auto max-w-6xl px-4 py-16 md:py-24">
+      <div class="reveal rounded-md border border-paper-200 bg-white/90 px-4 py-16 text-center font-body text-paper-500 shadow-sm backdrop-blur-sm">
+        <div class="mx-auto mb-3 h-9 w-9 rounded-full border-4 border-navy-100 border-t-navy-700 animate-spin"></div>
+        Loading…
+      </div>
+    </div>
     <div v-else-if="tutor" class="max-w-6xl mx-auto px-4 py-6 md:py-10 space-y-5 md:space-y-6">
 
       <!-- ── Header card ── -->
-      <div class="card">
+      <div class="profile-card reveal">
         <div class="grid gap-5 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-start">
-          <div class="w-24 h-24 rounded-xl bg-navy-100 flex items-center justify-center shrink-0 overflow-hidden ring-4 ring-white shadow mx-auto md:mx-0">
+          <div class="w-24 h-24 rounded-lg bg-navy-100 flex items-center justify-center shrink-0 overflow-hidden ring-4 ring-white shadow-lg mx-auto md:mx-0">
             <img v-if="tutor.user?.avatar_url" :src="tutor.user.avatar_url" class="w-full h-full object-cover" />
             <span v-else class="font-display font-bold text-3xl text-navy-700">{{ initials }}</span>
           </div>
@@ -30,14 +38,14 @@
             </div>
           </div>
           <div class="shrink-0 w-full md:w-64">
-            <div class="rounded-lg border border-paper-200 bg-paper-50 px-4 py-3 text-center md:text-left">
+            <div class="rounded-md border border-paper-200 bg-white px-4 py-3 text-center shadow-xs md:text-left">
               <p class="text-xs text-paper-400 font-display font-semibold uppercase tracking-wide mb-1">Expected salary</p>
               <p class="font-display font-bold text-xl text-navy-700 leading-tight whitespace-nowrap">
                 {{ formatSalaryRange(tutor.tuition_preference?.expected_salary_min, tutor.tuition_preference?.expected_salary_max) }}
               </p>
               <p class="text-xs text-paper-500 font-body">per month</p>
             </div>
-            <button @click="toggleShortlist" :disabled="shortlistLoading"
+            <button v-if="!auth.isTutor" @click="toggleShortlist" :disabled="shortlistLoading"
               class="mt-3 w-full text-sm py-2.5 px-4 inline-flex items-center justify-center gap-1.5 rounded-md font-semibold font-display border transition-colors disabled:opacity-60"
               :class="isShortlisted
                 ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
@@ -52,13 +60,13 @@
         </div>
 
         <!-- Bio -->
-        <div v-if="tutor.bio" class="mt-5 rounded-lg border border-paper-200 bg-paper-50 p-4">
+        <div v-if="tutor.bio" class="mt-5 rounded-md border border-paper-200 bg-paper-50/80 p-4">
           <p class="text-box">{{ tutor.bio }}</p>
         </div>
       </div>
 
       <!-- ── 1. Educational Information ── -->
-      <div v-if="tutor.education_entries?.length" class="card">
+      <div v-if="tutor.education_entries?.length" class="profile-card reveal">
         <h2 class="section-title">Educational Information</h2>
         <div class="grid md:grid-cols-2 gap-3">
           <div v-for="edu in tutor.education_entries" :key="edu.id"
@@ -78,7 +86,7 @@
       </div>
 
       <!-- ── 2. Tuition Related Information ── -->
-      <div v-if="tutor.tuition_preference" class="card">
+      <div v-if="tutor.tuition_preference" class="profile-card reveal">
         <h2 class="section-title">Tuition Related Information</h2>
 
         <!-- Teaching approach -->
@@ -215,7 +223,7 @@
       </div>
 
       <!-- ── 3. Personal Information (no email / phone) ── -->
-      <div v-if="tutor.personal_info" class="card">
+      <div v-if="tutor.personal_info" class="profile-card reveal">
         <h2 class="section-title">Personal Information</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div v-if="tutor.personal_info.gender" class="info-card">
@@ -242,7 +250,7 @@
       </div>
 
       <!-- ── Teaching videos ── -->
-      <div class="card">
+      <div class="profile-card reveal">
         <h2 class="section-title">Teaching Videos</h2>
         <div v-if="tutor.teaching_videos?.length" class="grid md:grid-cols-2 gap-4">
           <div v-for="vid in tutor.teaching_videos" :key="vid.id" class="info-card">
@@ -268,22 +276,74 @@
       </div>
 
       <!-- ── Reviews ── -->
-      <div v-if="tutor.reviews?.length" class="card">
-        <h2 class="section-title">Reviews ({{ tutor.review_count }})</h2>
-        <div class="space-y-3">
-        <div v-for="review in tutor.reviews" :key="review.id"
-          class="info-card">
-          <div class="flex items-center justify-between mb-1">
-            <p class="font-display font-semibold text-sm text-navy-900">{{ review.guardian_profile?.user?.name }}</p>
-            <StarRating :rating="review.rating" :showCount="false" />
+      <div class="profile-card reveal">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="section-title !mb-0">Reviews{{ tutor.review_count ? ` (${tutor.review_count})` : '' }}</h2>
+          <button v-if="canWriteReview && !showReviewForm" @click="showReviewForm = true"
+            class="text-sm font-semibold font-display text-navy-700 border border-navy-200 bg-navy-50 hover:bg-navy-100 px-3 py-1.5 rounded-md transition-colors">
+            Write A Review
+          </button>
+        </div>
+
+        <!-- Review submission form -->
+        <div v-if="showReviewForm" class="mb-5 rounded-lg border border-gold-300 bg-gold-50 p-4 space-y-3">
+          <p class="text-sm font-semibold font-display text-navy-800">Your review</p>
+
+          <!-- Star picker -->
+          <div class="flex items-center gap-1">
+            <button v-for="star in 5" :key="star" type="button"
+              @click="reviewRating = star"
+              @mouseover="reviewHover = star"
+              @mouseleave="reviewHover = 0"
+              class="focus:outline-none transition-transform hover:scale-110">
+              <svg class="w-7 h-7 transition-colors" viewBox="0 0 24 24" fill="currentColor"
+                :class="star <= (reviewHover || reviewRating) ? 'text-gold-400' : 'text-paper-300'">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+            </button>
+            <span class="ml-2 text-sm text-paper-500 font-body">{{ reviewRating ? STAR_LABELS[reviewRating] : 'Select a rating' }}</span>
           </div>
-          <p class="text-sm text-paper-600 font-body leading-relaxed">{{ review.review_text }}</p>
+
+          <textarea v-model="reviewText" rows="3" placeholder="Share your experience with this tutor (optional)…"
+            class="input text-sm w-full resize-none" maxlength="1000" />
+          <p class="text-xs text-paper-400 font-body text-right">{{ reviewText.length }}/1000</p>
+
+          <div class="flex gap-2 justify-end">
+            <button type="button" @click="cancelReview"
+              class="text-sm font-semibold font-display border border-paper-300 text-paper-600 hover:bg-paper-100 px-4 py-2 rounded-md transition-colors">
+              Cancel
+            </button>
+            <button type="button" @click="submitReview" :disabled="!reviewRating || reviewSubmitting"
+              class="text-sm font-semibold font-display bg-navy-700 text-white hover:bg-navy-800 px-4 py-2 rounded-md transition-colors disabled:opacity-50">
+              {{ reviewSubmitting ? 'Submitting…' : 'Submit Review' }}
+            </button>
+          </div>
         </div>
+
+        <!-- Submitted notice -->
+        <div v-if="reviewSubmitted" class="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700 font-body">
+          Your review has been submitted and will appear here after moderation. Thank you!
         </div>
+
+        <div v-if="tutor.reviews?.length" class="space-y-3">
+          <div v-for="review in tutor.reviews" :key="review.id" class="info-card">
+            <div class="flex items-center justify-between mb-1">
+              <p class="font-display font-semibold text-sm text-navy-900">{{ review.guardian_profile?.user?.name }}</p>
+              <StarRating :rating="review.rating" :showCount="false" />
+            </div>
+            <p class="text-sm text-paper-600 font-body leading-relaxed">{{ review.review_text }}</p>
+          </div>
+        </div>
+        <p v-else-if="!showReviewForm && !reviewSubmitted" class="text-paper-400 text-sm font-body italic">No reviews yet.</p>
       </div>
 
     </div>
-    <div v-else class="text-center py-20 text-paper-500 font-body">Tutor not found.</div>
+    <div v-else class="mx-auto max-w-6xl px-4 py-16 md:py-24">
+      <div class="reveal rounded-md border border-paper-200 bg-white/90 px-4 py-16 text-center font-body text-paper-500 shadow-sm backdrop-blur-sm">
+        Tutor not found.
+      </div>
+    </div>
+    </main>
   </DefaultLayout>
 </template>
 
@@ -310,6 +370,17 @@ const loading = ref(true)
 
 const isShortlisted   = ref(false)
 const shortlistLoading = ref(false)
+
+const canWriteReview    = ref(false)
+const reviewConnectionId = ref(null)
+const showReviewForm    = ref(false)
+const reviewSubmitted   = ref(false)
+const reviewRating      = ref(0)
+const reviewHover       = ref(0)
+const reviewText        = ref('')
+const reviewSubmitting  = ref(false)
+
+const STAR_LABELS = { 1: 'Poor', 2: 'Fair', 3: 'Good', 4: 'Very good', 5: 'Excellent' }
 
 const initials = computed(() => getInitials(tutor.value?.user?.name))
 const uniqueSubjects = computed(() => {
@@ -366,8 +437,41 @@ onMounted(async () => {
       const list = data.data || []
       isShortlisted.value = list.some(s => s.tutor_profile_id === tutor.value.id)
     } catch { /* silently ignore */ }
+
+    try {
+      const { data } = await guardianApi.reviewEligibility(tutor.value.id)
+      canWriteReview.value    = data.data.eligible
+      reviewConnectionId.value = data.data.connection_request_id
+    } catch { /* silently ignore */ }
   }
 })
+
+function cancelReview() {
+  showReviewForm.value = false
+  reviewRating.value   = 0
+  reviewText.value     = ''
+}
+
+async function submitReview() {
+  if (!reviewRating.value) return
+  reviewSubmitting.value = true
+  try {
+    await guardianApi.submitReview({
+      tutor_profile_id:      tutor.value.id,
+      connection_request_id: reviewConnectionId.value,
+      rating:                reviewRating.value,
+      review_text:           reviewText.value || null,
+    })
+    showReviewForm.value  = false
+    canWriteReview.value  = false
+    reviewSubmitted.value = true
+    toast.success('Review submitted! It will appear after moderation.')
+  } catch {
+    toast.error('Could not submit review. Please try again.')
+  } finally {
+    reviewSubmitting.value = false
+  }
+}
 
 async function toggleShortlist() {
   if (!auth.isAuthenticated) {
@@ -399,14 +503,46 @@ async function toggleShortlist() {
 </script>
 
 <style scoped>
-.section-title { @apply font-display font-semibold text-navy-800 text-lg mb-4; }
+.profile-grid {
+  background-image:
+    linear-gradient(rgba(15, 46, 92, 0.038) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 46, 92, 0.038) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
+.profile-card {
+  @apply rounded-md border border-paper-200 p-5 shadow-lg backdrop-blur-sm md:p-6;
+  background-color: rgba(255, 255, 255, 0.92);
+}
+.section-title { @apply font-display font-bold text-navy-900 text-xl mb-4; }
 .info-label    { @apply text-xs font-semibold font-display text-paper-400 uppercase tracking-wide mb-1; }
 .info-value    { @apply text-sm font-body text-navy-800; }
-.info-card     { @apply rounded-lg border border-paper-200 bg-paper-50 p-3; }
+.info-card     { @apply rounded-md border border-paper-200 bg-white p-3 shadow-xs; }
 .info-section  { @apply mb-4; }
 .chip-list     { @apply flex flex-wrap gap-1.5 mt-1.5; }
-.chip          { @apply text-xs sm:text-sm font-semibold font-display text-navy-700 bg-navy-50 border border-navy-100 px-2.5 sm:px-3 py-1 rounded-full; }
+.chip          { @apply text-xs sm:text-sm font-semibold font-display text-navy-700 bg-navy-50 border border-navy-100 px-2.5 sm:px-3 py-1 rounded-pill; }
 .status-pill   { @apply inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-pill border; }
-.note-box      { @apply rounded-lg border border-paper-200 bg-paper-50 p-3 text-sm font-body text-paper-700 leading-relaxed; }
+.note-box      { @apply rounded-md border border-paper-200 bg-paper-50/80 p-3 text-sm font-body text-paper-700 leading-relaxed; }
 .text-box      { @apply font-body text-paper-700 leading-relaxed text-sm text-justify; }
+
+.reveal {
+  animation: reveal-up 0.56s ease both;
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    animation: none;
+  }
+}
 </style>

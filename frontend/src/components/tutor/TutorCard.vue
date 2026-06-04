@@ -1,10 +1,10 @@
 <template>
   <RouterLink :to="`/tutors/${tutor.public_id}`"
-    class="group block h-full cursor-pointer rounded-sm border border-paper-200 bg-white p-4 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-navy-200 hover:shadow-md md:p-5">
+    class="group block h-full cursor-pointer rounded-md border border-paper-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-gold-200 hover:shadow-lg md:p-5">
     <div class="flex h-full flex-col gap-4">
       <div class="flex items-start gap-3">
         <div
-          class="h-16 w-16 shrink-0 overflow-hidden rounded-sm border border-navy-100 bg-navy-50 flex items-center justify-center md:h-[72px] md:w-[72px]">
+          class="h-16 w-16 shrink-0 overflow-hidden rounded-md border border-navy-100 bg-navy-50 flex items-center justify-center shadow-xs md:h-[72px] md:w-[72px]">
           <img v-if="tutor.user?.avatar_url" :src="tutor.user.avatar_url" :alt="tutor.user?.name"
             class="h-full w-full object-cover" />
           <span v-else class="font-display text-xl font-bold text-navy-700 md:text-2xl">{{ initials }}</span>
@@ -22,7 +22,7 @@
                   {{ tutor.tutor_id }}
                 </span>
                 <span v-if="tutor.is_verified"
-                  class="rounded-pill border border-green-200 bg-green-50 px-2 py-0.5 font-display text-[11px] font-semibold text-green-700">
+                  class="rounded-pill border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-display text-[11px] font-semibold text-emerald-700">
                   Verified
                 </span>
               </div>
@@ -33,7 +33,7 @@
         </div>
       </div>
 
-      <div class="rounded-sm border border-navy-100 bg-navy-50 px-3 py-2.5">
+      <div class="rounded-md border border-navy-100 bg-navy-50 px-3 py-2.5">
         <p class="font-display text-[11px] font-semibold uppercase tracking-wide text-paper-500">Expected salary</p>
         <p class="mt-0.5 font-display text-sm font-bold leading-snug text-navy-800">
           {{ formatSalaryRange(tutor.tuition_preference?.expected_salary_min, tutor.tuition_preference?.expected_salary_max) }}
@@ -45,11 +45,11 @@
           <p class="mb-1.5 font-display text-[11px] font-semibold uppercase tracking-wide text-paper-400">Subjects</p>
           <div class="flex flex-wrap gap-1.5">
             <span v-for="subject in subjectTags" :key="subject"
-              class="rounded-pill bg-gold-50 px-2.5 py-1 font-display text-xs font-semibold text-gold-800">
+              class="rounded-pill border border-gold-100 bg-gold-50 px-2.5 py-1 font-display text-xs font-semibold text-gold-800">
               {{ subject }}
             </span>
             <span v-if="extraSubjectCount > 0"
-              class="rounded-pill bg-paper-100 px-2.5 py-1 font-display text-xs font-semibold text-paper-500">
+              class="rounded-pill border border-paper-200 bg-paper-100 px-2.5 py-1 font-display text-xs font-semibold text-paper-500">
               +{{ extraSubjectCount }}
             </span>
           </div>
@@ -59,11 +59,11 @@
           <p class="mb-1.5 font-display text-[11px] font-semibold uppercase tracking-wide text-paper-400">Classes</p>
           <div class="flex flex-wrap gap-1.5">
             <span v-for="cls in classTags" :key="cls"
-              class="rounded-pill bg-navy-50 px-2.5 py-1 font-display text-xs font-semibold text-navy-700">
+              class="rounded-pill border border-navy-100 bg-navy-50 px-2.5 py-1 font-display text-xs font-semibold text-navy-700">
               {{ cls }}
             </span>
             <span v-if="extraClassCount > 0"
-              class="rounded-pill bg-paper-100 px-2.5 py-1 font-display text-xs font-semibold text-paper-500">
+              class="rounded-pill border border-paper-200 bg-paper-100 px-2.5 py-1 font-display text-xs font-semibold text-paper-500">
               +{{ extraClassCount }}
             </span>
           </div>

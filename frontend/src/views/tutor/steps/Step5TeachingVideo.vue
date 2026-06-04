@@ -2,7 +2,7 @@
   <div>
     <h2 class="font-display font-semibold text-navy-700 text-lg mb-1">Teaching videos</h2>
     <p class="text-sm text-paper-500 font-body mb-6">
-      Upload up to 4 videos showcasing your teaching style. Each video needs a title, subject, class, and medium.
+      Upload up to 4 videos showcasing your teaching style. Each video needs a title, subject, class and medium.
       Max 150 MB per video — MP4, WebM, or MOV.
     </p>
 

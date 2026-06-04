@@ -1,13 +1,26 @@
 <template>
-  <div class="max-w-lg">
-    <h1 class="font-display font-bold text-navy-900 text-xl mb-6">Settings</h1>
+  <div class="settings-page space-y-6">
+    <div class="settings-card reveal">
+      <p class="font-display text-xs font-bold uppercase text-gold-600">Account Settings</p>
+      <h1 class="mt-1 font-display font-bold text-navy-900 text-2xl md:text-3xl">Settings</h1>
+      <p class="mt-2 max-w-2xl font-body text-sm leading-relaxed text-paper-600">
+        Update your account security and protect access to your dashboard.
+      </p>
+    </div>
 
-    <div class="card">
-      <h2 class="font-display font-semibold text-navy-700 text-base mb-5">Change password</h2>
+    <div class="settings-card reveal">
+      <div class="grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
+        <aside class="rounded-md border border-paper-200 bg-paper-50 p-4">
+          <h2 class="font-display font-bold text-navy-900 text-lg">Change Password</h2>
+          <p class="mt-2 font-body text-sm leading-relaxed text-paper-600">
+            Password changes require email verification before they are applied.
+          </p>
+        </aside>
 
       <!-- ── Step: OTP verification ── -->
       <template v-if="step === 'otp'">
-        <div class="rounded-lg bg-navy-50 border border-navy-200 px-4 py-3 mb-5">
+        <div>
+        <div class="rounded-md bg-navy-50 border border-navy-200 px-4 py-3 mb-5">
           <p class="text-sm font-body text-navy-700">
             A verification code was sent to <strong>{{ maskedEmail }}</strong>. Enter it below to confirm the password change.
           </p>
@@ -25,7 +38,7 @@
           <div class="flex flex-col sm:flex-row gap-3">
             <button @click="submitWithOtp" :disabled="saving || otpCode.length < 6"
               class="btn-primary text-sm py-2.5 px-6">
-              {{ saving ? 'Updating…' : 'Confirm & update password' }}
+              {{ saving ? 'Updating…' : 'Confirm And Update Password' }}
             </button>
             <button @click="cancelOtp" class="btn-outline text-sm py-2.5 px-5">
               Cancel
@@ -36,16 +49,18 @@
             Didn't receive it?
             <button @click="handleResend" :disabled="resending"
               class="text-navy-700 font-semibold hover:text-navy-900 transition-colors disabled:opacity-50">
-              {{ resending ? 'Sending…' : 'Resend code' }}
+              {{ resending ? 'Sending…' : 'Resend Code' }}
             </button>
           </p>
+        </div>
         </div>
       </template>
 
       <!-- ── Step: Password form ── -->
       <template v-else>
-        <div class="space-y-4">
-          <div>
+        <div>
+        <div class="grid gap-4 md:grid-cols-2">
+          <div class="md:col-span-2">
             <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Current password</label>
             <div class="relative">
               <input v-model="form.current_password" :type="show.current ? 'text' : 'password'"
@@ -103,9 +118,11 @@
         </div>
 
         <button @click="requestChange" :disabled="requesting" class="btn-primary mt-6 text-sm py-2.5 px-6">
-          {{ requesting ? 'Sending code…' : 'Send verification code' }}
+          {{ requesting ? 'Sending Code…' : 'Send Verification Code' }}
         </button>
+        </div>
       </template>
+      </div>
     </div>
   </div>
 </template>
@@ -216,3 +233,30 @@ function cancelOtp() {
   otpCode.value = ''
 }
 </script>
+
+<style scoped>
+.settings-card {
+  @apply rounded-md border border-paper-200 bg-white p-5 shadow-lg md:p-6;
+}
+
+.reveal {
+  animation: reveal-up 0.54s ease both;
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    animation: none;
+  }
+}
+</style>

@@ -32,7 +32,7 @@
           <textarea v-model="form.special_notes" rows="3" class="input" placeholder="Any specific requirements…"></textarea>
         </div>
         <p v-if="error" class="text-red-600 text-sm font-body">{{ error }}</p>
-        <button type="submit" :disabled="saving" class="btn-primary">{{ saving ? 'Posting…' : 'Post requirement' }}</button>
+        <button type="submit" :disabled="saving" class="btn-primary">{{ saving ? 'Posting…' : 'Post Requirement' }}</button>
       </form>
     </div>
   </div>

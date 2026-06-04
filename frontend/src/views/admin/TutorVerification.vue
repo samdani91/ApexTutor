@@ -1,6 +1,23 @@
 <template>
   <div>
-    <h1 class="font-display font-bold text-2xl text-navy-900 mb-6">Verification queue</h1>
+    <div class="mb-6 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <h1 class="font-display font-bold text-2xl text-navy-900">Verification queue</h1>
+        <p class="mt-1 text-sm font-body text-paper-500">Review pending tutor profiles, documents and teaching preferences.</p>
+      </div>
+      <p v-if="meta.total" class="text-xs font-semibold font-display text-paper-500">
+        {{ meta.total }} pending
+      </p>
+    </div>
+    <div class="card mb-5">
+      <div class="relative">
+        <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-paper-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+        <input v-model="search" @input="debouncedLoad" type="search"
+          placeholder="Search by name or email..." class="input pl-9 text-sm w-full" />
+      </div>
+    </div>
     <div v-if="loading" class="text-paper-500 font-body">Loading…</div>
     <div v-else-if="!queue.length" class="card text-center py-12 text-paper-500 font-body">
       All caught up — no pending verifications.
@@ -116,12 +133,14 @@
       </div>
     </div>
 
+    <AdminPagination :meta="meta" @page="loadQueue" />
+
     <!-- Approve confirm -->
     <AdminConfirmDialog
       :show="!!approveTarget"
-      title="Approve tutor?"
+      title="Approve Tutor?"
       :message="`Approve ${approveTarget?.user?.name} and mark their profile as verified?`"
-      confirm-label="Yes, approve"
+      confirm-label="Yes, Approve"
       @confirm="confirmApprove"
       @cancel="approveTarget = null"
     />
@@ -129,7 +148,7 @@
     <!-- Reject confirm (with reason input) -->
     <AdminConfirmDialog
       :show="!!rejectTarget"
-      title="Reject tutor?"
+      title="Reject Tutor?"
       :message="`Reject ${rejectTarget?.user?.name}'s verification request.`"
       confirm-label="Reject"
       danger
@@ -149,22 +168,35 @@ import { adminApi } from '@/api/admin.js'
 import { toast } from 'vue-sonner'
 import { getInitials } from '@/utils/helpers.js'
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog.vue'
+import AdminPagination from '@/components/admin/AdminPagination.vue'
 
-const queue        = ref([])
-const loading      = ref(true)
+const queue         = ref([])
+const loading       = ref(true)
 const approveTarget = ref(null)
 const rejectTarget  = ref(null)
+const search        = ref('')
+const meta          = ref({ current_page: 1, last_page: 1, total: 0, from: 0, to: 0 })
 
 function initials(name) { return getInitials(name) }
 
-onMounted(async () => {
+let searchTimer = null
+function debouncedLoad() {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => loadQueue(), 350)
+}
+
+async function loadQueue(page = 1) {
+  loading.value = true
   try {
-    const { data } = await adminApi.getVerificationQueue()
+    const { data } = await adminApi.getVerificationQueue({ search: search.value, page, per_page: 10 })
     queue.value = data.data.data || data.data || []
+    meta.value = data.data
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(loadQueue)
 
 function openApprove(tutor) { approveTarget.value = tutor }
 function openReject(tutor)  { rejectTarget.value  = tutor }
