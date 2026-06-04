@@ -1,40 +1,39 @@
 <template>
-  <div class="min-h-screen flex">
+  <div class="auth-page min-h-screen flex bg-white">
 
     <!-- ── Left branding panel (desktop only) ── -->
-    <div class="hidden lg:flex lg:w-[400px] xl:w-[460px] shrink-0 bg-navy-900 flex-col justify-between p-10 relative overflow-hidden">
-      <div class="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.08)_0,rgba(255,255,255,0)_42%),linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:100%_100%,28px_28px,28px_28px]" />
+    <div class="hidden lg:flex lg:w-[420px] xl:w-[500px] shrink-0 bg-navy-900 flex-col justify-between p-10 relative overflow-hidden">
+      <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.055)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.055)_1px,transparent_1px)] bg-[length:34px_34px]" />
       <RouterLink to="/" class="relative z-10 inline-block">
-        <span class="font-display font-bold text-2xl text-white">Tutor<span class="text-blue-400">Khujo</span></span>
+        <span class="font-display font-bold text-2xl text-white">Tutor<span class="text-gold-300">Khujo</span></span>
       </RouterLink>
       <div class="relative z-10 space-y-5">
-        <div class="w-12 h-12 rounded-sm bg-blue-500/20 border border-blue-400/30 flex items-center justify-center">
-          <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+        <div class="w-12 h-12 rounded-sm bg-gold-400/15 border border-gold-300/30 flex items-center justify-center">
+          <svg class="w-6 h-6 text-gold-300" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.906 59.906 0 0112 3.493a59.903 59.903 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5"/>
           </svg>
         </div>
         <h2 class="font-display font-bold text-3xl text-white leading-snug">
-          Connect with verified tutors across Bangladesh.
+          Continue your tuition search with clearer profiles.
         </h2>
         <p class="text-navy-300 font-body text-sm leading-relaxed">
-          Thousands of guardians and tutors trust TutorKhujo to find the right match — quickly and safely.
+          Compare verified tutors, manage shortlists and track confirmed tuition updates from one dashboard.
         </p>
-        <div class="flex gap-6 pt-2">
-          <div>
-            <p class="font-display font-bold text-white text-xl">500+</p>
-            <p class="text-navy-400 text-xs font-body mt-0.5">Verified tutors</p>
-          </div>
-          <div>
-            <p class="font-display font-bold text-white text-xl">1 200+</p>
-            <p class="text-navy-400 text-xs font-body mt-0.5">Connections made</p>
+        <div class="grid grid-cols-3 gap-3 pt-2">
+          <div v-for="stat in authStats" :key="stat.label" class="rounded-sm border border-white/10 bg-white/5 p-3">
+            <p class="font-display font-bold text-white text-xl">
+              {{ stat.value }}<span v-if="stat.suffix">{{ stat.suffix }}</span>
+            </p>
+            <p class="text-navy-300 text-xs font-body mt-0.5 leading-snug">{{ stat.label }}</p>
           </div>
         </div>
       </div>
-      <p class="relative z-10 text-navy-500 text-xs font-body">© 2025 TutorKhujo</p>
+      <p class="relative z-10 text-navy-500 text-xs font-body">© 2026 TutorKhujo</p>
     </div>
 
     <!-- ── Right form panel ── -->
-    <div class="flex-1 flex flex-col bg-white">
+    <div class="relative flex-1 flex flex-col bg-white">
+      <div class="pointer-events-none absolute inset-0 landing-grid"></div>
       <div class="flex items-center justify-between px-6 pt-6 pb-2">
         <button @click="router.push('/')"
           class="inline-flex items-center gap-1.5 text-sm font-semibold font-display text-navy-500 hover:text-navy-900 transition-colors group">
@@ -44,15 +43,16 @@
           Back
         </button>
         <RouterLink to="/" class="lg:hidden font-display font-bold text-navy-700">
-          Tutor<span class="text-blue-600">Khujo</span>
+          Tutor<span class="text-gold-600">Khujo</span>
         </RouterLink>
         <div class="w-12 lg:hidden" />
       </div>
 
-      <div class="flex-1 flex items-center justify-center px-6 py-10">
-        <div class="w-full max-w-sm">
+      <div class="relative flex-1 flex items-center justify-center px-6 py-10">
+        <div class="w-full max-w-md rounded-lg border border-paper-200 bg-white p-6 shadow-xl sm:p-8">
 
           <div class="mb-8">
+            <p class="font-display text-xs font-bold uppercase text-gold-600">Welcome Back</p>
             <h1 class="font-display font-bold text-2xl text-navy-900">Welcome back</h1>
             <p class="text-paper-400 text-sm mt-1.5 font-body">Sign in to your account to continue</p>
           </div>
@@ -81,7 +81,7 @@
               </div>
             </div>
 
-            <button type="submit" :disabled="auth.loading" class="btn-primary w-full py-3 text-sm mt-2">
+            <button type="submit" :disabled="auth.loading" class="btn-primary w-full rounded-sm py-3 text-sm mt-2">
               <svg v-if="auth.loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
@@ -97,6 +97,12 @@
                 Create one free
               </RouterLink>
             </p>
+            <p class="mt-4 text-xs text-paper-300 font-body">
+              Protected by reCAPTCHA —
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="underline hover:text-paper-400">Privacy</a>
+              &amp;
+              <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="underline hover:text-paper-400">Terms</a>
+            </p>
           </div>
 
         </div>
@@ -107,10 +113,11 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { RouterLink, useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import { toast } from 'vue-sonner'
+import { useLandingStats } from '@/composables/useLandingStats.js'
 
 const auth   = useAuthStore()
 const router = useRouter()
@@ -118,33 +125,22 @@ const route  = useRoute()
 
 const form         = reactive({ email: '', password: '' })
 const showPassword = ref(false)
+const { authStats, loadLandingStats } = useLandingStats()
 
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
-
-async function getCaptchaToken() {
-  if (!RECAPTCHA_SITE_KEY) return 'dev-bypass'
-  return new Promise((resolve, reject) => {
-    window.grecaptcha.ready(() => {
-      window.grecaptcha
-        .execute(RECAPTCHA_SITE_KEY, { action: 'login' })
-        .then(resolve)
-        .catch(reject)
-    })
-  })
-}
+onMounted(() => {
+  loadLandingStats()
+})
 
 async function handleLogin() {
   try {
-    const captcha_token = await getCaptchaToken()
-    const data = await auth.login({ ...form, captcha_token })
-    if (data.data?.token) {
-      toast.success('Welcome back!')
-      const redirect = route.query.redirect
-      if (redirect) return router.push(redirect)
-      if (auth.isTutor) router.push('/tutor/dashboard')
-      else if (auth.isAdmin) router.push('/admin/dashboard')
-      else router.push('/guardian/dashboard')
-    }
+    const data = await auth.login({ ...form })
+    if (!data.success) return
+    toast.success('Welcome back!')
+    const redirect = route.query.redirect
+    if (redirect) return router.push(redirect)
+    if (auth.isTutor) router.push('/tutor/dashboard')
+    else if (auth.isAdmin) router.push('/admin/dashboard')
+    else router.push('/guardian/dashboard')
   } catch (e) {
     if (!e._toasted) {
       toast.error(e.response?.data?.message || 'Invalid credentials. Please try again.')
@@ -152,3 +148,12 @@ async function handleLogin() {
   }
 }
 </script>
+
+<style scoped>
+.landing-grid {
+  background-image:
+    linear-gradient(rgba(15, 46, 92, 0.038) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 46, 92, 0.038) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+</style>

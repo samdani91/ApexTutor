@@ -3,6 +3,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide the floating reCAPTCHA badge.
+   Google permits this as long as the required branding text is visible
+   on every page that calls grecaptcha.execute(). */
+.grecaptcha-badge {
+  visibility: hidden !important;
+}
+
 @layer base {
   html, body {
     @apply bg-paper-100 text-navy-900 font-body;

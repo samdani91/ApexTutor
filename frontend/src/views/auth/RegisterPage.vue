@@ -1,38 +1,47 @@
 <template>
-  <div class="min-h-screen flex">
+  <div class="min-h-screen flex bg-white">
 
     <!-- ── Left branding panel (desktop only) ── -->
-    <div class="hidden lg:flex lg:w-[400px] xl:w-[460px] shrink-0 bg-navy-900 flex-col justify-between p-10 relative overflow-hidden">
-      <div class="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.08)_0,rgba(255,255,255,0)_42%),linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:100%_100%,28px_28px,28px_28px]" />
+    <div class="hidden lg:flex lg:w-[420px] xl:w-[500px] shrink-0 bg-navy-900 flex-col justify-between p-10 relative overflow-hidden">
+      <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.055)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.055)_1px,transparent_1px)] bg-[length:34px_34px]" />
       <RouterLink to="/" class="relative z-10 inline-block">
-        <span class="font-display font-bold text-2xl text-white">Tutor<span class="text-blue-400">Khujo</span></span>
+        <span class="font-display font-bold text-2xl text-white">Tutor<span class="text-gold-300">Khujo</span></span>
       </RouterLink>
       <div class="relative z-10 space-y-5">
-        <div class="w-12 h-12 rounded-sm bg-blue-500/20 border border-blue-400/30 flex items-center justify-center">
-          <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+        <div class="w-12 h-12 rounded-sm bg-gold-400/15 border border-gold-300/30 flex items-center justify-center">
+          <svg class="w-6 h-6 text-gold-300" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3M13.5 19.5l-.197-2.96a1.5 1.5 0 01.01-.23l.287-2.587A4.5 4.5 0 0118 9.75 4.5 4.5 0 0118 1.5h-.75a4.5 4.5 0 00-4.5 4.5v1.5M10.5 19.5H6.75a2.25 2.25 0 01-2.25-2.25v-8.25A2.25 2.25 0 016.75 6.75H9M10.5 19.5a2.25 2.25 0 002.25-2.25v-1.5A2.25 2.25 0 0010.5 13.5H9a2.25 2.25 0 00-2.25 2.25v1.5A2.25 2.25 0 009 19.5h1.5z"/>
           </svg>
         </div>
         <h2 class="font-display font-bold text-3xl text-white leading-snug">
-          Join thousands of tutors and guardians today.
+          Build a profile or find the right tutor faster.
         </h2>
         <p class="text-navy-300 font-body text-sm leading-relaxed">
-          Create a free account as a tutor to showcase your skills, or as a guardian to find the best tutor for your child.
+          Create a tutor profile for admin review or compare verified tutors as a guardian with clearer information.
         </p>
         <ul class="space-y-2.5 pt-1">
           <li v-for="item in perks" :key="item" class="flex items-center gap-2.5 text-navy-300 text-sm font-body">
-            <svg class="w-4 h-4 text-blue-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 text-gold-300 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
             </svg>
             {{ item }}
           </li>
         </ul>
+        <div class="grid grid-cols-3 gap-3 pt-2">
+          <div v-for="stat in authStats" :key="stat.label" class="rounded-sm border border-white/10 bg-white/5 p-3">
+            <p class="font-display font-bold text-white text-xl">
+              {{ stat.value }}<span v-if="stat.suffix">{{ stat.suffix }}</span>
+            </p>
+            <p class="text-navy-300 text-xs font-body mt-0.5 leading-snug">{{ stat.label }}</p>
+          </div>
+        </div>
       </div>
-      <p class="relative z-10 text-navy-500 text-xs font-body">© 2025 TutorKhujo</p>
+      <p class="relative z-10 text-navy-500 text-xs font-body">© 2026 TutorKhujo</p>
     </div>
 
     <!-- ── Right form panel ── -->
-    <div class="flex-1 flex flex-col bg-white">
+    <div class="relative flex-1 flex flex-col bg-white">
+      <div class="pointer-events-none absolute inset-0 landing-grid"></div>
       <div class="flex items-center justify-between px-6 pt-6 pb-2">
         <button @click="step === 'otp' ? (step = 'form') : router.push('/')"
           class="inline-flex items-center gap-1.5 text-sm font-semibold font-display text-navy-500 hover:text-navy-900 transition-colors group">
@@ -42,23 +51,24 @@
           Back
         </button>
         <RouterLink to="/" class="lg:hidden font-display font-bold text-navy-700">
-          Tutor<span class="text-blue-600">Khujo</span>
+          Tutor<span class="text-gold-600">Khujo</span>
         </RouterLink>
         <div class="w-12 lg:hidden" />
       </div>
 
-      <div class="flex-1 flex items-center justify-center px-6 py-8">
-        <div class="w-full max-w-sm">
+      <div class="relative flex-1 flex items-center justify-center px-6 py-8">
+        <div class="w-full max-w-md rounded-lg border border-paper-200 bg-white p-6 shadow-xl sm:p-8">
 
           <!-- ── Step: OTP verification ── -->
           <template v-if="step === 'otp'">
             <div class="mb-7">
-              <div class="w-12 h-12 rounded-sm bg-navy-50 border border-navy-200 flex items-center justify-center mb-4">
-                <svg class="w-6 h-6 text-navy-700" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+              <div class="w-12 h-12 rounded-sm bg-gold-50 border border-gold-200 flex items-center justify-center mb-4">
+                <svg class="w-6 h-6 text-gold-700" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/>
                 </svg>
               </div>
-              <h1 class="font-display font-bold text-2xl text-navy-900">Check your email</h1>
+              <p class="font-display text-xs font-bold uppercase text-gold-600">Email Verification</p>
+              <h1 class="mt-1 font-display font-bold text-2xl text-navy-900">Check your email</h1>
               <p class="text-paper-400 text-sm mt-1.5 font-body">
                 We sent a 6-digit code to <strong class="text-navy-700">{{ maskedEmail }}</strong>. Enter it below to verify your account.
               </p>
@@ -74,7 +84,7 @@
               </div>
 
               <button @click="handleVerify" :disabled="verifying || otpCode.length < 6"
-                class="btn-primary w-full py-3 text-sm">
+                class="btn-primary w-full rounded-sm py-3 text-sm">
                 <svg v-if="verifying" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
@@ -95,6 +105,7 @@
           <!-- ── Step: Registration form ── -->
           <template v-else>
             <div class="mb-7">
+              <p class="font-display text-xs font-bold uppercase text-gold-600">Create Account</p>
               <h1 class="font-display font-bold text-2xl text-navy-900">Create your account</h1>
               <p class="text-paper-400 text-sm mt-1.5 font-body">Free forever — no credit card required</p>
             </div>
@@ -171,7 +182,7 @@
                 </div>
               </div>
 
-              <button type="submit" :disabled="auth.loading" class="btn-primary w-full py-3 text-sm mt-1">
+              <button type="submit" :disabled="auth.loading" class="btn-primary w-full rounded-sm py-3 text-sm mt-1">
                 <svg v-if="auth.loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
@@ -187,6 +198,12 @@
                   Log In
                 </RouterLink>
               </p>
+              <p class="mt-4 text-xs text-paper-300 font-body">
+                Protected by reCAPTCHA —
+                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="underline hover:text-paper-400">Privacy</a>
+                &amp;
+                <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="underline hover:text-paper-400">Terms</a>
+              </p>
             </div>
           </template>
 
@@ -198,12 +215,13 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { onMounted, ref, reactive } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import { authApi } from '@/api/auth.js'
 import { toast } from 'vue-sonner'
 import PasswordRequirements from '@/components/common/PasswordRequirements.vue'
+import { useLandingStats } from '@/composables/useLandingStats.js'
 
 const auth   = useAuthStore()
 const router = useRouter()
@@ -216,6 +234,7 @@ const rawEmail    = ref('')
 const otpCode     = ref('')
 const verifying   = ref(false)
 const resending   = ref(false)
+const { authStats, loadLandingStats } = useLandingStats()
 
 const roles = [
   { value: 'tutor',    label: 'Tutor'    },
@@ -230,25 +249,13 @@ const form = reactive({
   name: '', email: '', phone: '', role: 'guardian', password: '', password_confirmation: '',
 })
 
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY
-
-async function getCaptchaToken() {
-  // If no site key configured (local dev without keys), return a placeholder
-  if (!RECAPTCHA_SITE_KEY) return 'dev-bypass'
-  return new Promise((resolve, reject) => {
-    window.grecaptcha.ready(() => {
-      window.grecaptcha
-        .execute(RECAPTCHA_SITE_KEY, { action: 'register' })
-        .then(resolve)
-        .catch(reject)
-    })
-  })
-}
+onMounted(() => {
+  loadLandingStats()
+})
 
 async function handleRegister() {
   try {
-    const captcha_token = await getCaptchaToken()
-    const data = await auth.register({ ...form, captcha_token })
+    const data = await auth.register({ ...form })
     if (data.data?.pending_verification) {
       rawEmail.value    = form.email
       maskedEmail.value = data.data.email
@@ -294,3 +301,12 @@ async function handleResend() {
   }
 }
 </script>
+
+<style scoped>
+.landing-grid {
+  background-image:
+    linear-gradient(rgba(15, 46, 92, 0.038) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 46, 92, 0.038) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+</style>
