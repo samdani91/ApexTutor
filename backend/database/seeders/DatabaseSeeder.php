@@ -9,6 +9,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             DistrictSeeder::class,
+            AreaSeeder::class,
             SubjectSeeder::class,
             AdminSeeder::class,
         ]);

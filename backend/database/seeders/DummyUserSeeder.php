@@ -48,28 +48,32 @@ class DummyUserSeeder extends Seeder
         ];
 
         foreach ($tutors as $data) {
-            $user = User::firstOrCreate(
+            $user = User::updateOrCreate(
                 ['email' => $data['email']],
                 [
-                    'name'     => $data['name'],
-                    'phone'    => $data['phone'],
-                    'password' => Hash::make($password),
-                    'role'     => 'tutor',
-                    'is_active'=> true,
+                    'name'              => $data['name'],
+                    'phone'             => $data['phone'],
+                    'password'          => Hash::make($password),
+                    'role'              => 'tutor',
+                    'is_active'         => true,
+                    'email_verified_at' => now(),
+                    'phone_verified_at' => now(),
                 ]
             );
             TutorProfile::firstOrCreate(['user_id' => $user->id]);
         }
 
         foreach ($guardians as $data) {
-            $user = User::firstOrCreate(
+            $user = User::updateOrCreate(
                 ['email' => $data['email']],
                 [
-                    'name'     => $data['name'],
-                    'phone'    => $data['phone'],
-                    'password' => Hash::make($password),
-                    'role'     => 'guardian',
-                    'is_active'=> true,
+                    'name'              => $data['name'],
+                    'phone'             => $data['phone'],
+                    'password'          => Hash::make($password),
+                    'role'              => 'guardian',
+                    'is_active'         => true,
+                    'email_verified_at' => now(),
+                    'phone_verified_at' => now(),
                 ]
             );
             GuardianProfile::firstOrCreate(
