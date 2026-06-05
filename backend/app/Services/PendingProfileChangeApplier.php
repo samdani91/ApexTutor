@@ -25,12 +25,13 @@ class PendingProfileChangeApplier
         $filesToDelete = [];
 
         DB::transaction(function () use ($profile, $changes, &$filesToDelete) {
-            $this->applyTopLevel($profile, $changes);
+            $topFiles      = $this->applyTopLevel($profile, $changes);
             $this->applyPreferences($profile, $changes);
             $this->applyPersonalInfo($profile, $changes);
             $this->applyEmergencyContact($profile, $changes);
             $this->applyEducation($profile, $changes);
-            $filesToDelete = $this->applyDocuments($profile, $changes);
+            $docFiles      = $this->applyDocuments($profile, $changes);
+            $filesToDelete = array_merge($topFiles, $docFiles);
 
             $profile->update(['pending_changes' => null, 'pending_note' => null]);
         });
@@ -43,12 +44,27 @@ class PendingProfileChangeApplier
 
     // ── Sections ─────────────────────────────────────────────────────────────
 
-    private function applyTopLevel(TutorProfile $profile, array $changes): void
+    private function applyTopLevel(TutorProfile $profile, array $changes): array
     {
+        $toDelete = [];
+
         $fields = collect($changes)->only(['bio', 'status'])->filter(fn($v) => $v !== null)->toArray();
         if ($fields) {
             $profile->update($fields);
         }
+
+        if (isset($changes['avatar'])) {
+            $user      = $profile->user;
+            $oldAvatar = $user->avatar;
+            $user->avatar         = $user->pending_avatar ?? $changes['avatar']['path'] ?? null;
+            $user->pending_avatar = null;
+            $user->save();
+            if ($oldAvatar) {
+                $toDelete[] = $oldAvatar;
+            }
+        }
+
+        return $toDelete;
     }
 
     private function applyPreferences(TutorProfile $profile, array $changes): void
@@ -142,7 +158,7 @@ class PendingProfileChangeApplier
                 $toDelete[] = $existing->file_path;
                 $existing->delete();
             }
-            $profile->documents()->create($docData + ['review_status' => 'pending']);
+            $profile->documents()->create($docData + ['review_status' => 'approved']);
         }
 
         return $toDelete;

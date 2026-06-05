@@ -14,7 +14,11 @@ class AdminVerificationController extends Controller
 {
     public function queue(Request $request): JsonResponse
     {
-        $queue = TutorProfile::with([
+        $request->validate([
+            'sort' => 'nullable|in:date_desc,date_asc,id_asc,id_desc',
+        ]);
+
+        $query = TutorProfile::with([
             'user:id,name,email',
             'documents',
             'tuitionPreference.subjects:id,name',
@@ -22,17 +26,36 @@ class AdminVerificationController extends Controller
             'tuitionPreference.locations',
         ])
         ->where('verification_status', 'pending')
-        ->when($request->search, function ($q, $search) {
-            $q->whereHas('user', fn($uq) => $uq->where('name', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%"));
-        })
-        ->paginate($request->integer('per_page', 10));
-        return response()->json(['success' => true, 'data' => $queue]);
+        ->when($request->search, function ($q, $search) use ($request) {
+            $by = $request->get('search_by', 'name');
+            $q->where(function ($inner) use ($search, $by) {
+                if ($by === 'id') {
+                    $inner->where('tutor_id', 'like', "%{$search}%");
+                } elseif ($by === 'email') {
+                    $inner->whereHas('user', fn($uq) => $uq->where('email', 'like', "%{$search}%"));
+                } else {
+                    $inner->whereHas('user', fn($uq) => $uq->where('name', 'like', "%{$search}%"));
+                }
+            });
+        });
+
+        match ($request->sort) {
+            'date_asc' => $query->oldest(),
+            'id_asc'   => $query->orderBy('tutor_id', 'asc'),
+            'id_desc'  => $query->orderBy('tutor_id', 'desc'),
+            default    => $query->latest(),
+        };
+
+        return response()->json(['success' => true, 'data' => $query->paginate($request->integer('per_page', 10))]);
     }
 
     public function approve(Request $request, int $id): JsonResponse
     {
         $tutor = TutorProfile::findOrFail($id);
+
+        if ($tutor->verification_status !== 'pending') {
+            return response()->json(['success' => false, 'message' => 'Tutor is not in pending state.'], 422);
+        }
 
         DB::transaction(function () use ($tutor, $request) {
             $tutor->update([
@@ -65,6 +88,11 @@ class AdminVerificationController extends Controller
     {
         $data  = $request->validate(['rejection_reason' => 'required|string|max:500']);
         $tutor = TutorProfile::findOrFail($id);
+
+        if ($tutor->verification_status !== 'pending') {
+            return response()->json(['success' => false, 'message' => 'Tutor is not in pending state.'], 422);
+        }
+
         $tutor->update([
             'verification_status' => 'rejected',
             'is_verified'         => false,

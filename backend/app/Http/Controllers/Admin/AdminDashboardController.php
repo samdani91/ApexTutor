@@ -25,6 +25,19 @@ class AdminDashboardController extends Controller
             'pending_profile_changes' => TutorProfile::whereNotNull('pending_changes')->count(),
             'pending_reviews'         => Review::where('moderation_status', 'pending')->count(),
             'pending_videos'          => TeachingVideo::where('review_status', 'pending')->count(),
+            // Only count standalone avatar items — tutors whose avatar is already in
+            // pending_changes are already included in pending_profile_changes above.
+            'pending_avatars'         => User::whereNotNull('pending_avatar')
+                ->where(function ($q) {
+                    $q->whereIn('role', ['guardian', 'student'])
+                      ->orWhere(function ($q2) {
+                          $q2->where('role', 'tutor')
+                             ->whereHas('tutorProfile', fn($tp) =>
+                                 $tp->whereNull('pending_changes')
+                                    ->orWhereRaw("JSON_EXTRACT(pending_changes, '$.avatar') IS NULL")
+                             );
+                      });
+                })->count(),
         ]]);
     }
 

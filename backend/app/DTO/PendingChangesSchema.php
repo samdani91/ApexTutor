@@ -26,6 +26,9 @@ final class PendingChangesSchema
     public readonly ?string $status;
     public readonly ?string $submittedAt;
 
+    /** @var array{path:string,url:string}|null */
+    public readonly ?array $avatar;
+
     // ── Sections ──────────────────────────────────────────────────────────────
     /** @var array{subject_ids?:int[],location_ids?:int[],district_id?:int,days?:array,...}|null */
     public readonly ?array $preferences;
@@ -53,6 +56,7 @@ final class PendingChangesSchema
         $this->bio              = $raw['bio']               ?? null;
         $this->status           = $raw['status']            ?? null;
         $this->submittedAt      = $raw['submitted_at']      ?? null;
+        $this->avatar           = isset($raw['avatar']['url']) ? $raw['avatar'] : null;
         $this->preferences      = $raw['preferences']       ?? null;
         $this->personalInfo     = $raw['personal_info']     ?? null;
         $this->emergencyContact = $raw['emergency_contact'] ?? null;
@@ -83,6 +87,7 @@ final class PendingChangesSchema
     {
         return $this->bio === null
             && $this->status === null
+            && $this->avatar === null
             && $this->preferences === null
             && $this->personalInfo === null
             && $this->emergencyContact === null
@@ -96,6 +101,7 @@ final class PendingChangesSchema
             'bio'               => $this->bio,
             'status'            => $this->status,
             'submitted_at'      => $this->submittedAt,
+            'avatar'            => $this->avatar,
             'preferences'       => $this->preferences,
             'personal_info'     => $this->personalInfo,
             'emergency_contact' => $this->emergencyContact,

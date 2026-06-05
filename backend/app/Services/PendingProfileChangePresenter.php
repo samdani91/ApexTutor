@@ -57,6 +57,7 @@ class PendingProfileChangePresenter
             'pending'      => $changes,
             'live'         => [
                 'bio'               => $profile->bio,
+                'avatar_url'        => $profile->user->avatar_url,
                 'preferences'       => $profile->tuitionPreference,
                 'education'         => $profile->educationEntries,
                 'documents'         => $profile->documents,

@@ -38,6 +38,7 @@ class AdminTutorResource extends JsonResource
                 'bio'               => $schema->bio,
                 'status'            => $schema->status,
                 'submitted_at'      => $schema->submittedAt,
+                'avatar'            => $schema->avatar,
                 'preferences'       => $schema->preferences,
                 'personal_info'     => $schema->personalInfo,
                 'emergency_contact' => $schema->emergencyContact,

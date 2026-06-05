@@ -2,9 +2,12 @@
 namespace App\Observers;
 
 use App\Models\TutorDocument;
+use App\Services\ProfileCompletionService;
 
 class TutorDocumentObserver
 {
+    public function __construct(private readonly ProfileCompletionService $completion) {}
+
     public function saved(TutorDocument $doc): void
     {
         $this->trigger($doc);
@@ -17,6 +20,6 @@ class TutorDocumentObserver
 
     private function trigger(TutorDocument $doc): void
     {
-        app(TutorProfileObserver::class)->recalculate($doc->tutorProfile);
+        $this->completion->recalculate($doc->tutorProfile);
     }
 }

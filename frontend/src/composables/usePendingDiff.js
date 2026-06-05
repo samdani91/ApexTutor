@@ -91,6 +91,16 @@ export function buildDiff(item) {
   const live    = item.live    || {}
   const rows    = []
 
+  // Avatar change (shown as thumbnail images, not text)
+  if (pending.avatar?.url) {
+    rows.push({
+      key:          'avatar',
+      label:        'Profile Photo',
+      oldAvatarUrl: live.avatar_url || null,
+      newAvatarUrl: pending.avatar.url,
+    })
+  }
+
   for (const { key, label } of [{ key: 'bio', label: 'Bio' }, { key: 'status', label: 'Status' }]) {
     if (pending[key] === undefined) continue
     if (norm(live[key]) === norm(pending[key])) continue

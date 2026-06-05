@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PendingProfileChangeResource;
 use App\Models\TutorProfile;
+use App\Models\User;
 use App\Notifications\PendingChangeApprovedNotification;
 use App\Notifications\PendingChangeRejectedNotification;
 use App\Services\PendingProfileChangeApplier;
@@ -11,6 +12,7 @@ use App\Services\PendingProfileChangePresenter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class AdminPendingChangesController extends Controller
 {
@@ -23,7 +25,7 @@ class AdminPendingChangesController extends Controller
     {
         $profiles = TutorProfile::whereNotNull('pending_changes')
             ->with([
-                'user:id,name,email',
+                'user:id,name,email,avatar,pending_avatar',
                 'tuitionPreference:id,tutor_profile_id,district_id,expected_salary_min,expected_salary_max,total_experience_years,days_per_week,hours_per_day,tutoring_methods,preferred_classes,preferred_time,place_of_tutoring',
                 'tuitionPreference.subjects:id,name',
                 'tuitionPreference.district:id,name',
@@ -38,12 +40,52 @@ class AdminPendingChangesController extends Controller
         $presented = $this->presenter->presentMany($profiles);
         $resources = array_map(fn($item) => (new PendingProfileChangeResource($item))->toArray(request()), $presented);
 
-        return response()->json(['success' => true, 'data' => $resources]);
+        // Standalone pending avatars: guardians, students, and any tutor whose
+        // pending_changes either is null or doesn't have an 'avatar' key yet
+        // (verified tutors that staged avatar via stageAvatar() show up in $profiles above;
+        // this catches any that fell through, e.g. from before the feature was in place)
+        $pendingAvatars = User::whereNotNull('pending_avatar')
+            ->where(function ($q) {
+                $q->whereIn('role', ['guardian', 'student'])
+                  ->orWhere(function ($q2) {
+                      $q2->where('role', 'tutor')
+                         ->whereHas('tutorProfile', fn($tp) =>
+                             $tp->whereNull('pending_changes')
+                                ->orWhereRaw("JSON_EXTRACT(pending_changes, '$.avatar') IS NULL")
+                         );
+                  });
+            })
+            ->with([
+                'tutorProfile:id,user_id,tutor_id',
+                'guardianProfile:id,user_id,guardian_id',
+            ])
+            ->get()
+            ->map(fn(User $u) => [
+                'id'                 => $u->id,
+                'name'               => $u->name,
+                'email'              => $u->email,
+                'role'               => $u->role,
+                'avatar_url'         => $u->avatar_url,
+                'pending_avatar_url' => $u->pending_avatar_url,
+                'profile_id'         => $u->tutorProfile?->tutor_id ?? $u->guardianProfile?->guardian_id,
+            ])
+            ->values()
+            ->all();
+
+        return response()->json([
+            'success'         => true,
+            'data'            => $resources,
+            'pending_avatars' => $pendingAvatars,
+        ]);
     }
 
     public function approve(Request $request, int $id): JsonResponse
     {
         $profile = TutorProfile::findOrFail($id);
+
+        if (!$profile->pending_changes) {
+            return response()->json(['success' => false, 'message' => 'No pending changes to approve.'], 422);
+        }
 
         $this->applier->apply($profile);
 
@@ -65,6 +107,25 @@ class AdminPendingChangesController extends Controller
         $sections  = array_keys(collect($pending)->except('submitted_at')->toArray());
         $submitted = $this->presenter->buildRejectionSummary($pending);
 
+        // Discard pending avatar file if one was staged
+        if (isset($pending['avatar']['path'])) {
+            $user = $profile->user;
+            try { Storage::disk('public')->delete($pending['avatar']['path']); } catch (\Exception $e) {
+                Log::warning('Could not delete pending avatar on reject', ['path' => $pending['avatar']['path']]);
+            }
+            $user->pending_avatar = null;
+            $user->save();
+        }
+
+        // Discard pending document files that were uploaded but never applied
+        foreach ($pending['documents']['upsert'] ?? [] as $docData) {
+            if (!empty($docData['file_path'])) {
+                try { Storage::disk('public')->delete($docData['file_path']); } catch (\Exception $e) {
+                    Log::warning('Could not delete pending document on reject', ['path' => $docData['file_path']]);
+                }
+            }
+        }
+
         $profile->update([
             'pending_changes' => null,
             'pending_note'    => $data['note'] ?? null,
@@ -82,5 +143,4 @@ class AdminPendingChangesController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Changes rejected.']);
     }
-
 }

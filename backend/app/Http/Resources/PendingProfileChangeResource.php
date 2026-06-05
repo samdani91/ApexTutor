@@ -23,17 +23,9 @@ class PendingProfileChangeResource extends JsonResource
             'user'         => $this->resource['user'],
             'submitted_at' => $this->resource['submitted_at'],
 
-            // Typed pending sections — frontend can rely on these keys always existing
-            'pending' => [
-                'bio'               => $schema->bio,
-                'status'            => $schema->status,
-                'submitted_at'      => $schema->submittedAt,
-                'preferences'       => $schema->preferences,
-                'personal_info'     => $schema->personalInfo,
-                'emergency_contact' => $schema->emergencyContact,
-                'education'         => $schema->education,
-                'documents'         => $schema->documents,
-            ],
+            // Only include keys that are actually set — null keys must be absent so
+            // buildDiff() can use `=== undefined` to detect "not pending" correctly.
+            'pending' => $schema->toArray(),
 
             'live' => $this->resource['live'],
         ];

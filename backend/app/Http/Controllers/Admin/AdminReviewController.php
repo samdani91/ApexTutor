@@ -38,6 +38,10 @@ class AdminReviewController extends Controller
             'guardianProfile.user:id,name,email',
         ])->findOrFail($id);
 
+        if ($review->moderation_status !== 'pending') {
+            return response()->json(['success' => false, 'message' => 'Review is not in pending state.'], 422);
+        }
+
         $review->update(['moderation_status' => 'approved', 'moderated_by' => $request->user()->id, 'moderated_at' => now()]);
 
         $profile = $review->tutorProfile;
@@ -70,6 +74,10 @@ class AdminReviewController extends Controller
             'tutorProfile.user:id,name',
             'guardianProfile.user:id,name,email',
         ])->findOrFail($id);
+
+        if ($review->moderation_status !== 'pending') {
+            return response()->json(['success' => false, 'message' => 'Review is not in pending state.'], 422);
+        }
 
         $review->update([
             'moderation_status' => 'rejected',
