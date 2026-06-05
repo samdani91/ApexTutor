@@ -68,6 +68,9 @@ class AreaSeeder extends Seeder
             }
         }
 
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        DB::table('areas')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
         DB::table('areas')->insert($rows);
     }
 }

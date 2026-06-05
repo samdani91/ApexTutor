@@ -72,7 +72,9 @@
         <div class="md:col-span-1">
           <label class="block text-sm font-semibold font-display text-navy-700 mb-1">Email</label>
           <input v-model="profileForm.email" type="email" name="email" id="email" autocomplete="email"
-            class="input" required />
+            :class="['input', !isSuperAdmin && 'bg-paper-50 text-paper-400 cursor-not-allowed']"
+            :disabled="!isSuperAdmin" required />
+          <p v-if="!isSuperAdmin" class="mt-1 text-xs text-paper-400 font-body">Email changes require OTP verification — contact a super admin.</p>
         </div>
         <div class="md:col-span-1">
           <label class="block text-sm font-semibold font-display text-navy-700 mb-1">Mobile number</label>
@@ -186,6 +188,8 @@ const activeTab = ref('profile')
 const initials       = computed(() => getInitials(auth.user?.name))
 const uploadingAvatar = ref(false)
 
+const isSuperAdmin = computed(() => auth.user?.role === 'super_admin')
+
 const profileForm   = reactive({
   name:    auth.user?.name    ?? '',
   email:   auth.user?.email   ?? '',
@@ -223,12 +227,13 @@ async function saveProfile() {
   profileError.value = ''
   savingProfile.value = true
   try {
-    const { data } = await authApi.updateProfile({
+    const payload = {
       name:    profileForm.name,
-      email:   profileForm.email,
       phone:   profileForm.phone   || null,
       address: profileForm.address || null,
-    })
+    }
+    if (isSuperAdmin.value) payload.email = profileForm.email
+    const { data } = await authApi.updateProfile(payload)
     auth.user = data.data
     toast.success('Profile updated.')
   } catch (e) {

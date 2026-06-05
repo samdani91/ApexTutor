@@ -25,7 +25,18 @@
           </div>
 
           <!-- Actions -->
-          <div class="flex items-center gap-2 shrink-0">
+          <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+            <!-- View button (only when uploaded) -->
+            <button v-if="uploaded(slot.type)"
+              @click="viewDoc(uploaded(slot.type))"
+              class="inline-flex items-center gap-1.5 border border-navy-200 bg-navy-50 px-3 py-1.5 rounded-sm text-xs font-semibold font-display text-navy-700 hover:bg-navy-100 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              View
+            </button>
+
             <label class="cursor-pointer">
               <span class="inline-flex items-center gap-1.5 border border-paper-300 bg-white px-3 py-1.5 rounded-sm text-xs font-semibold font-display text-navy-700 hover:bg-navy-50 transition-colors">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -52,6 +63,46 @@
         </div>
       </div>
     </div>
+
+    <!-- Image preview modal -->
+    <Teleport to="body">
+      <Transition name="dialog">
+        <div v-if="previewDoc" class="fixed inset-0 z-[230] flex items-center justify-center px-4"
+          @click.self="previewDoc = null">
+          <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" @click="previewDoc = null" />
+          <div class="relative w-full max-w-2xl bg-white rounded-sm shadow-xl overflow-hidden">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-5 py-3 border-b border-paper-200">
+              <div class="min-w-0">
+                <p class="font-display font-semibold text-sm text-navy-900 truncate">{{ previewDoc.file_name }}</p>
+                <p class="text-xs text-paper-400 font-body mt-0.5 capitalize">{{ previewDoc.type.replace(/_/g, ' ') }}</p>
+              </div>
+              <button @click="previewDoc = null"
+                class="ml-3 shrink-0 w-8 h-8 flex items-center justify-center rounded-md text-paper-400 hover:bg-paper-100 hover:text-navy-700 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <!-- Image preview -->
+            <div class="p-4 flex items-center justify-center bg-paper-50 min-h-[200px] max-h-[70vh] overflow-auto">
+              <img :src="previewDoc.file_url" :alt="previewDoc.file_name"
+                class="max-w-full max-h-[60vh] object-contain rounded-sm shadow-sm" />
+            </div>
+            <!-- Footer -->
+            <div class="px-5 py-3 border-t border-paper-200 flex justify-end">
+              <a :href="previewDoc.file_url" target="_blank" rel="noopener"
+                class="inline-flex items-center gap-1.5 text-xs font-semibold font-display text-navy-700 border border-paper-300 bg-white px-3 py-1.5 rounded-sm hover:bg-navy-50 transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/>
+                </svg>
+                Open in new tab
+              </a>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
     <Teleport to="body">
       <Transition name="dialog">
@@ -99,10 +150,21 @@ const DOC_SLOTS = [
   { type: 'emergency_contact_nid', label: 'Emergency Contact NID',           hint: "National ID card of your emergency contact person" },
 ]
 
-const documents = ref([])
-const uploading = ref(null)  // type string while uploading
+const documents   = ref([])
+const uploading   = ref(null)
 const removeTarget = ref(null)
-const removing = ref(false)
+const removing    = ref(false)
+const previewDoc  = ref(null)
+
+function viewDoc(doc) {
+  if (!doc.file_url) return
+  // PDFs open in a new tab; images show in the preview modal
+  if (doc.mime_type === 'application/pdf') {
+    window.open(doc.file_url, '_blank', 'noopener')
+  } else {
+    previewDoc.value = doc
+  }
+}
 
 onMounted(async () => {
   const { data } = await tutorApi.getDocuments()

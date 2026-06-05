@@ -114,6 +114,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import { useNotificationStore } from '@/stores/notification.js'
 import { notificationApi } from '@/api/notifications.js'
+import { adminApi } from '@/api/admin.js'
 import LogoutConfirmDialog from './LogoutConfirmDialog.vue'
 import { toast } from 'vue-sonner'
 
@@ -123,12 +124,16 @@ const router      = useRouter()
 const $route      = useRoute()
 
 onMounted(async () => {
-  if (auth.isAuthenticated && (auth.isTutor || auth.isGuardian) && !notifStore.initialized) {
-    try {
+  if (!auth.isAuthenticated || notifStore.initialized) return
+  try {
+    if (auth.isAdmin) {
+      const { data } = await adminApi.getNotifications({ per_page: 1 })
+      notifStore.setUnread(data.unread ?? 0)
+    } else if (auth.isTutor || auth.isGuardian) {
       const { data } = await notificationApi.getAll()
       notifStore.setUnread(data.unread)
-    } catch {}
-  }
+    }
+  } catch {}
 })
 
 const mobileOpen      = ref(false)
@@ -136,7 +141,7 @@ const showLogoutDialog = ref(false)
 const logoutToast = { id: 'auth-logout', position: 'top-right' }
 
 const inDashboard = computed(() =>
-  $route.path.startsWith('/tutor/') || $route.path.startsWith('/guardian/')
+  $route.path.startsWith('/tutor/') || $route.path.startsWith('/guardian/') || $route.path.startsWith('/admin/')
 )
 
 const dashboardPath = computed(() => {

@@ -51,8 +51,14 @@ export const useAuthStore = defineStore('auth', {
     async uploadAvatar(formData) {
       const { data } = await authApi.uploadAvatar(formData)
       if (this.user) {
-        this.user.avatar     = data.avatar_url
-        this.user.avatar_url = data.avatar_url
+        if (data.pending) {
+          // Avatar is pending approval — keep old avatar, just update pending_avatar_url
+          this.user.pending_avatar_url = data.pending_avatar_url
+        } else {
+          this.user.avatar     = data.avatar_url
+          this.user.avatar_url = data.avatar_url
+          this.user.pending_avatar_url = null
+        }
       }
       return data
     },

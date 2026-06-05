@@ -131,7 +131,10 @@
 
               <div class="space-y-1.5">
                 <label class="block text-sm font-semibold font-display text-navy-700">Full name</label>
-                <input v-model="form.name" type="text" autocomplete="name" placeholder="Your full name" class="input" required />
+                <input v-model="form.name" type="text" autocomplete="name" placeholder="Your full name"
+                  class="input" required maxlength="150" pattern="^[A-Za-z\s.]+$"
+                  title="Name can only contain letters, spaces, and dots"
+                  @input="form.name = form.name.replace(/[^A-Za-z\s.]/g, '')" />
               </div>
 
               <div class="space-y-1.5">
@@ -141,7 +144,10 @@
 
               <div class="space-y-1.5">
                 <label class="block text-sm font-semibold font-display text-navy-700">Phone number</label>
-                <input v-model="form.phone" type="tel" autocomplete="tel" placeholder="017xxxxxxxx" class="input" required />
+                <input v-model="form.phone" type="tel" autocomplete="tel" placeholder="017xxxxxxxx"
+                  class="input" required maxlength="11" pattern="^[0-9]{11}$"
+                  title="Phone must be exactly 11 digits"
+                  @input="form.phone = form.phone.replace(/\D/g, '').slice(0, 11)" />
               </div>
 
               <div class="space-y-1.5">
@@ -254,6 +260,14 @@ onMounted(() => {
 })
 
 async function handleRegister() {
+  if (!/^[A-Za-z\s.]+$/.test(form.name.trim())) {
+    toast.error('Name can only contain letters, spaces, and dots.')
+    return
+  }
+  if (!/^\d{11}$/.test(form.phone)) {
+    toast.error('Phone number must be exactly 11 digits.')
+    return
+  }
   try {
     const data = await auth.register({ ...form })
     if (data.data?.pending_verification) {

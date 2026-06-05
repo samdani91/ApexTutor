@@ -17,13 +17,16 @@ class UserProfileController extends Controller
 {
     public function update(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $data = $request->validate([
+        $user  = $request->user();
+        $rules = [
             'name'    => 'required|string|max:255',
             'phone'   => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
-        ]);
-        // Email changes require OTP re-verification — use requestEmailChange instead
+        ];
+        if ($user->role === 'super_admin') {
+            $rules['email'] = 'sometimes|required|email|max:255|unique:users,email,' . $user->id;
+        }
+        $data = $request->validate($rules);
         $user->update($data);
         return response()->json(['success' => true, 'data' => $user->fresh(), 'message' => 'Profile updated.']);
     }
@@ -95,7 +98,9 @@ class UserProfileController extends Controller
 
         RateLimiter::clear($rateLimitKey);
         $otp->update(['used_at' => now()]);
-        $user->update(['email' => $user->pending_email, 'pending_email' => null]);
+        $user->email        = $user->pending_email;
+        $user->pending_email = null;
+        $user->save();
 
         return response()->json(['success' => true, 'data' => $user->fresh(), 'message' => 'Email updated successfully.']);
     }

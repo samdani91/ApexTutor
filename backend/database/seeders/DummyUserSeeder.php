@@ -28,6 +28,7 @@ class DummyUserSeeder extends Seeder
             ['name' => 'Mizanur Rahman',  'email' => 'mizan.tutor@example.com',   'phone' => '01711000012'],
             ['name' => 'Sharmin Akter',   'email' => 'sharmin.tutor@example.com', 'phone' => '01711000013'],
             ['name' => 'Nazmul Huda',     'email' => 'nazmul.tutor@example.com',  'phone' => '01711000014'],
+            ['name' => 'Parveen Akter',   'email' => 'parveen.tutor@example.com', 'phone' => '01711000015'],
         ];
 
         $guardians = [
@@ -45,37 +46,32 @@ class DummyUserSeeder extends Seeder
             ['name' => 'Shahnaz Parvin',  'email' => 'shahnaz.guardian@example.com','phone' => '01822000012'],
             ['name' => 'Belal Hossain',   'email' => 'belal.guardian@example.com',  'phone' => '01822000013'],
             ['name' => 'Ruma Khatun',     'email' => 'ruma.guardian@example.com',   'phone' => '01822000014'],
+            ['name' => 'Jamal Uddin',     'email' => 'jamal.guardian@example.com',  'phone' => '01822000015'],
         ];
 
         foreach ($tutors as $data) {
-            $user = User::updateOrCreate(
-                ['email' => $data['email']],
-                [
-                    'name'              => $data['name'],
-                    'phone'             => $data['phone'],
-                    'password'          => Hash::make($password),
-                    'role'              => 'tutor',
-                    'is_active'         => true,
-                    'email_verified_at' => now(),
-                    'phone_verified_at' => now(),
-                ]
-            );
+            $user = User::firstOrNew(['email' => $data['email']]);
+            $user->name              = $data['name'];
+            $user->phone             = $data['phone'];
+            $user->password          = Hash::make($password);
+            $user->role              = 'tutor';
+            $user->is_active         = true;
+            $user->email_verified_at = now();
+            $user->phone_verified_at = now();
+            $user->save();
             TutorProfile::firstOrCreate(['user_id' => $user->id]);
         }
 
         foreach ($guardians as $data) {
-            $user = User::updateOrCreate(
-                ['email' => $data['email']],
-                [
-                    'name'              => $data['name'],
-                    'phone'             => $data['phone'],
-                    'password'          => Hash::make($password),
-                    'role'              => 'guardian',
-                    'is_active'         => true,
-                    'email_verified_at' => now(),
-                    'phone_verified_at' => now(),
-                ]
-            );
+            $user = User::firstOrNew(['email' => $data['email']]);
+            $user->name              = $data['name'];
+            $user->phone             = $data['phone'];
+            $user->password          = Hash::make($password);
+            $user->role              = 'guardian';
+            $user->is_active         = true;
+            $user->email_verified_at = now();
+            $user->phone_verified_at = now();
+            $user->save();
             GuardianProfile::firstOrCreate(
                 ['user_id' => $user->id],
                 ['account_type' => 'guardian']

@@ -30,7 +30,11 @@ class TutorProfileController extends Controller
         $profile = $request->user()->tutorProfile()->firstOrCreate(['user_id' => $request->user()->id]);
 
         if ($this->pending->requiresPendingFlow($profile)) {
-            $this->pending->mergeTopLevel($profile, $data);
+            // Only stage fields that actually differ from the live profile value
+            $changed = array_filter($data, fn($v, $k) => $v !== $profile->$k, ARRAY_FILTER_USE_BOTH);
+            if (!empty($changed)) {
+                $this->pending->mergeTopLevel($profile, $changed);
+            }
             return response()->json(['success' => true, 'pending' => true, 'message' => 'Changes saved — pending admin review.']);
         }
 

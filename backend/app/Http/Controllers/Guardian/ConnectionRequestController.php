@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ConnectionRequest;
 use App\Models\User;
 use App\Notifications\ConnectionRequestedNotification;
+use App\Notifications\ConnectionRequestedTutorNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -46,13 +47,20 @@ class ConnectionRequestController extends Controller
         try {
             $tutor    = \App\Models\TutorProfile::with('user:id,name')->find($data['tutor_profile_id']);
             $admins   = User::where('role', 'super_admin')->get();
-            $notification = new ConnectionRequestedNotification(
+            $adminNotification = new ConnectionRequestedNotification(
                 guardianName:    $request->user()->name,
                 tutorName:       $tutor?->user?->name ?? 'a tutor',
                 guardianMessage: $data['guardian_message'] ?? null,
             );
             foreach ($admins as $admin) {
-                $admin->notify($notification);
+                $admin->notify($adminNotification);
+            }
+            if ($tutor?->user) {
+                $tutor->user->notify(new ConnectionRequestedTutorNotification(
+                    guardianName:    $request->user()->name,
+                    connectionId:    $connection->id,
+                    guardianMessage: $data['guardian_message'] ?? null,
+                ));
             }
         } catch (\Exception $e) {
             Log::error('Connection request notification failed', ['error' => $e->getMessage()]);

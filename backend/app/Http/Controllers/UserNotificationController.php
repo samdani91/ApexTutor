@@ -8,22 +8,27 @@ class UserNotificationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $request->validate([
-            'page'    => 'nullable|integer|min:1',
-            'type'    => 'nullable|in:approved,rejected,shortlisted',
-            'sort'    => 'nullable|in:newest,oldest',
-        ]);
-
-        $typeMap = [
-            'approved'    => 'pending_change_approved',
-            'rejected'    => 'pending_change_rejected',
-            'shortlisted' => 'tutor_shortlisted',
+        $allTypes = [
+            // tutor
+            'tutor_shortlisted', 'tutor_removed_from_shortlist',
+            'connection_requested_tutor', 'tutor_contacted', 'tuition_confirmed',
+            'pending_change_approved', 'pending_change_rejected',
+            'video_reviewed', 'profile_edited_by_admin',
+            'tutor_verified', 'tutor_verification_rejected',
+            // guardian
+            'connection_status_changed', 'review_approved', 'review_rejected',
         ];
+
+        $request->validate([
+            'page' => 'nullable|integer|min:1',
+            'type' => 'nullable|in:' . implode(',', $allTypes),
+            'sort' => 'nullable|in:newest,oldest',
+        ]);
 
         $query = $request->user()->notifications();
 
-        if ($request->type && isset($typeMap[$request->type])) {
-            $query->where('data->type', $typeMap[$request->type]);
+        if ($request->type) {
+            $query->where('data->type', $request->type);
         }
 
         if ($request->sort === 'oldest') {

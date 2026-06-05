@@ -13,9 +13,9 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
-    protected $fillable = ['name', 'email', 'pending_email', 'pending_email_token', 'phone', 'address', 'password', 'role', 'is_active', 'avatar'];
+    protected $fillable = ['name', 'email', 'pending_email', 'pending_email_token', 'phone', 'address', 'password', 'role', 'is_active', 'avatar', 'pending_avatar'];
     protected $hidden   = ['password', 'remember_token', 'pending_email_token'];
-    protected $appends  = ['avatar_url'];
+    protected $appends  = ['avatar_url', 'pending_avatar_url'];
     protected $casts = [
         'email_verified_at' => 'datetime',
         'phone_verified_at' => 'datetime',
@@ -26,6 +26,12 @@ class User extends Authenticatable
     {
         if (!$this->avatar) return null;
         return Storage::disk('public')->url($this->avatar);
+    }
+
+    public function getPendingAvatarUrlAttribute(): ?string
+    {
+        if (!$this->pending_avatar) return null;
+        return Storage::disk('public')->url($this->pending_avatar);
     }
 
     public function tutorProfile(): HasOne { return $this->hasOne(TutorProfile::class); }

@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ConnectionRequest;
 use App\Notifications\ConnectionStatusChangedNotification;
 use App\Notifications\ConnectionConfirmedTutorNotification;
+use App\Notifications\TutorContactedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -66,6 +67,11 @@ class AdminConnectionController extends Controller
 
                 if ($data['status'] === 'confirmed' && $tutorUser) {
                     $tutorUser->notify(new ConnectionConfirmedTutorNotification(
+                        guardianName: $guardianName,
+                    ));
+                }
+                if ($data['status'] === 'tutor_contacted' && $tutorUser) {
+                    $tutorUser->notify(new TutorContactedNotification(
                         guardianName: $guardianName,
                     ));
                 }

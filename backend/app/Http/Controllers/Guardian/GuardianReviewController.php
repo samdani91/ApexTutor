@@ -3,8 +3,11 @@ namespace App\Http\Controllers\Guardian;
 
 use App\Http\Controllers\Controller;
 use App\Models\Review;
+use App\Models\User;
+use App\Notifications\AdminReviewSubmittedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class GuardianReviewController extends Controller
 {
@@ -55,6 +58,21 @@ class GuardianReviewController extends Controller
             'review_text'           => $data['review_text'] ?? null,
             'moderation_status'     => 'pending',
         ]);
+
+        try {
+            $tutorName = $connection->tutorProfile?->user?->name
+                ?? \App\Models\TutorProfile::with('user:id,name')->find($data['tutor_profile_id'])?->user?->name
+                ?? 'a tutor';
+            $notification = new AdminReviewSubmittedNotification(
+                guardianName: $request->user()->name,
+                tutorName:    $tutorName,
+                rating:       $data['rating'],
+                reviewId:     $review->id,
+            );
+            User::where('role', 'super_admin')->each(fn($admin) => $admin->notify($notification));
+        } catch (\Exception $e) {
+            Log::error('Review submitted admin notification failed', ['error' => $e->getMessage()]);
+        }
 
         return response()->json([
             'success' => true,

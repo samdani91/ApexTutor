@@ -18,7 +18,11 @@ class DocumentController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        return response()->json(['success' => true, 'data' => $request->user()->tutorProfile->documents]);
+        $documents = $request->user()->tutorProfile->documents->map(function ($doc) {
+            $doc->file_url = Storage::disk('public')->url($doc->file_path);
+            return $doc;
+        });
+        return response()->json(['success' => true, 'data' => $documents]);
     }
 
     public function store(Request $request): JsonResponse
@@ -62,6 +66,7 @@ class DocumentController extends Controller
         }
 
         $doc = $profile->documents()->create($payload);
+        $doc->file_url = Storage::disk('public')->url($doc->file_path);
 
         return response()->json(['success' => true, 'data' => $doc, 'message' => 'Document uploaded.'], 201);
     }

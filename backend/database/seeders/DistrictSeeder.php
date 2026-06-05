@@ -3,6 +3,7 @@ namespace Database\Seeders;
 
 use App\Models\District;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class DistrictSeeder extends Seeder
 {
@@ -51,6 +52,10 @@ class DistrictSeeder extends Seeder
             ['name' => 'Netrokona', 'name_bn' => 'নেত্রকোণা', 'division' => 'Mymensingh'],
             ['name' => 'Sherpur', 'name_bn' => 'শেরপুর', 'division' => 'Mymensingh'],
         ];
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        DB::table('areas')->truncate();
+        District::truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
         foreach ($districts as $district) {
             District::create($district);
         }

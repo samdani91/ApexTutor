@@ -22,11 +22,14 @@ class AuthController extends Controller
     public function register(Request $request): JsonResponse
     {
         $request->validate([
-            'name'            => 'required|string|max:150',
+            'name'            => ['required', 'string', 'max:150', 'regex:/^[A-Za-z\s.]+$/'],
             'email'           => 'required|email|max:255',
-            'phone'           => ['required', 'string', 'max:20', 'regex:/^(\+88)?01[3-9]\d{8}$/'],
+            'phone'           => ['required', 'digits:11'],
             'password'        => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
             'role'            => 'required|in:tutor,guardian,student',
+        ], [
+            'name.regex'  => 'Name can only contain letters, spaces, and dots.',
+            'phone.digits' => 'Phone number must be exactly 11 digits.',
         ]);
 
         // Clean up stale unverified accounts older than 7 days so the user can re-register
@@ -146,7 +149,8 @@ class AuthController extends Controller
             return response()->json(['success' => false, 'message' => 'User not found.'], 404);
         }
 
-        $user->update(['email_verified_at' => now()]);
+        $user->email_verified_at = now();
+        $user->save();
         $user->tokens()->delete();
         $token = $user->createToken('auth_token')->plainTextToken;
 

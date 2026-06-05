@@ -43,6 +43,14 @@ export const adminApi = {
   approvePendingChange: (id) => http.put(`/admin/pending-changes/${id}/approve`),
   rejectPendingChange: (id, data) => http.put(`/admin/pending-changes/${id}/reject`, data),
 
+  // Pending avatar approvals (standalone: guardians / unverified tutors)
+  approvePendingAvatar: (id) => http.put(`/admin/pending-avatars/${id}/approve`),
+  rejectPendingAvatar: (id, data) => http.put(`/admin/pending-avatars/${id}/reject`, data),
+
+  // Admin direct avatar management (replace / remove on profile detail views)
+  replaceUserAvatar: (id, formData) => http.post(`/admin/users/${id}/avatar`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  removeUserAvatar: (id) => http.delete(`/admin/users/${id}/avatar`),
+
   // Reviews
   getReviews: (params) => http.get('/admin/reviews', { params }),
   getPendingReviews: (params) => http.get('/admin/reviews/pending', { params }),
@@ -67,7 +75,7 @@ export const adminApi = {
   getAuditActions: () => http.get('/admin/audit-log/actions'),
 
   // Notifications
-  getNotifications: () => http.get('/admin/notifications'),
+  getNotifications: (params = {}) => http.get('/admin/notifications', { params }),
   markNotificationRead: (id) => http.put(`/admin/notifications/${id}/read`),
   markAllNotificationsRead: () => http.put('/admin/notifications/read-all'),
 }

@@ -9,7 +9,12 @@
             <img v-if="avatarUrl" :src="avatarUrl" :alt="auth.user?.name" class="w-full h-full object-cover" />
             <span v-else class="font-display font-bold text-3xl text-navy-700">{{ initials }}</span>
           </div>
-          <label class="absolute bottom-0 right-0 w-7 h-7 bg-gold-400 rounded-full flex items-center justify-center cursor-pointer hover:bg-gold-500 transition-colors shadow-md">
+          <!-- Pending avatar badge -->
+          <span v-if="auth.user?.pending_avatar_url"
+            class="absolute -top-1 -right-1 bg-amber-400 text-amber-900 text-[9px] font-bold font-display px-1.5 py-0.5 rounded-pill shadow-sm border border-amber-300 leading-tight">
+            Pending
+          </span>
+          <label v-else class="absolute bottom-0 right-0 w-7 h-7 bg-gold-400 rounded-full flex items-center justify-center cursor-pointer hover:bg-gold-500 transition-colors shadow-md">
             <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/>
               <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z"/>
@@ -200,8 +205,12 @@ async function uploadAvatar(e) {
   try {
     const fd = new FormData()
     fd.append('avatar', file)
-    await auth.uploadAvatar(fd)
-    toast.success('Profile picture updated!')
+    const result = await auth.uploadAvatar(fd)
+    if (result.pending) {
+      toast.info('Photo submitted for admin approval. Your current photo stays until it\'s approved.')
+    } else {
+      toast.success('Profile picture updated!')
+    }
   } catch {
     toast.error('Upload failed. Max 2 MB, JPG/PNG/WebP.')
   } finally {

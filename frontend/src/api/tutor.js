@@ -21,6 +21,7 @@ export const tutorApi = {
   uploadVideo: (formData, config = {}) => http.post('/tutor/videos', formData, { headers: { 'Content-Type': 'multipart/form-data' }, ...config }),
   updateVideo: (id, data) => http.put(`/tutor/videos/${id}`, data),
   deleteVideo: (id) => http.delete(`/tutor/videos/${id}`),
+  getReviews: (params = {}) => http.get('/tutor/reviews', { params }),
   getTravel: () => http.get('/tutor/travel'),
   addTravel: (data) => http.post('/tutor/travel', data),
   updateTravel: (id, data) => http.put(`/tutor/travel/${id}`, data),
