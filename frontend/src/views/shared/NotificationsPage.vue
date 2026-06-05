@@ -20,21 +20,32 @@
     </div>
 
     <!-- Filter / Sort bar -->
-    <div class="mb-6 rounded-lg border border-paper-200 bg-white p-3 shadow-sm">
-      <div class="grid gap-3 sm:grid-cols-[minmax(0,176px)_minmax(0,160px)_auto] sm:items-center">
-      <div>
-        <DropSelect v-model="activeType" :options="typeOpts" placeholder="All types"
-          @update:modelValue="onFilterChange" />
-      </div>
-      <div>
-        <DropSelect v-model="sortOrder" :options="sortOpts" placeholder="Newest first"
-          @update:modelValue="onFilterChange" />
-      </div>
-      <button v-if="activeType !== '' || sortOrder !== 'newest'"
-        @click="activeType = ''; sortOrder = 'newest'; onFilterChange()"
-        class="inline-flex h-10 items-center justify-center rounded-sm bg-red-500 px-4 text-xs font-semibold font-display text-white hover:bg-red-600 transition-colors">
-        Reset Filters
-      </button>
+    <div class="mb-6 rounded-lg border border-paper-200 bg-white px-4 py-3 shadow-sm">
+      <div class="flex flex-wrap items-end gap-3">
+        <div class="w-52">
+          <p class="text-xs text-paper-400 font-body mb-1">Type</p>
+          <DropSelect
+            :modelValue="activeType"
+            :options="typeOpts"
+            placeholder="All types"
+            @update:modelValue="val => { activeType = val; onFilterChange() }"
+          />
+        </div>
+        <div class="w-40">
+          <p class="text-xs text-paper-400 font-body mb-1">Sort</p>
+          <DropSelect
+            :modelValue="sortOrder"
+            :options="sortOpts"
+            @update:modelValue="val => { sortOrder = val; onFilterChange() }"
+          />
+        </div>
+        <div>
+          <button v-if="activeType !== '' || sortOrder !== 'newest'"
+            @click="activeType = ''; sortOrder = 'newest'; onFilterChange()"
+            class="rounded-sm bg-red-600 px-3 py-2 text-xs font-semibold font-display text-white hover:bg-red-700 transition-colors">
+            Clear
+          </button>
+        </div>
       </div>
     </div>
 
@@ -156,17 +167,95 @@
 
             <!-- Shortlisted -->
             <template v-else-if="n.data.type === 'tutor_shortlisted'">
-              <p class="text-sm font-body leading-relaxed"
-                :class="n.read_at ? 'text-navy-800' : 'font-semibold text-navy-900'">
-                <span class="text-violet-700 font-semibold">{{ n.data.guardian_name || 'A guardian' }}</span>
-                has added you to their shortlist.
+              <p class="text-sm font-body leading-relaxed" :class="n.read_at ? 'text-navy-800' : 'font-semibold text-navy-900'">
+                <span class="text-gold-700 font-semibold">{{ n.data.guardian_name || 'A guardian' }}</span>
+                added you to their shortlist.
+              </p>
+            </template>
+
+            <!-- Removed from shortlist -->
+            <template v-else-if="n.data.type === 'tutor_removed_from_shortlist'">
+              <p class="text-sm font-body leading-relaxed" :class="n.read_at ? 'text-navy-800' : 'font-semibold text-navy-900'">
+                <span class="font-semibold">{{ n.data.guardian_name || 'A guardian' }}</span>
+                removed you from their shortlist.
+              </p>
+            </template>
+
+            <!-- Connection request (tutor) -->
+            <template v-else-if="n.data.type === 'connection_requested_tutor'">
+              <p class="text-sm font-body leading-relaxed" :class="n.read_at ? 'text-navy-800' : 'font-semibold text-navy-900'">
+                <span class="text-emerald-700 font-semibold">{{ n.data.guardian_name || 'A guardian' }}</span>
+                has sent you a connection request.
+              </p>
+              <p v-if="n.data.guardian_message" class="mt-2 text-xs text-paper-500 font-body italic border-l-2 border-paper-300 pl-2">
+                "{{ n.data.guardian_message }}"
+              </p>
+            </template>
+
+            <!-- Tutor contacted -->
+            <template v-else-if="n.data.type === 'tutor_contacted'">
+              <p class="text-sm font-body leading-relaxed" :class="n.read_at ? 'text-navy-800' : 'font-semibold text-navy-900'">
+                {{ n.data.message }}
+              </p>
+            </template>
+
+            <!-- Connection status changed (guardian) -->
+            <template v-else-if="n.data.type === 'connection_status_changed'">
+              <p class="text-sm font-body leading-relaxed" :class="n.read_at ? 'text-navy-800' : 'font-semibold text-navy-900'">
+                {{ n.data.message }}
+              </p>
+              <span v-if="n.data.status" class="mt-2 inline-block rounded-full px-2.5 py-1 text-[11px] font-bold font-display uppercase tracking-wide"
+                :class="{
+                  'bg-emerald-50 text-emerald-700': n.data.status === 'confirmed',
+                  'bg-red-50 text-red-700':         n.data.status === 'declined' || n.data.status === 'closed',
+                  'bg-blue-50 text-blue-700':       n.data.status === 'tutor_contacted',
+                  'bg-amber-50 text-amber-700':     n.data.status === 'admin_reviewing',
+                }">
+                {{ n.data.status.replace('_', ' ') }}
+              </span>
+            </template>
+
+            <!-- Video reviewed -->
+            <template v-else-if="n.data.type === 'video_reviewed'">
+              <p class="text-sm font-body leading-relaxed" :class="n.read_at ? 'text-navy-800' : 'font-semibold text-navy-900'">
+                {{ n.data.message }}
+              </p>
+            </template>
+
+            <!-- Profile edited by admin -->
+            <template v-else-if="n.data.type === 'profile_edited_by_admin'">
+              <p class="text-sm font-body leading-relaxed" :class="n.read_at ? 'text-navy-800' : 'font-semibold text-navy-900'">
+                An admin has updated your profile.
+              </p>
+            </template>
+
+            <!-- Tutor verified -->
+            <template v-else-if="n.data.type === 'tutor_verified'">
+              <p class="text-sm font-body leading-relaxed" :class="n.read_at ? 'text-navy-800' : 'font-semibold text-navy-900'">
+                Congratulations! Your tutor profile has been <span class="text-teal-700 font-semibold">verified</span> and is now live.
+              </p>
+            </template>
+
+            <!-- Verification rejected -->
+            <template v-else-if="n.data.type === 'tutor_verification_rejected'">
+              <p class="text-sm font-body leading-relaxed" :class="n.read_at ? 'text-navy-800' : 'font-semibold text-navy-900'">
+                Your tutor profile verification was <span class="text-red-600 font-semibold">not approved</span>.
+              </p>
+              <p v-if="n.data.reason" class="mt-2 text-xs text-red-700 font-body bg-red-50 border border-red-100 rounded-md px-3 py-2">
+                {{ n.data.reason }}
+              </p>
+            </template>
+
+            <!-- Review approved/rejected (guardian) -->
+            <template v-else-if="n.data.type === 'review_approved' || n.data.type === 'review_rejected'">
+              <p class="text-sm font-body leading-relaxed" :class="n.read_at ? 'text-navy-800' : 'font-semibold text-navy-900'">
+                {{ n.data.message }}
               </p>
             </template>
 
             <!-- Fallback -->
             <template v-else>
-              <p class="text-sm font-body text-navy-800 leading-relaxed"
-                :class="n.read_at ? '' : 'font-semibold'">
+              <p class="text-sm font-body text-navy-800 leading-relaxed" :class="n.read_at ? '' : 'font-semibold'">
                 {{ n.data.message }}
               </p>
             </template>
@@ -216,44 +305,7 @@
         </div>
       </div>
 
-      <!-- Pagination -->
-      <div v-if="pagination.last_page > 1"
-        class="flex items-center justify-center gap-1 mt-6 flex-wrap">
-        <!-- Prev -->
-        <button @click="goPage(pagination.current_page - 1)"
-          :disabled="pagination.current_page === 1"
-          class="w-8 h-8 flex items-center justify-center rounded-md border border-paper-300 text-navy-700 hover:bg-navy-50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
-          aria-label="Previous page">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/>
-          </svg>
-        </button>
-
-        <!-- Page numbers -->
-        <template v-for="p in pageButtons" :key="p">
-          <span v-if="p === '...'"
-            class="w-8 h-8 flex items-center justify-center text-paper-400 text-sm font-body select-none">
-            …
-          </span>
-          <button v-else @click="goPage(p)"
-            class="w-8 h-8 flex items-center justify-center rounded-md text-sm font-semibold font-display border transition-colors"
-            :class="p === pagination.current_page
-              ? 'bg-navy-700 text-white border-navy-700'
-              : 'border-paper-300 text-navy-700 hover:bg-navy-50'">
-            {{ p }}
-          </button>
-        </template>
-
-        <!-- Next -->
-        <button @click="goPage(pagination.current_page + 1)"
-          :disabled="pagination.current_page === pagination.last_page"
-          class="w-8 h-8 flex items-center justify-center rounded-md border border-paper-300 text-navy-700 hover:bg-navy-50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
-          aria-label="Next page">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/>
-          </svg>
-        </button>
-      </div>
+      <AdminPagination :meta="pagination" @page="goPage" />
     </template>
 
   </div>
@@ -263,43 +315,49 @@
 import { ref, computed, onMounted } from 'vue'
 import { notificationApi } from '@/api/notifications.js'
 import { useNotificationStore } from '@/stores/notification.js'
+import { useAuthStore } from '@/stores/auth.js'
 import DropSelect from '@/components/search/DropSelect.vue'
+import AdminPagination from '@/components/admin/AdminPagination.vue'
 
 const notifStore = useNotificationStore()
+const auth       = useAuthStore()
 
-const typeOpts = [
-  { value: '',           label: 'All types'   },
-  { value: 'approved',   label: 'Approved'    },
-  { value: 'rejected',   label: 'Rejected'    },
-  { value: 'shortlisted',label: 'Shortlisted' },
+const tutorTypes = [
+  { value: '',                             label: 'All' },
+  { value: 'tutor_shortlisted',            label: 'Shortlisted' },
+  { value: 'tutor_removed_from_shortlist', label: 'Removed' },
+  { value: 'connection_requested_tutor',   label: 'New Request' },
+  { value: 'tutor_contacted',              label: 'Contacted' },
+  { value: 'tuition_confirmed',            label: 'Confirmed' },
+  { value: 'pending_change_approved',      label: 'Approved' },
+  { value: 'pending_change_rejected',      label: 'Rejected' },
+  { value: 'video_reviewed',               label: 'Video Review' },
+  { value: 'profile_edited_by_admin',      label: 'Profile Edit' },
+  { value: 'tutor_verified',               label: 'Verified' },
+  { value: 'tutor_verification_rejected',  label: 'Verify Rejected' },
 ]
+
+const guardianTypes = [
+  { value: '',                          label: 'All' },
+  { value: 'connection_status_changed', label: 'Connection' },
+  { value: 'review_approved',           label: 'Review Approved' },
+  { value: 'review_rejected',           label: 'Review Rejected' },
+]
+
+const typeOpts = computed(() => auth.isTutor ? tutorTypes : guardianTypes)
+
 const sortOpts = [
   { value: 'newest', label: 'Newest first' },
   { value: 'oldest', label: 'Oldest first' },
 ]
 
 const items      = ref([])
-const pagination = ref({ current_page: 1, last_page: 1 })
+const pagination = ref({ current_page: 1, last_page: 1, total: 0, from: 0, to: 0 })
 const loading    = ref(true)
 const marking    = ref(false)
 const activeType = ref('')
 const sortOrder  = ref('newest')
 const activeMenu = ref(null)
-
-// Same ellipsis logic as AdminUsersList
-const pageButtons = computed(() => {
-  const total   = pagination.value.last_page
-  const current = pagination.value.current_page
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
-  const pages = []
-  const addRange = (from, to) => { for (let i = from; i <= to; i++) pages.push(i) }
-  pages.push(1)
-  if (current > 3) pages.push('...')
-  addRange(Math.max(2, current - 1), Math.min(total - 1, current + 1))
-  if (current < total - 2) pages.push('...')
-  pages.push(total)
-  return pages
-})
 
 onMounted(() => load(1))
 
@@ -307,7 +365,7 @@ async function load(page = 1) {
   loading.value = true
   try {
     const params = { page }
-    if (activeType.value) params.type = activeType.value
+    if (activeType.value)            params.type = activeType.value
     if (sortOrder.value !== 'newest') params.sort = sortOrder.value
 
     const { data } = await notificationApi.getAll(params)
@@ -348,29 +406,41 @@ async function markAll() {
   }
 }
 
-function iconBg(type, data = null) {
-  if (type === 'pending_change_approved' || type === 'tuition_confirmed' || (type === 'connection_status_changed' && data?.status === 'confirmed')) return 'bg-emerald-50 text-emerald-600 ring-emerald-100'
-  if (type === 'pending_change_rejected') return 'bg-red-50 text-red-600 ring-red-100'
-  if (type === 'tutor_shortlisted')       return 'bg-gold-50 text-gold-700 ring-gold-100'
-  return 'bg-navy-50 text-navy-600 ring-navy-100'
+function notifMeta(type, data = null) {
+  const status = data?.status
+  if (type === 'pending_change_approved' || type === 'tuition_confirmed' || (type === 'connection_status_changed' && status === 'confirmed'))
+    return { label: type === 'tuition_confirmed' ? 'Confirmed' : 'Approved', pill: 'bg-emerald-50 text-emerald-700', icon: 'bg-emerald-50 text-emerald-600 ring-emerald-100' }
+  if (type === 'pending_change_rejected' || type === 'tutor_verification_rejected')
+    return { label: 'Rejected', pill: 'bg-red-50 text-red-700', icon: 'bg-red-50 text-red-600 ring-red-100' }
+  if (type === 'tutor_shortlisted')
+    return { label: 'Shortlisted', pill: 'bg-gold-50 text-gold-700', icon: 'bg-gold-50 text-gold-700 ring-gold-100' }
+  if (type === 'tutor_removed_from_shortlist')
+    return { label: 'Removed', pill: 'bg-paper-100 text-paper-600', icon: 'bg-paper-50 text-paper-500 ring-paper-200' }
+  if (type === 'connection_requested_tutor')
+    return { label: 'New Request', pill: 'bg-emerald-50 text-emerald-700', icon: 'bg-emerald-50 text-emerald-600 ring-emerald-100' }
+  if (type === 'tutor_contacted')
+    return { label: 'Contacted', pill: 'bg-blue-50 text-blue-700', icon: 'bg-blue-50 text-blue-600 ring-blue-100' }
+  if (type === 'connection_status_changed')
+    return { label: 'Connection Update', pill: 'bg-emerald-50 text-emerald-700', icon: 'bg-emerald-50 text-emerald-600 ring-emerald-100' }
+  if (type === 'video_reviewed' && data?.action === 'rejected')
+    return { label: 'Video Rejected', pill: 'bg-red-50 text-red-700', icon: 'bg-red-50 text-red-600 ring-red-100' }
+  if (type === 'video_reviewed')
+    return { label: 'Video Approved', pill: 'bg-violet-50 text-violet-700', icon: 'bg-violet-50 text-violet-600 ring-violet-100' }
+  if (type === 'profile_edited_by_admin')
+    return { label: 'Profile Edited', pill: 'bg-amber-50 text-amber-700', icon: 'bg-amber-50 text-amber-600 ring-amber-100' }
+  if (type === 'tutor_verified')
+    return { label: 'Verified', pill: 'bg-teal-50 text-teal-700', icon: 'bg-teal-50 text-teal-600 ring-teal-100' }
+  if (type === 'review_approved')
+    return { label: 'Review Approved', pill: 'bg-emerald-50 text-emerald-700', icon: 'bg-emerald-50 text-emerald-600 ring-emerald-100' }
+  if (type === 'review_rejected')
+    return { label: 'Review Rejected', pill: 'bg-red-50 text-red-700', icon: 'bg-red-50 text-red-600 ring-red-100' }
+  return { label: 'Notification', pill: 'bg-navy-50 text-navy-700', icon: 'bg-navy-50 text-navy-600 ring-navy-100' }
 }
 
-function typeLabel(type, data = null) {
-  if (type === 'pending_change_approved') return 'Approved'
-  if (type === 'tuition_confirmed' || (type === 'connection_status_changed' && data?.status === 'confirmed')) return 'Confirmed'
-  if (type === 'pending_change_rejected') return 'Rejected'
-  if (type === 'tutor_shortlisted') return 'Shortlisted'
-  return 'Notification'
-}
-
-function typePill(type, data = null) {
-  if (type === 'pending_change_approved' || type === 'tuition_confirmed' || (type === 'connection_status_changed' && data?.status === 'confirmed')) return 'bg-emerald-50 text-emerald-700'
-  if (type === 'pending_change_rejected') return 'bg-red-50 text-red-700'
-  if (type === 'tutor_shortlisted') return 'bg-gold-50 text-gold-700'
-  return 'bg-navy-50 text-navy-700'
-}
-
-function isConfirmedNotification(n) {
+function iconBg(type, data = null)   { return notifMeta(type, data).icon }
+function typeLabel(type, data = null) { return notifMeta(type, data).label }
+function typePill(type, data = null)  { return notifMeta(type, data).pill }
+function isConfirmedNotification(n)  {
   return n?.data?.type === 'tuition_confirmed'
     || (n?.data?.type === 'connection_status_changed' && n?.data?.status === 'confirmed')
 }
