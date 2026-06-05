@@ -15,6 +15,7 @@ const routes = [
       { path: 'dashboard',           component: () => import('@/views/tutor/TutorDashboard.vue'),      name: 'tutor-dashboard' },
       { path: 'profile',             component: () => import('@/views/tutor/ProfileBuilder.vue'),       name: 'tutor-profile-builder' },
       { path: 'confirmed-tuitions',  component: () => import('@/views/tutor/ConfirmedTuitions.vue'),    name: 'tutor-confirmed-tuitions' },
+      { path: 'reviews',             component: () => import('@/views/tutor/TutorReviews.vue'),         name: 'tutor-reviews' },
       { path: 'notifications',       component: () => import('@/views/shared/NotificationsPage.vue'),  name: 'tutor-notifications' },
       { path: 'settings',            component: () => import('@/views/shared/SettingsPage.vue'),        name: 'tutor-settings' },
     ]
@@ -40,9 +41,9 @@ const routes = [
     children: [
       { path: 'dashboard', component: () => import('@/views/admin/AdminDashboard.vue'), name: 'admin-dashboard' },
       { path: 'users', component: () => import('@/views/admin/AdminUsersList.vue'), name: 'admin-users' },
-      { path: 'tutors/:id', component: () => import('@/views/admin/AdminTutorDetail.vue'), name: 'admin-tutor-detail' },
-      { path: 'tutors/:id/edit', component: () => import('@/views/admin/AdminTutorEdit.vue'), name: 'admin-tutor-edit' },
-      { path: 'guardians/:id', component: () => import('@/views/admin/AdminGuardianDetail.vue'), name: 'admin-guardian-detail' },
+      { path: 'tutors/:tutorId', component: () => import('@/views/admin/AdminTutorDetail.vue'), name: 'admin-tutor-detail' },
+      { path: 'tutors/:tutorId/edit', component: () => import('@/views/admin/AdminTutorEdit.vue'), name: 'admin-tutor-edit' },
+      { path: 'guardians/:guardianId', component: () => import('@/views/admin/AdminGuardianDetail.vue'), name: 'admin-guardian-detail' },
       { path: 'admins/create', component: () => import('@/views/admin/AdminCreateAdmin.vue'), name: 'admin-create-admin' },
       { path: 'admins/:id', component: () => import('@/views/admin/AdminUserDetail.vue'), name: 'admin-user-detail' },
       { path: 'verifications', component: () => import('@/views/admin/TutorVerification.vue'), name: 'admin-verifications' },

@@ -27,9 +27,11 @@ class GuardianProfile extends Model
     protected static function booted(): void
     {
         static::created(function (GuardianProfile $profile) {
-            $profile->updateQuietly([
-                'guardian_id' => 'GRD-' . str_pad($profile->id, 6, '0', STR_PAD_LEFT),
-            ]);
+            do {
+                $num = random_int(100000, 999999);
+            } while (self::where('guardian_id', 'GRD-' . $num)->exists());
+
+            $profile->updateQuietly(['guardian_id' => 'GRD-' . $num]);
         });
     }
 

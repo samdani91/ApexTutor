@@ -1,6 +1,6 @@
 <template>
   <div class="w-full">
-    <RouterLink :to="{ name: 'admin-tutor-detail', params: { id: route.params.id } }"
+    <RouterLink :to="{ name: 'admin-tutor-detail', params: { tutorId: route.params.tutorId } }"
       class="inline-flex items-center gap-1.5 text-sm font-semibold font-display text-navy-700 hover:text-navy-900 mb-5">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
@@ -42,6 +42,44 @@
         <p class="text-xs text-paper-400 font-body mt-1 text-right">{{ (form.profile.bio || '').length }}/2000</p>
       </section>
       </div>
+
+      <!-- ── Profile photo ──────────────────────────────────── -->
+      <section class="card mt-4">
+        <h2 class="section-title">Profile photo</h2>
+        <div class="flex items-center gap-5">
+          <div class="w-20 h-20 rounded-xl bg-navy-100 flex items-center justify-center overflow-hidden ring-2 ring-white shadow shrink-0 relative">
+            <img v-if="tutor?.user?.avatar_url" :src="tutor.user.avatar_url" class="w-full h-full object-cover" alt="Current photo" />
+            <span v-else class="font-display font-bold text-2xl text-navy-700">{{ tutor?.user?.name?.charAt(0)?.toUpperCase() }}</span>
+            <span v-if="tutor?.user?.pending_avatar_url"
+              class="absolute top-0.5 right-0.5 bg-amber-400 text-amber-900 text-[8px] font-bold font-display px-1 py-0.5 rounded leading-tight">
+              Pending
+            </span>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div v-if="tutor?.user?.pending_avatar_url" class="flex items-center gap-2">
+              <img :src="tutor.user.pending_avatar_url" class="w-12 h-12 rounded-lg object-cover ring-2 ring-amber-400" alt="Pending photo" />
+              <span class="text-xs font-body text-amber-700">Pending approval photo</span>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+              <label class="cursor-pointer inline-flex items-center gap-1.5 text-sm font-semibold font-display px-3 py-1.5 rounded-md border border-paper-300 bg-white text-navy-700 hover:bg-navy-50 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 12l-4-4m0 0L8 12m4-4v12"/>
+                </svg>
+                Replace photo
+                <input type="file" class="hidden" accept="image/jpeg,image/png,image/webp" @change="onAvatarSelected" />
+              </label>
+              <button v-if="tutor?.user?.avatar_url" @click="avatarRemoveConfirm = true"
+                class="inline-flex items-center gap-1.5 text-sm font-semibold font-display px-3 py-1.5 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                Remove photo
+              </button>
+            </div>
+            <p class="text-xs text-paper-400 font-body">JPG, PNG or WebP. Max 2 MB.</p>
+          </div>
+        </div>
+      </section>
 
       <!-- ── Personal info ────────────────────────────────────── -->
       <section class="card mt-4">
@@ -270,6 +308,25 @@
         @confirm="doDeleteVideo"
         @cancel="deleteVideoTarget = null"
       />
+
+      <AdminConfirmDialog
+        :show="!!avatarReplaceFile"
+        title="Replace Profile Photo?"
+        :message="`Replace ${tutor?.user?.name}'s current photo? Any pending avatar will also be cleared.`"
+        confirm-label="Yes, Replace"
+        @confirm="confirmAvatarReplace"
+        @cancel="avatarReplaceFile = null"
+      />
+
+      <AdminConfirmDialog
+        :show="avatarRemoveConfirm"
+        title="Remove Profile Photo?"
+        :message="`Remove ${tutor?.user?.name}'s profile photo? This cannot be undone.`"
+        confirm-label="Remove Photo"
+        :danger="true"
+        @confirm="confirmAvatarRemove"
+        @cancel="avatarRemoveConfirm = false"
+      />
     </template>
   </div>
 </template>
@@ -298,6 +355,50 @@ const loading = ref(true)
 const saving  = ref(false)
 const saveConfirmOpen = ref(false)
 const cancelConfirmOpen = ref(false)
+
+// ── Avatar management ─────────────────────────────────────
+const avatarReplaceFile   = ref(null)
+const avatarRemoveConfirm = ref(false)
+const avatarSaving        = ref(false)
+
+function onAvatarSelected(e) {
+  const file = e.target.files?.[0]
+  e.target.value = ''
+  if (file) avatarReplaceFile.value = file
+}
+
+async function confirmAvatarReplace() {
+  const file = avatarReplaceFile.value
+  avatarReplaceFile.value = null
+  avatarSaving.value = true
+  try {
+    const fd = new FormData()
+    fd.append('avatar', file)
+    const { data } = await adminApi.replaceUserAvatar(tutor.value.user.id, fd)
+    tutor.value.user.avatar_url         = data.avatar_url
+    tutor.value.user.pending_avatar_url = null
+    toast.success('Photo replaced.')
+  } catch (e) {
+    toast.error(e.response?.data?.message ?? 'Could not replace photo.')
+  } finally {
+    avatarSaving.value = false
+  }
+}
+
+async function confirmAvatarRemove() {
+  avatarRemoveConfirm.value = false
+  avatarSaving.value = true
+  try {
+    await adminApi.removeUserAvatar(tutor.value.user.id)
+    tutor.value.user.avatar_url         = null
+    tutor.value.user.pending_avatar_url = null
+    toast.success('Photo removed.')
+  } catch (e) {
+    toast.error(e.response?.data?.message ?? 'Could not remove photo.')
+  } finally {
+    avatarSaving.value = false
+  }
+}
 
 // ── Documents ─────────────────────────────────────────────
 const documents       = ref([])
@@ -333,7 +434,7 @@ const form = reactive({
 
 onMounted(async () => {
   try {
-    const { data } = await adminApi.getTutor(route.params.id)
+    const { data } = await adminApi.getTutor(route.params.tutorId)
     tutor.value = data.data
     populate(data.data)
   } finally {
@@ -371,7 +472,7 @@ async function uploadDoc() {
     const fd = new FormData()
     fd.append('type', docUpload.type)
     fd.append('file', docUpload.file)
-    const { data } = await adminApi.uploadTutorDocument(route.params.id, fd)
+    const { data } = await adminApi.uploadTutorDocument(route.params.tutorId, fd)
     // Replace any existing doc of the same type, then add the new one
     documents.value = documents.value.filter(d => d.type !== data.data.type)
     documents.value.push(data.data)
@@ -395,7 +496,7 @@ async function doDeleteDoc() {
   if (!doc) return
   docDeleting[doc.id] = true
   try {
-    await adminApi.deleteTutorDocument(route.params.id, doc.id)
+    await adminApi.deleteTutorDocument(route.params.tutorId, doc.id)
     documents.value = documents.value.filter(d => d.id !== doc.id)
     toast.success('Document deleted.')
   } catch (e) {
@@ -423,7 +524,7 @@ function cancelEditVideo(vid) {
 async function saveVideo(vid) {
   videoSaving[vid.id] = true
   try {
-    const { data } = await adminApi.updateTutorVideo(route.params.id, vid.id, { ...videoEditing[vid.id] })
+    const { data } = await adminApi.updateTutorVideo(route.params.tutorId, vid.id, { ...videoEditing[vid.id] })
     const idx = videos.value.findIndex(v => v.id === vid.id)
     if (idx !== -1) videos.value[idx] = { ...videos.value[idx], ...data.data }
     delete videoEditing[vid.id]
@@ -445,7 +546,7 @@ async function doDeleteVideo() {
   if (!vid) return
   videoDeleting[vid.id] = true
   try {
-    await adminApi.deleteTutorVideo(route.params.id, vid.id)
+    await adminApi.deleteTutorVideo(route.params.tutorId, vid.id)
     videos.value = videos.value.filter(v => v.id !== vid.id)
     toast.success('Video deleted.')
   } catch (e) {
@@ -459,9 +560,9 @@ async function save() {
   saveConfirmOpen.value = false
   saving.value = true
   try {
-    await adminApi.updateTutor(route.params.id, { ...form })
+    await adminApi.updateTutor(route.params.tutorId, { ...form })
     toast.success('Profile updated successfully.')
-    router.push({ name: 'admin-tutor-detail', params: { id: route.params.id } })
+    router.push({ name: 'admin-tutor-detail', params: { tutorId: route.params.tutorId } })
   } catch (e) {
     toast.error(e.response?.data?.message ?? 'Could not save changes.')
   } finally {
@@ -471,7 +572,7 @@ async function save() {
 
 function confirmCancel() {
   cancelConfirmOpen.value = false
-  router.push({ name: 'admin-tutor-detail', params: { id: route.params.id } })
+  router.push({ name: 'admin-tutor-detail', params: { tutorId: route.params.tutorId } })
 }
 </script>
 

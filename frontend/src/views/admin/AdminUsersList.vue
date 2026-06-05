@@ -12,13 +12,27 @@
     <div class="card mb-5 space-y-3">
       <!-- Row 1: search + tabs -->
       <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-        <div class="relative flex-1 w-full">
-          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-paper-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
-          </svg>
-          <input v-model="searchInput" @input="onSearch" type="search" placeholder="Search by name or email…"
-            class="input pl-9 w-full" />
+
+        <!-- Search: type DropSelect + text input -->
+        <div class="flex items-center gap-2 flex-1 w-full">
+          <div class="w-36 shrink-0">
+            <DropSelect
+              :modelValue="searchType"
+              :options="searchTypeOptions"
+              @update:modelValue="onSearchTypeChange"
+            />
+          </div>
+          <div class="relative flex-1">
+            <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-paper-400"
+              fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+            </svg>
+            <input v-model="searchInput" @input="onSearch" type="search"
+              :placeholder="searchPlaceholder"
+              class="input pl-9 w-full" />
+          </div>
         </div>
+
         <div class="flex bg-paper-100 rounded-lg p-1 gap-1 shrink-0 w-full sm:w-auto">
           <button v-for="tab in tabs" :key="tab.value" @click="switchTab(tab.value)"
             class="flex-1 sm:flex-none px-3 sm:px-4 py-1.5 rounded-md text-sm font-semibold font-display transition-colors"
@@ -47,7 +61,7 @@
           </div>
 
           <!-- Clear filters — inline on desktop (ml-auto pushes to far right), hidden here on mobile -->
-          <button v-if="statusFilter || sortOrder !== 'id_desc'"
+          <button v-if="statusFilter || sortOrder !== 'id_desc' || searchInput || searchType !== 'name'"
             @click="clearFilters"
             class="hidden sm:inline-flex sm:ml-auto text-xs font-semibold font-display text-white bg-red-600 hover:bg-red-700 px-4 py-1.5 rounded-sm transition-colors self-end">
             Clear Filters
@@ -55,7 +69,7 @@
         </div>
 
         <!-- Clear filters — mobile only, full width below the grid -->
-        <button v-if="statusFilter || sortOrder !== 'id_desc'"
+        <button v-if="statusFilter || sortOrder !== 'id_desc' || searchInput || searchType !== 'name'"
           @click="clearFilters"
           class="sm:hidden mt-3 w-full text-xs font-semibold font-display text-white bg-red-600 hover:bg-red-700 px-4 py-1.5 rounded-sm transition-colors">
           Clear Filters
@@ -256,41 +270,7 @@
 
     </template>
 
-    <!-- Pagination -->
-    <div v-if="pagination.last_page > 1" class="flex items-center justify-center gap-1 mt-6 flex-wrap">
-      <!-- Prev arrow -->
-      <button @click="goPage(pagination.current_page - 1)" :disabled="pagination.current_page === 1"
-        class="w-8 h-8 flex items-center justify-center rounded-md border border-paper-300 text-navy-700 hover:bg-navy-50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
-        aria-label="Previous page">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/>
-        </svg>
-      </button>
-
-      <!-- Page number buttons -->
-      <template v-for="page in pageButtons" :key="page">
-        <span v-if="page === '...'"
-          class="w-8 h-8 flex items-center justify-center text-paper-400 text-sm font-body select-none">
-          …
-        </span>
-        <button v-else @click="goPage(page)"
-          class="w-8 h-8 flex items-center justify-center rounded-md text-sm font-semibold font-display border transition-colors"
-          :class="page === pagination.current_page
-            ? 'bg-navy-700 text-white border-navy-700'
-            : 'border-paper-300 text-navy-700 hover:bg-navy-50'">
-          {{ page }}
-        </button>
-      </template>
-
-      <!-- Next arrow -->
-      <button @click="goPage(pagination.current_page + 1)" :disabled="pagination.current_page === pagination.last_page"
-        class="w-8 h-8 flex items-center justify-center rounded-md border border-paper-300 text-navy-700 hover:bg-navy-50 disabled:opacity-35 disabled:cursor-not-allowed transition-colors"
-        aria-label="Next page">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/>
-        </svg>
-      </button>
-    </div>
+    <AdminPagination :meta="pagination" @page="goPage" />
   </div>
 </template>
 
@@ -299,6 +279,7 @@ import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { adminApi } from '@/api/admin.js'
 import { getInitials } from '@/utils/helpers.js'
+import AdminPagination from '@/components/admin/AdminPagination.vue'
 
 const tabs = [
   { value: 'tutors',    label: 'Tutors'    },
@@ -316,28 +297,30 @@ const sortOptions = [
   { value: 'id_asc', label: 'Oldest first' },
 ]
 
-const activeTab   = ref('tutors')
-const searchInput = ref('')
+const activeTab    = ref('tutors')
+const searchInput  = ref('')
+const searchType   = ref('name')
 const statusFilter = ref('')
 const sortOrder    = ref('id_desc')
-const rows        = ref([])
-const loading     = ref(true)
-const pagination  = ref({ current_page: 1, last_page: 1 })
-let searchTimeout = null
+const rows         = ref([])
+const loading      = ref(true)
+const pagination   = ref({ current_page: 1, last_page: 1, total: 0, from: 0, to: 0 })
+let searchTimeout  = null
 
-// Builds page number list with ellipsis: [1, 2, '...', 8, 9, 10]
-const pageButtons = computed(() => {
-  const total   = pagination.value.last_page
-  const current = pagination.value.current_page
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
-  const pages = []
-  const addRange = (from, to) => { for (let i = from; i <= to; i++) pages.push(i) }
-  pages.push(1)
-  if (current > 3) pages.push('...')
-  addRange(Math.max(2, current - 1), Math.min(total - 1, current + 1))
-  if (current < total - 2) pages.push('...')
-  pages.push(total)
-  return pages
+const searchTypeOptions = computed(() => {
+  const opts = [
+    { value: 'name',  label: 'Name'  },
+    { value: 'email', label: 'Email' },
+  ]
+  if (activeTab.value !== 'admins')
+    opts.push({ value: 'id', label: activeTab.value === 'tutors' ? 'Tutor ID' : 'Guardian ID' })
+  return opts
+})
+
+const searchPlaceholder = computed(() => {
+  if (searchType.value === 'email') return 'Enter email address…'
+  if (searchType.value === 'id')    return activeTab.value === 'tutors' ? 'Enter tutor ID (e.g. TUT-847392)…' : 'Enter guardian ID (e.g. GRD-512038)…'
+  return 'Enter full or partial name…'
 })
 
 function userOf(row) { return row.user ?? null }
@@ -351,20 +334,30 @@ function verificationClass(status) {
 }
 
 function detailRoute(row) {
-  if (activeTab.value === 'tutors')  return { name: 'admin-tutor-detail',    params: { id: row.id } }
+  if (activeTab.value === 'tutors')  return { name: 'admin-tutor-detail',    params: { tutorId: row.tutor_id } }
   if (activeTab.value === 'admins')  return { name: 'admin-user-detail',     params: { id: row.id } }
-  return { name: 'admin-guardian-detail', params: { id: row.id } }
+  return { name: 'admin-guardian-detail', params: { guardianId: row.guardian_id } }
 }
 
 function switchTab(tab) {
-  activeTab.value = tab
+  activeTab.value    = tab
   statusFilter.value = ''
+  searchType.value   = 'name'
+  searchInput.value  = ''
+  load()
+}
+
+function onSearchTypeChange(val) {
+  searchType.value  = val
+  searchInput.value = ''
   load()
 }
 
 function clearFilters() {
   statusFilter.value = ''
   sortOrder.value    = 'id_desc'
+  searchType.value   = 'name'
+  searchInput.value  = ''
   load()
 }
 
@@ -374,8 +367,9 @@ async function load(page = 1) {
     const params = {
       page,
       per_page: 10,
-      search: searchInput.value || undefined,
-      sort:   sortOrder.value !== 'id_desc' ? sortOrder.value : undefined,
+      search:    searchInput.value || undefined,
+      search_by: searchInput.value ? searchType.value : undefined,
+      sort:      sortOrder.value !== 'id_desc' ? sortOrder.value : undefined,
     }
     if (activeTab.value === 'tutors' && statusFilter.value)
       params.verification_status = statusFilter.value

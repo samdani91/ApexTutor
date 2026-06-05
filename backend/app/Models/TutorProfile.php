@@ -27,9 +27,11 @@ class TutorProfile extends Model
         });
 
         static::created(function (TutorProfile $profile) {
-            $profile->updateQuietly([
-                'tutor_id' => 'TUT-' . str_pad($profile->id, 6, '0', STR_PAD_LEFT),
-            ]);
+            do {
+                $num = random_int(100000, 999999);
+            } while (self::where('tutor_id', 'TUT-' . $num)->exists());
+
+            $profile->updateQuietly(['tutor_id' => 'TUT-' . $num]);
         });
     }
 

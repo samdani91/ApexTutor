@@ -3,25 +3,36 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\GuardianProfile;
+use App\Notifications\AccountReactivatedNotification;
+use App\Notifications\AccountSuspendedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AdminGuardianController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
         $query = GuardianProfile::with('user:id,name,email,phone,avatar')
-            ->when($request->search, function ($q, $search) {
-                $q->whereHas('user', fn($uq) => $uq->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%"));
+            ->when($request->search, function ($q, $search) use ($request) {
+                $by = $request->get('search_by', 'name');
+                $q->where(function ($inner) use ($search, $by) {
+                    if ($by === 'id') {
+                        $inner->where('guardian_id', 'like', "%{$search}%");
+                    } elseif ($by === 'email') {
+                        $inner->whereHas('user', fn($uq) => $uq->where('email', 'like', "%{$search}%"));
+                    } else {
+                        $inner->whereHas('user', fn($uq) => $uq->where('name', 'like', "%{$search}%"));
+                    }
+                });
             })
             ->when($request->sort === 'id_asc', fn($q) => $q->orderBy('id'), fn($q) => $q->orderByDesc('id'));
 
         return response()->json(['success' => true, 'data' => $query->paginate(10)]);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(string $guardianId): JsonResponse
     {
         $guardian = GuardianProfile::with([
             'user',
@@ -34,14 +45,14 @@ class AdminGuardianController extends Controller
                 'tutorProfile:id,user_id,tutor_id',
                 'tutorProfile.user:id,name',
             ]),
-        ])->findOrFail($id);
+        ])->where('guardian_id', $guardianId)->firstOrFail();
 
         return response()->json(['success' => true, 'data' => $guardian]);
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function update(Request $request, string $guardianId): JsonResponse
     {
-        $guardian = GuardianProfile::with('user')->findOrFail($id);
+        $guardian = GuardianProfile::with('user')->where('guardian_id', $guardianId)->firstOrFail();
 
         $request->validate([
             'user.name'    => 'sometimes|string|max:100',
@@ -68,18 +79,30 @@ class AdminGuardianController extends Controller
         return response()->json(['success' => true, 'message' => 'Guardian profile updated.']);
     }
 
-    public function updateStatus(Request $request, int $id): JsonResponse
+    public function updateStatus(Request $request, string $guardianId): JsonResponse
     {
         $data = $request->validate([
             'is_active' => 'required|boolean',
             'reason'    => 'nullable|string|max:500',
         ]);
 
-        $guardian = GuardianProfile::with('user')->findOrFail($id);
+        $guardian    = GuardianProfile::with('user')->where('guardian_id', $guardianId)->firstOrFail();
+        $wasActive   = (bool) $guardian->user->is_active;
         $guardian->user->update(['is_active' => $data['is_active']]);
 
         if (!$data['is_active']) {
             $guardian->user->tokens()->delete();
+        }
+
+        // Notify the guardian when their account is suspended or reactivated
+        try {
+            if (!$data['is_active']) {
+                $guardian->user->notify(new AccountSuspendedNotification(reason: $data['reason'] ?? null));
+            } elseif (!$wasActive) {
+                $guardian->user->notify(new AccountReactivatedNotification());
+            }
+        } catch (\Exception $e) {
+            Log::error('Guardian account status notification failed', ['error' => $e->getMessage(), 'guardian' => $guardianId]);
         }
 
         return response()->json(['success' => true, 'message' => $data['is_active'] ? 'Guardian activated.' : 'Guardian suspended.']);

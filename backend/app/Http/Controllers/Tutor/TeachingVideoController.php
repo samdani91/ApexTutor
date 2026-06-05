@@ -58,6 +58,7 @@ class TeachingVideoController extends Controller
                 Notification::send($admins, new AdminPendingVideoNotification(
                     tutorName:      $request->user()->name,
                     tutorProfileId: $profile->id,
+                    tutorId:        $profile->tutor_id,
                     videoTitle:     $request->title,
                 ));
             }

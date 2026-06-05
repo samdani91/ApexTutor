@@ -5,6 +5,8 @@ use App\Http\Controllers\Controller;
 use App\Models\TeachingVideo;
 use App\Models\TutorDocument;
 use App\Models\TutorProfile;
+use App\Notifications\AccountReactivatedNotification;
+use App\Notifications\AccountSuspendedNotification;
 use App\Notifications\TutorProfileEditedByAdminNotification;
 use App\Notifications\TutorVideoReviewedNotification;
 use Illuminate\Http\JsonResponse;
@@ -18,9 +20,17 @@ class AdminTutorController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = TutorProfile::with('user:id,name,email,phone,avatar')
-            ->when($request->search, function ($q, $search) {
-                $q->whereHas('user', fn($uq) => $uq->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%"));
+            ->when($request->search, function ($q, $search) use ($request) {
+                $by = $request->get('search_by', 'name');
+                $q->where(function ($inner) use ($search, $by) {
+                    if ($by === 'id') {
+                        $inner->where('tutor_id', 'like', "%{$search}%");
+                    } elseif ($by === 'email') {
+                        $inner->whereHas('user', fn($uq) => $uq->where('email', 'like', "%{$search}%"));
+                    } else {
+                        $inner->whereHas('user', fn($uq) => $uq->where('name', 'like', "%{$search}%"));
+                    }
+                });
             })
             ->when($request->verification_status, fn($q) => $q->where('verification_status', $request->verification_status))
             ->when($request->sort === 'id_asc', fn($q) => $q->orderBy('id'), fn($q) => $q->orderByDesc('id'));
@@ -28,7 +38,7 @@ class AdminTutorController extends Controller
         return response()->json(['success' => true, 'data' => $query->paginate(10)]);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(string $tutorId): JsonResponse
     {
         $tutor = TutorProfile::with([
             'user',
@@ -42,7 +52,7 @@ class AdminTutorController extends Controller
             'teachingVideos',
             'connectionRequests' => fn($q) => $q->with('guardianProfile.user:id,name,email')->latest()->take(20),
             'reviews' => fn($q) => $q->with('guardianProfile.user:id,name')->latest()->take(10),
-        ])->findOrFail($id);
+        ])->where('tutor_id', $tutorId)->firstOrFail();
 
         $tutor->documents->each(function ($doc) {
             $doc->file_url = \Illuminate\Support\Facades\Storage::disk('public')->url($doc->file_path);
@@ -56,9 +66,9 @@ class AdminTutorController extends Controller
         return response()->json(['success' => true, 'data' => $tutor]);
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function update(Request $request, string $tutorId): JsonResponse
     {
-        $tutor = TutorProfile::with(['user','tuitionPreference','personalInfo','emergencyContact'])->findOrFail($id);
+        $tutor = TutorProfile::with(['user','tuitionPreference','personalInfo','emergencyContact'])->where('tutor_id', $tutorId)->firstOrFail();
 
         $request->validate([
             'user.name'    => 'sometimes|string|max:100',
@@ -105,6 +115,11 @@ class AdminTutorController extends Controller
             'emergency_contact.address'  => 'nullable|string|max:255',
         ]);
 
+        // If the tutor had a staged avatar in pending_changes, also discard pending_avatar
+        // on the user record (and the file). Admin editing the profile directly supersedes
+        // any pending changes — the avatar is no longer in a reviewable state.
+        $pendingAvatarPath = $tutor->pending_changes['avatar']['path'] ?? null;
+
         DB::transaction(function () use ($request, $tutor) {
             if ($userData = $request->input('user')) {
                 $tutor->user->update(array_filter($userData, fn($v, $k) => $v !== null || in_array($k, ['phone', 'address']), ARRAY_FILTER_USE_BOTH));
@@ -118,6 +133,12 @@ class AdminTutorController extends Controller
             } else {
                 // Always clear pending changes on any admin edit
                 $tutor->update(['pending_changes' => null, 'pending_note' => null]);
+            }
+
+            // Clear dangling pending_avatar when pending_changes is wiped
+            if ($tutor->user->pending_avatar) {
+                $tutor->user->pending_avatar = null;
+                $tutor->user->save();
             }
 
             if ($prefData = $request->input('preference')) {
@@ -148,12 +169,22 @@ class AdminTutorController extends Controller
             }
         });
 
+        // Delete the staged avatar file outside the transaction so a storage failure
+        // cannot roll back the profile update.
+        if ($pendingAvatarPath) {
+            try {
+                Storage::disk('public')->delete($pendingAvatarPath);
+            } catch (\Exception $e) {
+                Log::warning('Could not delete staged avatar on admin edit', ['path' => $pendingAvatarPath]);
+            }
+        }
+
         try {
             if ($tutor->user) {
                 $tutor->user->notify(new TutorProfileEditedByAdminNotification());
             }
         } catch (\Exception $e) {
-            Log::error('Admin profile edit notification failed', ['error' => $e->getMessage(), 'tutor' => $id]);
+            Log::error('Admin profile edit notification failed', ['error' => $e->getMessage(), 'tutor' => $tutorId]);
         }
 
         return response()->json(['success' => true, 'message' => 'Tutor profile updated.']);
@@ -161,9 +192,9 @@ class AdminTutorController extends Controller
 
     // ── Document management ───────────────────────────────────────────────────
 
-    public function uploadDocument(Request $request, int $id): JsonResponse
+    public function uploadDocument(Request $request, string $tutorId): JsonResponse
     {
-        $tutor = TutorProfile::findOrFail($id);
+        $tutor = TutorProfile::where('tutor_id', $tutorId)->firstOrFail();
 
         $request->validate([
             'type' => 'required|in:nid,ssc_marksheet,hsc_marksheet,emergency_contact_nid',
@@ -200,9 +231,9 @@ class AdminTutorController extends Controller
         return response()->json(['success' => true, 'data' => $doc, 'message' => 'Document uploaded.'], 201);
     }
 
-    public function deleteDocument(int $id, int $docId): JsonResponse
+    public function deleteDocument(string $tutorId, int $docId): JsonResponse
     {
-        $tutor = TutorProfile::findOrFail($id);
+        $tutor = TutorProfile::where('tutor_id', $tutorId)->firstOrFail();
         $doc   = $tutor->documents()->findOrFail($docId);
 
         Storage::disk('public')->delete($doc->file_path);
@@ -213,9 +244,9 @@ class AdminTutorController extends Controller
 
     // ── Teaching video management ─────────────────────────────────────────────
 
-    public function updateVideo(Request $request, int $id, int $videoId): JsonResponse
+    public function updateVideo(Request $request, string $tutorId, int $videoId): JsonResponse
     {
-        $tutor = TutorProfile::findOrFail($id);
+        $tutor = TutorProfile::where('tutor_id', $tutorId)->firstOrFail();
         $video = $tutor->teachingVideos()->findOrFail($videoId);
 
         $data = $request->validate([
@@ -233,14 +264,14 @@ class AdminTutorController extends Controller
         return response()->json(['success' => true, 'data' => $video, 'message' => 'Video updated.']);
     }
 
-    public function reviewVideo(Request $request, int $id, int $videoId): JsonResponse
+    public function reviewVideo(Request $request, string $tutorId, int $videoId): JsonResponse
     {
         $data  = $request->validate([
             'action'      => 'required|in:approve,reject',
             'review_note' => 'nullable|string|max:500',
         ]);
 
-        $tutor = TutorProfile::with('user')->findOrFail($id);
+        $tutor = TutorProfile::with('user')->where('tutor_id', $tutorId)->firstOrFail();
         $video = $tutor->teachingVideos()->findOrFail($videoId);
 
         $reviewStatus = $data['action'] === 'approve' ? 'approved' : 'rejected';
@@ -268,9 +299,9 @@ class AdminTutorController extends Controller
         return response()->json(['success' => true, 'data' => $video, 'message' => $message]);
     }
 
-    public function deleteVideo(int $id, int $videoId): JsonResponse
+    public function deleteVideo(string $tutorId, int $videoId): JsonResponse
     {
-        $tutor = TutorProfile::findOrFail($id);
+        $tutor = TutorProfile::where('tutor_id', $tutorId)->firstOrFail();
         $video = $tutor->teachingVideos()->findOrFail($videoId);
 
         Storage::disk('public')->delete($video->file_path);
@@ -279,17 +310,30 @@ class AdminTutorController extends Controller
         return response()->json(['success' => true, 'message' => 'Video deleted.']);
     }
 
-    public function updateStatus(Request $request, int $id): JsonResponse
+    public function updateStatus(Request $request, string $tutorId): JsonResponse
     {
         $data = $request->validate(['status' => 'required|in:active,inactive,suspended']);
-        $tutor = TutorProfile::findOrFail($id);
-        $tutor->update($data);
+        $tutor = TutorProfile::where('tutor_id', $tutorId)->firstOrFail();
+        $oldStatus   = $tutor->status;
         $isSuspended = $data['status'] === 'suspended';
+        $tutor->update($data);
         $tutor->user->update(['is_active' => !$isSuspended]);
         if ($isSuspended) {
             // Immediately invalidate all active sessions
             $tutor->user->tokens()->delete();
         }
+
+        // Notify the tutor when their account is suspended or brought back from suspension
+        try {
+            if ($isSuspended) {
+                $tutor->user->notify(new AccountSuspendedNotification());
+            } elseif ($oldStatus === 'suspended' && in_array($data['status'], ['active', 'inactive'])) {
+                $tutor->user->notify(new AccountReactivatedNotification());
+            }
+        } catch (\Exception $e) {
+            Log::error('Account status notification failed', ['error' => $e->getMessage(), 'tutor' => $tutorId]);
+        }
+
         return response()->json(['success' => true, 'message' => 'Status updated.']);
     }
 }

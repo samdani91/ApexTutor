@@ -14,9 +14,16 @@
       <div class="card mb-5">
         <div class="grid gap-4 lg:grid-cols-[auto_minmax(0,1fr)_220px_auto] lg:items-start">
           <!-- Avatar -->
-          <div class="w-20 h-20 rounded-xl bg-navy-100 flex items-center justify-center shrink-0 overflow-hidden ring-2 ring-white shadow mx-auto sm:mx-0">
-            <img v-if="tutor.user?.avatar_url" :src="tutor.user.avatar_url" class="w-full h-full object-cover" />
-            <span v-else class="font-display font-bold text-2xl text-navy-700">{{ initials }}</span>
+          <div class="flex flex-col items-center gap-2 mx-auto sm:mx-0">
+            <div class="w-20 h-20 rounded-xl bg-navy-100 flex items-center justify-center shrink-0 overflow-hidden ring-2 ring-white shadow relative">
+              <img v-if="tutor.user?.avatar_url" :src="tutor.user.avatar_url" class="w-full h-full object-cover" />
+              <span v-else class="font-display font-bold text-2xl text-navy-700">{{ initials }}</span>
+              <!-- Pending badge -->
+              <span v-if="tutor.user?.pending_avatar_url"
+                class="absolute top-0.5 right-0.5 bg-amber-400 text-amber-900 text-[8px] font-bold font-display px-1 py-0.5 rounded leading-tight">
+                Pending
+              </span>
+            </div>
           </div>
           <!-- Basic info -->
           <div class="min-w-0 text-center sm:text-left">
@@ -62,7 +69,7 @@
           </div>
           <!-- Admin actions -->
           <div class="flex flex-col gap-2 w-full lg:w-36">
-            <RouterLink :to="{ name: 'admin-tutor-edit', params: { id: tutor.id } }"
+            <RouterLink :to="{ name: 'admin-tutor-edit', params: { tutorId: tutor.tutor_id } }"
               class="text-sm font-semibold font-display px-4 py-1.5 rounded-md bg-navy-700 text-white hover:bg-navy-900 transition-colors text-center w-full">
               Edit Profile
             </RouterLink>
@@ -218,10 +225,14 @@
                   class="status-chip bg-red-50 text-red-700">
                   Rejected
                 </span>
-                <a :href="doc.file_url" target="_blank"
-                  class="text-xs font-semibold font-display text-navy-700 hover:text-navy-900 underline underline-offset-2">
+                <button @click="viewDoc(doc)"
+                  class="inline-flex items-center gap-1.5 border border-navy-200 bg-navy-50 px-3 py-1.5 rounded-sm text-xs font-semibold font-display text-navy-700 hover:bg-navy-100 transition-colors">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  </svg>
                   View
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -361,6 +372,43 @@
       @confirm="confirmStatusChange"
       @cancel="cancelStatusChange"
     />
+
+    <!-- Document preview modal -->
+    <Teleport to="body">
+      <Transition name="dialog">
+        <div v-if="previewDoc" class="fixed inset-0 z-[240] flex items-center justify-center px-4"
+          @click.self="previewDoc = null">
+          <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" @click="previewDoc = null" />
+          <div class="relative w-full max-w-2xl bg-white rounded-sm shadow-xl overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-3 border-b border-paper-200">
+              <div class="min-w-0">
+                <p class="font-display font-semibold text-sm text-navy-900 truncate">{{ previewDoc.file_name }}</p>
+                <p class="text-xs text-paper-400 font-body mt-0.5 capitalize">{{ previewDoc.type?.replace(/_/g, ' ') }}</p>
+              </div>
+              <button @click="previewDoc = null"
+                class="ml-3 shrink-0 w-8 h-8 flex items-center justify-center rounded-md text-paper-400 hover:bg-paper-100 hover:text-navy-700 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="p-4 flex items-center justify-center bg-paper-50 min-h-[200px] max-h-[70vh] overflow-auto">
+              <img :src="previewDoc.file_url" :alt="previewDoc.file_name"
+                class="max-w-full max-h-[60vh] object-contain rounded-sm shadow-sm" />
+            </div>
+            <div class="px-5 py-3 border-t border-paper-200 flex justify-end">
+              <a :href="previewDoc.file_url" target="_blank" rel="noopener"
+                class="inline-flex items-center gap-1.5 text-xs font-semibold font-display text-navy-700 border border-paper-300 bg-white px-3 py-1.5 rounded-sm hover:bg-navy-50 transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/>
+                </svg>
+                Open in new tab
+              </a>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -389,6 +437,16 @@ const showApproveVideoDialog = ref(false)
 const pendingApproveVideo    = ref(null)
 const showRejectVideoDialog  = ref(false)
 const pendingRejectVideo     = ref(null)
+const previewDoc             = ref(null)
+
+function viewDoc(doc) {
+  if (!doc?.file_url) return
+  if (doc.mime_type === 'application/pdf') {
+    window.open(doc.file_url, '_blank', 'noopener')
+  } else {
+    previewDoc.value = doc
+  }
+}
 
 const pendingVideoCount = computed(() =>
   tutor.value?.teaching_videos?.filter(v => v.review_status === 'pending').length ?? 0
@@ -454,7 +512,7 @@ const preferenceRows = computed(() => {
 
 onMounted(async () => {
   try {
-    const { data } = await adminApi.getTutor(route.params.id)
+    const { data } = await adminApi.getTutor(route.params.tutorId)
     tutor.value = data.data
     statusValue.value = tutor.value.status || 'active'
   } finally {

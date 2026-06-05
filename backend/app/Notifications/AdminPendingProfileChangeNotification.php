@@ -9,7 +9,8 @@ class AdminPendingProfileChangeNotification extends Notification
 
     public function __construct(
         public readonly string $tutorName,
-        public readonly int    $tutorProfileId
+        public readonly int    $tutorProfileId,
+        public readonly string $tutorId
     ) {}
 
     public function via(object $notifiable): array
@@ -33,6 +34,7 @@ class AdminPendingProfileChangeNotification extends Notification
             'type'             => 'pending_profile_change',
             'message'          => "{$this->tutorName} has submitted profile changes for review.",
             'tutor_profile_id' => $this->tutorProfileId,
+            'tutor_id'         => $this->tutorId,
         ];
     }
 }

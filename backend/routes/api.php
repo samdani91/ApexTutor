@@ -1,7 +1,9 @@
 <?php
 use App\Http\Controllers\Admin\AdminAuditLogController;
 use App\Http\Controllers\Admin\AdminNotificationController;
+use App\Http\Controllers\Admin\AdminPendingAvatarController;
 use App\Http\Controllers\Admin\AdminPendingChangesController;
+use App\Http\Controllers\Admin\AdminUserAvatarController;
 use App\Http\Controllers\Admin\AdminReferenceDataController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminConnectionController;
@@ -27,6 +29,7 @@ use App\Http\Controllers\Tutor\TutorPersonalInfoController;
 use App\Http\Controllers\Tutor\TravelAvailabilityController;
 use App\Http\Controllers\Tutor\TuitionPreferenceController;
 use App\Http\Controllers\Tutor\TutorProfileController;
+use App\Http\Controllers\Tutor\TutorReviewController;
 use App\Http\Controllers\User\AvatarController;
 use App\Http\Controllers\User\UserProfileController;
 use App\Http\Controllers\UserNotificationController;
@@ -107,6 +110,7 @@ Route::middleware(['auth:sanctum', 'active.user', 'verified', 'role:tutor'])->pr
     Route::put('videos/{id}',      [TeachingVideoController::class, 'update']);
     Route::delete('videos/{id}',   [TeachingVideoController::class, 'destroy']);
     Route::apiResource('travel', TravelAvailabilityController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::get('reviews', [TutorReviewController::class, 'index']);
 });
 
 // Guardian routes
@@ -142,19 +146,19 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:super_admin', 'log.admin
     Route::delete('admins/{id}',    [AdminUserController::class, 'destroy']);
 
     Route::get('tutors',             [AdminTutorController::class, 'index']);
-    Route::get('tutors/{id}',                          [AdminTutorController::class, 'show']);
-    Route::put('tutors/{id}',                          [AdminTutorController::class, 'update']);
-    Route::put('tutors/{id}/status',                   [AdminTutorController::class, 'updateStatus']);
-    Route::post('tutors/{id}/documents',               [AdminTutorController::class, 'uploadDocument']);
-    Route::delete('tutors/{id}/documents/{docId}',     [AdminTutorController::class, 'deleteDocument']);
-    Route::put('tutors/{id}/videos/{videoId}',          [AdminTutorController::class, 'updateVideo']);
-    Route::put('tutors/{id}/videos/{videoId}/review',  [AdminTutorController::class, 'reviewVideo']);
-    Route::delete('tutors/{id}/videos/{videoId}',      [AdminTutorController::class, 'deleteVideo']);
+    Route::get('tutors/{tutorId}',                             [AdminTutorController::class, 'show']);
+    Route::put('tutors/{tutorId}',                             [AdminTutorController::class, 'update']);
+    Route::put('tutors/{tutorId}/status',                      [AdminTutorController::class, 'updateStatus']);
+    Route::post('tutors/{tutorId}/documents',                  [AdminTutorController::class, 'uploadDocument']);
+    Route::delete('tutors/{tutorId}/documents/{docId}',        [AdminTutorController::class, 'deleteDocument']);
+    Route::put('tutors/{tutorId}/videos/{videoId}',            [AdminTutorController::class, 'updateVideo']);
+    Route::put('tutors/{tutorId}/videos/{videoId}/review',     [AdminTutorController::class, 'reviewVideo']);
+    Route::delete('tutors/{tutorId}/videos/{videoId}',         [AdminTutorController::class, 'deleteVideo']);
 
-    Route::get('guardians',              [AdminGuardianController::class, 'index']);
-    Route::get('guardians/{id}',         [AdminGuardianController::class, 'show']);
-    Route::put('guardians/{id}',         [AdminGuardianController::class, 'update']);
-    Route::put('guardians/{id}/status',  [AdminGuardianController::class, 'updateStatus']);
+    Route::get('guardians',                  [AdminGuardianController::class, 'index']);
+    Route::get('guardians/{guardianId}',     [AdminGuardianController::class, 'show']);
+    Route::put('guardians/{guardianId}',     [AdminGuardianController::class, 'update']);
+    Route::put('guardians/{guardianId}/status', [AdminGuardianController::class, 'updateStatus']);
 
     Route::get('verifications',              [AdminVerificationController::class, 'queue']);
     Route::put('verifications/{id}/approve', [AdminVerificationController::class, 'approve']);
@@ -168,6 +172,14 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:super_admin', 'log.admin
     Route::get('pending-changes',              [AdminPendingChangesController::class, 'index']);
     Route::put('pending-changes/{id}/approve', [AdminPendingChangesController::class, 'approve']);
     Route::put('pending-changes/{id}/reject',  [AdminPendingChangesController::class, 'reject']);
+
+    Route::get('pending-avatars',              [AdminPendingAvatarController::class, 'index']);
+    Route::put('pending-avatars/{id}/approve', [AdminPendingAvatarController::class, 'approve']);
+    Route::put('pending-avatars/{id}/reject',  [AdminPendingAvatarController::class, 'reject']);
+
+    // Admin direct avatar management (replace / remove on profile views)
+    Route::post('users/{id}/avatar',   [AdminUserAvatarController::class, 'replace']);
+    Route::delete('users/{id}/avatar', [AdminUserAvatarController::class, 'remove']);
 
     Route::get('reviews',             [AdminReviewController::class, 'all']);
     Route::get('reviews/pending',     [AdminReviewController::class, 'pending']);

@@ -10,12 +10,42 @@
       </p>
     </div>
     <div class="card mb-5">
-      <div class="relative">
-        <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-paper-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-        </svg>
-        <input v-model="search" @input="debouncedLoad" type="search"
-          placeholder="Search by name or email..." class="input pl-9 text-sm w-full" />
+      <div class="flex flex-wrap items-end gap-3">
+        <!-- Search: type DropSelect + text input -->
+        <div class="flex items-center gap-2 flex-1 min-w-48">
+          <div class="w-36 shrink-0">
+            <DropSelect
+              :modelValue="searchType"
+              :options="searchTypeOptions"
+              @update:modelValue="onSearchTypeChange"
+            />
+          </div>
+          <div class="relative flex-1">
+            <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-paper-400"
+              fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>
+            </svg>
+            <input v-model="search" @input="debouncedLoad" type="search"
+              :placeholder="searchPlaceholder"
+              class="input pl-9 w-full" />
+          </div>
+        </div>
+        <!-- Sort -->
+        <div class="w-44">
+          <p class="text-xs text-paper-400 font-body mb-1">Sort</p>
+          <DropSelect
+            :modelValue="sort"
+            :options="sortOptions"
+            @update:modelValue="val => { sort = val; loadQueue() }"
+          />
+        </div>
+        <!-- Clear -->
+        <div>
+          <button v-if="search || sort !== 'date_desc' || searchType !== 'name'" @click="clearFilters"
+            class="rounded-sm bg-red-600 px-3 py-2 text-xs font-semibold font-display text-white hover:bg-red-700 transition-colors">
+            Clear
+          </button>
+        </div>
       </div>
     </div>
     <div v-if="loading" class="text-paper-500 font-body">Loading…</div>
@@ -114,7 +144,7 @@
 
         <!-- Bottom row: view link + action buttons -->
         <div class="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-paper-100 flex-wrap">
-          <RouterLink :to="{ name: 'admin-tutor-detail', params: { id: tutor.id } }"
+          <RouterLink :to="{ name: 'admin-tutor-detail', params: { tutorId: tutor.tutor_id } }"
             class="text-xs font-semibold font-display text-navy-700 hover:underline">
             View full profile
           </RouterLink>
@@ -162,20 +192,42 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { adminApi } from '@/api/admin.js'
 import { toast } from 'vue-sonner'
 import { getInitials } from '@/utils/helpers.js'
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
+import DropSelect from '@/components/search/DropSelect.vue'
 
 const queue         = ref([])
 const loading       = ref(true)
 const approveTarget = ref(null)
 const rejectTarget  = ref(null)
 const search        = ref('')
+const searchType    = ref('name')
+const sort          = ref('date_desc')
 const meta          = ref({ current_page: 1, last_page: 1, total: 0, from: 0, to: 0 })
+
+const sortOptions = [
+  { value: 'date_desc', label: 'Date (Newest)' },
+  { value: 'date_asc',  label: 'Date (Oldest)' },
+  { value: 'id_asc',    label: 'Tutor ID (A → Z)' },
+  { value: 'id_desc',   label: 'Tutor ID (Z → A)' },
+]
+
+const searchTypeOptions = [
+  { value: 'name',  label: 'Name'     },
+  { value: 'email', label: 'Email'    },
+  { value: 'id',    label: 'Tutor ID' },
+]
+
+const searchPlaceholder = computed(() => {
+  if (searchType.value === 'email') return 'Enter email address…'
+  if (searchType.value === 'id')    return 'Enter tutor ID (e.g. TUT-847392)…'
+  return 'Enter full or partial name…'
+})
 
 function initials(name) { return getInitials(name) }
 
@@ -185,10 +237,29 @@ function debouncedLoad() {
   searchTimer = setTimeout(() => loadQueue(), 350)
 }
 
+function onSearchTypeChange(val) {
+  searchType.value = val
+  search.value     = ''
+  loadQueue()
+}
+
+function clearFilters() {
+  search.value     = ''
+  searchType.value = 'name'
+  sort.value       = 'date_desc'
+  loadQueue()
+}
+
 async function loadQueue(page = 1) {
   loading.value = true
   try {
-    const { data } = await adminApi.getVerificationQueue({ search: search.value, page, per_page: 10 })
+    const { data } = await adminApi.getVerificationQueue({
+      search:    search.value || undefined,
+      search_by: search.value ? searchType.value : undefined,
+      sort:      sort.value,
+      page,
+      per_page:  10,
+    })
     queue.value = data.data.data || data.data || []
     meta.value = data.data
   } finally {

@@ -10,6 +10,27 @@
 
     <div v-if="loading" class="text-paper-500 font-body py-12 text-center">Loading…</div>
 
+    <!-- Avatar replace confirm -->
+    <AdminConfirmDialog
+      :show="!!avatarReplaceFile"
+      title="Replace Profile Photo?"
+      :message="`Replace ${guardian?.user?.name}'s current photo?`"
+      confirm-label="Yes, Replace"
+      @confirm="confirmAvatarReplace"
+      @cancel="avatarReplaceFile = null"
+    />
+
+    <!-- Avatar remove confirm -->
+    <AdminConfirmDialog
+      :show="avatarRemoveConfirm"
+      title="Remove Profile Photo?"
+      :message="`Remove ${guardian?.user?.name}'s profile photo? This cannot be undone.`"
+      confirm-label="Remove Photo"
+      :danger="true"
+      @confirm="confirmAvatarRemove"
+      @cancel="avatarRemoveConfirm = false"
+    />
+
     <AdminConfirmDialog
       :show="saveConfirmOpen"
       title="Save Guardian Profile?"
@@ -34,10 +55,33 @@
       <!-- Header card -->
       <div class="card mb-5">
         <div class="flex gap-5 items-start flex-wrap">
-          <!-- Avatar -->
-          <div class="w-20 h-20 rounded-xl bg-navy-100 flex items-center justify-center shrink-0 overflow-hidden ring-2 ring-white shadow">
-            <img v-if="guardian.user?.avatar_url" :src="guardian.user.avatar_url" class="w-full h-full object-cover" />
-            <span v-else class="font-display font-bold text-2xl text-navy-700">{{ initials }}</span>
+          <!-- Avatar + admin controls -->
+          <div class="flex flex-col items-center gap-2 shrink-0">
+            <div class="w-20 h-20 rounded-xl bg-navy-100 flex items-center justify-center overflow-hidden ring-2 ring-white shadow relative">
+              <img v-if="guardian.user?.avatar_url" :src="guardian.user.avatar_url" class="w-full h-full object-cover" />
+              <span v-else class="font-display font-bold text-2xl text-navy-700">{{ initials }}</span>
+              <span v-if="guardian.user?.pending_avatar_url"
+                class="absolute top-0.5 right-0.5 bg-amber-400 text-amber-900 text-[8px] font-bold font-display px-1 py-0.5 rounded leading-tight">
+                Pending
+              </span>
+            </div>
+            <div v-if="editing" class="flex gap-1">
+              <label class="cursor-pointer inline-flex items-center gap-1 text-xs font-semibold font-display px-2 py-1 rounded-sm border border-paper-300 bg-white text-navy-700 hover:bg-navy-50 transition-colors">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 12l-4-4m0 0L8 12m4-4v12"/>
+                </svg>
+                Replace
+                <input type="file" class="hidden" accept="image/jpeg,image/png,image/webp"
+                  @change="onAvatarSelected" />
+              </label>
+              <button v-if="guardian.user?.avatar_url" @click="avatarRemoveConfirm = true"
+                class="inline-flex items-center gap-1 text-xs font-semibold font-display px-2 py-1 rounded-sm bg-red-600 text-white hover:bg-red-700 transition-colors">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                Remove
+              </button>
+            </div>
           </div>
           <!-- Basic info -->
           <div class="flex-1 min-w-0">
@@ -188,8 +232,8 @@
                     class="text-xs font-semibold font-display text-navy-500 bg-navy-50 border border-navy-200 px-1.5 py-0 rounded-pill">
                     {{ conn.tutor_profile.tutor_id }}
                   </span>
-                  <RouterLink v-if="conn.tutor_profile?.id"
-                    :to="{ name: 'admin-tutor-detail', params: { id: conn.tutor_profile.id } }"
+                  <RouterLink v-if="conn.tutor_profile?.tutor_id"
+                    :to="{ name: 'admin-tutor-detail', params: { tutorId: conn.tutor_profile.tutor_id } }"
                     class="text-xs text-navy-700 hover:underline font-semibold">View tutor</RouterLink>
                 </div>
                 <p class="text-xs text-paper-400 font-body mt-0.5">{{ formatDate(conn.created_at) }}</p>
@@ -273,8 +317,8 @@
                   {{ sl.tutor_profile.tutor_id }}
                 </span>
               </div>
-              <RouterLink v-if="sl.tutor_profile?.id"
-                :to="{ name: 'admin-tutor-detail', params: { id: sl.tutor_profile.id } }"
+              <RouterLink v-if="sl.tutor_profile?.tutor_id"
+                :to="{ name: 'admin-tutor-detail', params: { tutorId: sl.tutor_profile.tutor_id } }"
                 class="text-xs font-semibold font-display text-navy-700 hover:text-navy-900 underline shrink-0">
                 View
               </RouterLink>
@@ -306,11 +350,54 @@ const saveConfirmOpen    = ref(false)
 const statusConfirmTarget = ref(null) // { isActive: bool }
 const editForm           = reactive({ user: { name: '', email: '', phone: '', address: '' }, profile: { occupation: '', relationship_to_student: '', nid_number: '', account_type: '' } })
 
+const avatarReplaceFile   = ref(null)
+const avatarRemoveConfirm = ref(false)
+const avatarSaving        = ref(false)
+
+function onAvatarSelected(e) {
+  const file = e.target.files[0]
+  e.target.value = ''
+  if (file) avatarReplaceFile.value = file
+}
+
+async function confirmAvatarReplace() {
+  const file = avatarReplaceFile.value
+  avatarReplaceFile.value = null
+  avatarSaving.value = true
+  try {
+    const fd = new FormData()
+    fd.append('avatar', file)
+    const { data } = await adminApi.replaceUserAvatar(guardian.value.user.id, fd)
+    guardian.value.user.avatar_url = data.avatar_url
+    guardian.value.user.pending_avatar_url = null
+    toast.success('Profile photo updated.')
+  } catch {
+    toast.error('Failed to update photo.')
+  } finally {
+    avatarSaving.value = false
+  }
+}
+
+async function confirmAvatarRemove() {
+  avatarRemoveConfirm.value = false
+  avatarSaving.value = true
+  try {
+    await adminApi.removeUserAvatar(guardian.value.user.id)
+    guardian.value.user.avatar_url = null
+    guardian.value.user.pending_avatar_url = null
+    toast.success('Profile photo removed.')
+  } catch {
+    toast.error('Failed to remove photo.')
+  } finally {
+    avatarSaving.value = false
+  }
+}
+
 const initials = computed(() => getInitials(guardian.value?.user?.name))
 
 onMounted(async () => {
   try {
-    const { data } = await adminApi.getGuardian(route.params.id)
+    const { data } = await adminApi.getGuardian(route.params.guardianId)
     guardian.value = data.data
   } finally {
     loading.value = false
@@ -326,9 +413,9 @@ function startEdit() {
 async function saveEdit() {
   editSaving.value = true
   try {
-    await adminApi.updateGuardian(route.params.id, { ...editForm })
+    await adminApi.updateGuardian(route.params.guardianId, { ...editForm })
     // Refresh
-    const { data } = await adminApi.getGuardian(route.params.id)
+    const { data } = await adminApi.getGuardian(route.params.guardianId)
     guardian.value = data.data
     editing.value = false
     toast.success('Guardian profile updated.')
@@ -344,7 +431,7 @@ async function doToggleStatus() {
   statusConfirmTarget.value = null
   statusSaving.value = true
   try {
-    await adminApi.updateGuardianStatus(route.params.id, { is_active: isActive })
+    await adminApi.updateGuardianStatus(route.params.guardianId, { is_active: isActive })
     guardian.value.user.is_active = isActive
     toast.success(isActive ? 'Guardian reactivated.' : 'Guardian suspended.')
   } catch {

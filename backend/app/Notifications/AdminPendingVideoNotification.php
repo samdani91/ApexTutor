@@ -10,6 +10,7 @@ class AdminPendingVideoNotification extends Notification
     public function __construct(
         public readonly string $tutorName,
         public readonly int    $tutorProfileId,
+        public readonly string $tutorId,
         public readonly string $videoTitle
     ) {}
 
@@ -35,6 +36,7 @@ class AdminPendingVideoNotification extends Notification
             'type'             => 'pending_video',
             'message'          => "{$this->tutorName} uploaded a teaching video \"{$this->videoTitle}\" for review.",
             'tutor_profile_id' => $this->tutorProfileId,
+            'tutor_id'         => $this->tutorId,
         ];
     }
 }

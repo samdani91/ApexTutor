@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Notifications\AdminPendingProfileChangeNotification;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Centralises all "merge into pending_changes" logic so every tutor controller
@@ -76,11 +77,42 @@ class PendingProfileChangeService
         $this->save($profile, $pending);
     }
 
+    // ── Avatar staging ────────────────────────────────────────────────────────
+
+    /**
+     * Stage an avatar change for a verified tutor:
+     *  - writes pending_avatar on the User
+     *  - merges avatar key into TutorProfile.pending_changes so it appears in the admin review queue
+     */
+    public function stageAvatar(TutorProfile $profile, string $path, string $url): void
+    {
+        $user = $profile->user;
+
+        // Clean up any previously staged (but not yet approved) pending avatar
+        if ($user->pending_avatar && $user->pending_avatar !== $path) {
+            Storage::disk('public')->delete($user->pending_avatar);
+        }
+
+        $user->pending_avatar = $path;
+        $user->save();
+
+        $this->mergeTopLevel($profile, [
+            'avatar' => ['path' => $path, 'url' => $url],
+        ]);
+    }
+
     // ── Document staging ──────────────────────────────────────────────────────
 
     public function stageDocumentUpsert(TutorProfile $profile, string $type, array $payload): void
     {
         $pending = $profile->pending_changes ?? [];
+
+        // If the same type was already staged, delete the superseded pending file
+        $oldPath = $pending['documents']['upsert'][$type]['file_path'] ?? null;
+        if ($oldPath && $oldPath !== $payload['file_path']) {
+            Storage::disk('public')->delete($oldPath);
+        }
+
         $pending['documents']['upsert'][$type] = $payload;
         $this->save($profile, $pending);
     }
@@ -110,7 +142,7 @@ class PendingProfileChangeService
                 $admins    = User::where('role', 'super_admin')->get();
                 $tutorName = $profile->user->name ?? 'A tutor';
                 if ($admins->isNotEmpty()) {
-                    Notification::send($admins, new AdminPendingProfileChangeNotification($tutorName, $profile->id));
+                    Notification::send($admins, new AdminPendingProfileChangeNotification($tutorName, $profile->id, $profile->tutor_id));
                 }
             } catch (\Exception $e) {
                 Log::error('Admin pending-change notification failed', ['error' => $e->getMessage(), 'profile' => $profile->id]);
