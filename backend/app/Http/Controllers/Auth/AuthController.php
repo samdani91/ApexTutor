@@ -43,6 +43,61 @@ class AuthController extends Controller
                 $stale->forceDelete();
             });
 
+        // Layer 1: if the email already exists but was never verified, refresh the
+        // account details and resend the OTP instead of rejecting with a 422.
+        $existingUnverified = User::where('email', $request->email)
+            ->whereNull('email_verified_at')
+            ->first();
+
+        if ($existingUnverified) {
+            // Only block if the requested phone belongs to a *verified* user that isn't this record.
+            $phoneConflict = User::where('phone', $request->phone)
+                ->where('id', '!=', $existingUnverified->id)
+                ->whereNotNull('email_verified_at')
+                ->exists();
+
+            if ($phoneConflict) {
+                throw ValidationException::withMessages(['phone' => ['The phone number is already registered.']]);
+            }
+
+            $previousRole = $existingUnverified->role;
+
+            DB::transaction(function () use ($request, $existingUnverified, $previousRole) {
+                $existingUnverified->update([
+                    'name'     => $request->name,
+                    'phone'    => $request->phone,
+                    'password' => Hash::make($request->password),
+                    'role'     => $request->role,
+                ]);
+
+                // Swap the profile record when the user changes role on retry.
+                if ($previousRole !== $request->role) {
+                    if ($previousRole === 'tutor') {
+                        $existingUnverified->tutorProfile()?->forceDelete();
+                    } else {
+                        $existingUnverified->guardianProfile()?->forceDelete();
+                    }
+
+                    if ($request->role === 'tutor') {
+                        TutorProfile::create(['user_id' => $existingUnverified->id]);
+                    } else {
+                        GuardianProfile::create(['user_id' => $existingUnverified->id, 'account_type' => $request->role]);
+                    }
+                }
+            });
+
+            $this->sendEmailOtp($existingUnverified->email, 'email_verification');
+
+            return response()->json([
+                'success' => true,
+                'data'    => [
+                    'pending_verification' => true,
+                    'email'                => $this->maskEmail($existingUnverified->email),
+                ],
+                'message' => 'A new verification code has been sent to your email.',
+            ]);
+        }
+
         // Now enforce uniqueness against verified accounts only
         $request->validate([
             'email' => 'unique:users,email',
