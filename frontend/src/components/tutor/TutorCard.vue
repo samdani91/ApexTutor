@@ -4,28 +4,27 @@
     <div class="flex h-full flex-col gap-4">
       <div class="flex items-start gap-3">
         <div
-          class="h-16 w-16 shrink-0 overflow-hidden rounded-md border border-navy-100 bg-navy-50 flex items-center justify-center shadow-xs md:h-[72px] md:w-[72px]">
+          class="h-24 w-20 shrink-0 overflow-hidden rounded-md border border-navy-100 bg-navy-50 flex items-center justify-center shadow-xs md:w-[84px]">
           <img v-if="tutor.user?.avatar_url" :src="tutor.user.avatar_url" :alt="tutor.user?.name"
             class="h-full w-full object-cover" />
           <span v-else class="font-display text-xl font-bold text-navy-700 md:text-2xl">{{ initials }}</span>
         </div>
 
         <div class="min-w-0 flex-1">
-          <div class="flex items-start justify-between gap-2">
-            <div class="min-w-0">
-              <h3 class="truncate font-display text-base font-semibold leading-snug text-navy-900 md:text-lg">
-                {{ tutor.user?.name || 'Tutor' }}
-              </h3>
-              <div class="mt-1 flex flex-wrap items-center gap-1.5">
-                <span v-if="tutor.tutor_id"
-                  class="rounded-pill border border-paper-200 bg-paper-50 px-2 py-0.5 font-display text-[11px] font-semibold text-paper-600">
-                  {{ tutor.tutor_id }}
-                </span>
-                <span v-if="tutor.is_verified"
-                  class="rounded-pill border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-display text-[11px] font-semibold text-emerald-700">
-                  Verified
-                </span>
-              </div>
+          <div class="min-w-0">
+            <h3 :title="tutor.user?.name || 'Tutor'"
+              class="line-clamp-2 min-h-[2.5rem] break-words font-display text-base font-semibold leading-snug text-navy-900">
+              {{ tutor.user?.name || 'Tutor' }}
+            </h3>
+            <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <span v-if="tutor.tutor_id"
+                class="rounded-pill border border-paper-200 bg-paper-50 px-2 py-0.5 font-display text-[11px] font-semibold text-paper-600">
+                {{ tutor.tutor_id }}
+              </span>
+              <span v-if="tutor.is_verified"
+                class="rounded-pill border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-display text-[11px] font-semibold text-emerald-700">
+                Verified
+              </span>
             </div>
           </div>
 
