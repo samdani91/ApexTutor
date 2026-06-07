@@ -124,15 +124,6 @@
       </div>
     </FilterSection>
 
-    <!-- Verified only -->
-    <FilterSection label="Verification">
-      <label class="flex items-center gap-2.5 cursor-pointer">
-        <input type="checkbox" v-model="filters.verified_only"
-          class="w-4 h-4 rounded accent-navy-700 cursor-pointer" />
-        <span class="text-sm font-body text-navy-700">Verified tutors only</span>
-      </label>
-    </FilterSection>
-
   </div>
 </template>
 
@@ -199,7 +190,6 @@ const filters = reactive({
   tutoring_styles: [],
   salary_max: '',
   min_rating: null,
-  verified_only: false,
 })
 
 async function onDistrictChange(newId) {
@@ -228,9 +218,8 @@ const activeCount = computed(() => {
     filters.tutor_gender, filters.days_per_week, filters.hours_per_day,
     filters.salary_max, filters.min_rating,
   ].filter(v => v !== '' && v !== null).length
-  const bools  = filters.verified_only ? 1 : 0
   const arrays = filters.subject_ids.length + filters.place_of_tutoring.length + filters.tutoring_styles.length
-  return singles + bools + arrays
+  return singles + arrays
 })
 
 function toggleNum(key, val) {
@@ -282,7 +271,6 @@ async function syncFilters(value) {
     tutoring_styles: Array.isArray(value.tutoring_styles) ? [...value.tutoring_styles] : [],
     salary_max: value.salary_max ?? '',
     min_rating: value.min_rating ?? null,
-    verified_only: Boolean(value.verified_only),
   })
 
   if (filters.district_id) {
@@ -317,7 +305,7 @@ function clearFilters() {
     medium: '', class_level: '', subject_ids: [], district_id: '', area_id: null,
     tutor_gender: '', days_per_week: null, hours_per_day: null,
     place_of_tutoring: [], tutoring_styles: [], salary_max: '',
-    min_rating: null, verified_only: false,
+    min_rating: null,
   })
   allAreas.value = []
   allSubjects.value = []
