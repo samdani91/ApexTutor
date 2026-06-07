@@ -254,7 +254,7 @@ class TutorSearchController extends Controller
 
     public function districts(): JsonResponse
     {
-        return response()->json(['success' => true, 'data' => District::all()]);
+        return response()->json(['success' => true, 'data' => District::orderBy('name')->get()]);
     }
 
     public function areas(Request $request): JsonResponse
