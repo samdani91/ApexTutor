@@ -8,10 +8,36 @@
       </span>
     </div>
 
+    <!-- Search + filters -->
+    <div class="card mb-5">
+      <div class="flex items-center gap-2">
+        <div class="w-32 shrink-0">
+          <DropSelect
+            :modelValue="searchType"
+            :options="searchTypeOptions"
+            @update:modelValue="v => { searchType = v; searchInput = '' }"
+          />
+        </div>
+        <div class="relative flex-1">
+          <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-paper-400"
+            fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+          </svg>
+          <input v-model="searchInput" @input="currentPage = 1" type="search"
+            :placeholder="searchType === 'email' ? 'Enter email address…' : searchType === 'id' ? 'Enter ID (e.g. TUT-123456)…' : 'Enter full or partial name…'"
+            class="input pl-9 w-full" />
+        </div>
+        <button v-if="hasActiveFilters" @click="clearFilters"
+          class="shrink-0 text-xs font-semibold font-display text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-sm transition-colors">
+          Clear
+        </button>
+      </div>
+    </div>
+
     <div v-if="loading" class="text-paper-500 font-body text-sm">Loading…</div>
 
     <template v-else>
-      <div v-if="allItems.length" class="space-y-4">
+      <div v-if="filteredItems.length" class="space-y-4">
         <div v-for="item in pagedItems" :key="item._key" class="card overflow-hidden">
 
           <!-- Card header -->
@@ -118,6 +144,16 @@
         <AdminPagination :meta="paginationMeta" @page="p => currentPage = p" />
       </div>
 
+      <!-- No results for active filters -->
+      <div v-else-if="allItems.length" class="card text-center py-14">
+        <svg class="w-10 h-10 text-paper-300 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+        </svg>
+        <p class="font-display font-semibold text-navy-700">No matches</p>
+        <p class="text-paper-400 text-sm font-body mt-1">No pending changes match your search.</p>
+        <button @click="clearFilters" class="mt-4 text-xs font-semibold font-display text-navy-700 underline underline-offset-2">Clear filters</button>
+      </div>
+
       <!-- Empty state -->
       <div v-else class="card text-center py-14">
         <svg class="w-10 h-10 text-paper-300 mx-auto mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -220,6 +256,24 @@ const actionLoading  = ref(false)
 const previewDoc     = ref(null)
 const currentPage    = ref(1)
 
+// Search + filter state
+const searchInput  = ref('')
+const searchType   = ref('name')
+
+const searchTypeOptions = [
+  { value: 'name',  label: 'Name'  },
+  { value: 'email', label: 'Email' },
+  { value: 'id',    label: 'ID'    },
+]
+
+const hasActiveFilters = computed(() => searchInput.value !== '')
+
+function clearFilters() {
+  searchInput.value = ''
+  searchType.value  = 'name'
+  currentPage.value = 1
+}
+
 // Merge profile changes and standalone avatar items into one unified list.
 // Avatar items are normalised into the same shape buildDiff() expects.
 const allItems = computed(() => [
@@ -236,8 +290,20 @@ const allItems = computed(() => [
   })),
 ])
 
+const filteredItems = computed(() => {
+  if (!searchInput.value.trim()) return allItems.value
+  const q = searchInput.value.trim().toLowerCase()
+  return allItems.value.filter(i => {
+    let field
+    if (searchType.value === 'email') field = i.user?.email
+    else if (searchType.value === 'id') field = i.tutor_id ?? i.profile_id
+    else field = i.user?.name
+    return (field ?? '').toLowerCase().includes(q)
+  })
+})
+
 const paginationMeta = computed(() => {
-  const total     = allItems.value.length
+  const total     = filteredItems.value.length
   const lastPage  = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const page      = Math.min(currentPage.value, lastPage)
   const from      = total ? (page - 1) * PAGE_SIZE + 1 : 0
@@ -247,12 +313,12 @@ const paginationMeta = computed(() => {
 
 const pagedItems = computed(() => {
   const page = paginationMeta.value.current_page
-  return allItems.value.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  return filteredItems.value.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 })
 
-// If an item is removed and the current page becomes empty, go back one page.
-watch(allItems, () => {
-  const lastPage = Math.max(1, Math.ceil(allItems.value.length / PAGE_SIZE))
+// If an item is removed / filtered and the current page becomes empty, go back one page.
+watch(filteredItems, () => {
+  const lastPage = Math.max(1, Math.ceil(filteredItems.value.length / PAGE_SIZE))
   if (currentPage.value > lastPage) currentPage.value = lastPage
 })
 
