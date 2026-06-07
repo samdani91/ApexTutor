@@ -1,6 +1,6 @@
 <template>
   <header class="sticky top-0 z-50 shrink-0 bg-navy-900 text-navy-100 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between gap-4">
+    <div class="mx-auto flex h-16 max-w-[84rem] items-center justify-between gap-4 px-4 md:px-6">
 
       <!-- Logo -->
       <RouterLink to="/" class="flex items-center gap-2 shrink-0 group">

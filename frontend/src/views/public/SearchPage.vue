@@ -2,7 +2,7 @@
   <DefaultLayout>
     <main class="public-grid-page relative isolate overflow-hidden bg-paper-50">
       <div class="pointer-events-none absolute inset-0 -z-10 public-grid"></div>
-      <div class="max-w-7xl mx-auto px-4 py-6 md:py-10">
+      <div class="mx-auto max-w-[84rem] px-4 py-6 md:py-10">
 
       <!-- ── Page header row ─────────────────────────────────── -->
       <div class="reveal mb-5 flex items-start justify-between gap-3 md:mb-7">
