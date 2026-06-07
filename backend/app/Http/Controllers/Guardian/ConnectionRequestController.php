@@ -28,19 +28,9 @@ class ConnectionRequestController extends Controller
     {
         $data = $request->validate([
             'tutor_profile_id' => 'required|exists:tutor_profiles,id',
-            'requirement_id'   => 'nullable|exists:tuition_requirements,id',
             'guardian_message' => 'nullable|string|max:1000',
         ]);
         $guardianProfile = $request->user()->guardianProfile;
-
-        if ($data['requirement_id'] ?? null) {
-            $owned = \App\Models\TuitionRequirement::where('id', $data['requirement_id'])
-                ->where('guardian_profile_id', $guardianProfile->id)
-                ->exists();
-            if (!$owned) {
-                return response()->json(['success' => false, 'message' => 'Requirement not found.'], 403);
-            }
-        }
 
         $connection = $guardianProfile->connectionRequests()->create($data);
 
@@ -71,7 +61,7 @@ class ConnectionRequestController extends Controller
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $connection = $request->user()->guardianProfile->connectionRequests()->with(['tutorProfile','requirement'])->findOrFail($id);
+        $connection = $request->user()->guardianProfile->connectionRequests()->with(['tutorProfile'])->findOrFail($id);
         return response()->json(['success' => true, 'data' => $connection]);
     }
 

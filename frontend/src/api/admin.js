@@ -8,7 +8,6 @@ export const adminApi = {
   getAdmin: (id) => http.get(`/admin/admins/${id}`),
   createAdmin: (data) => http.post('/admin/admins', data),
   updateAdmin: (id, data) => http.put(`/admin/admins/${id}`, data),
-  deleteAdmin: (id) => http.delete(`/admin/admins/${id}`),
 
   // Tutors
   getTutors: (params) => http.get('/admin/tutors', { params }),
@@ -26,6 +25,8 @@ export const adminApi = {
   getGuardian: (id) => http.get(`/admin/guardians/${id}`),
   updateGuardian: (id, data) => http.put(`/admin/guardians/${id}`, data),
   updateGuardianStatus: (id, data) => http.put(`/admin/guardians/${id}/status`, data),
+  uploadGuardianNid: (id, formData) => http.post(`/admin/guardians/${id}/nid`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  deleteGuardianNid: (id) => http.delete(`/admin/guardians/${id}/nid`),
 
   // Verifications
   getVerificationQueue: (params) => http.get('/admin/verifications', { params }),

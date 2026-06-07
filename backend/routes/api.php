@@ -18,7 +18,6 @@ use App\Http\Controllers\Guardian\ConnectionRequestController;
 use App\Http\Controllers\Guardian\GuardianProfileController;
 use App\Http\Controllers\Guardian\GuardianReviewController;
 use App\Http\Controllers\Guardian\ShortlistController;
-use App\Http\Controllers\Guardian\TuitionRequirementController;
 use App\Http\Controllers\Public\TutorPublicProfileController;
 use App\Http\Controllers\Public\TutorSearchController;
 use App\Http\Controllers\Tutor\DocumentController;
@@ -119,7 +118,6 @@ Route::middleware(['auth:sanctum', 'active.user', 'verified', 'role:guardian,stu
     Route::put('profile',    [GuardianProfileController::class, 'update']);
     Route::post('profile/nid',   [GuardianProfileController::class, 'uploadNid']);
     Route::delete('profile/nid', [GuardianProfileController::class, 'deleteNid']);
-    Route::apiResource('requirements', TuitionRequirementController::class)->except(['show']);
     Route::get('connections',              [ConnectionRequestController::class, 'index']);
     Route::post('connections',             [ConnectionRequestController::class, 'store']);
     Route::get('connections/{id}',         [ConnectionRequestController::class, 'show']);
@@ -138,12 +136,11 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:super_admin', 'log.admin
     Route::get('dashboard',           [AdminDashboardController::class, 'index']);
     Route::get('dashboard/analytics', [AdminDashboardController::class, 'analytics']);
 
-    // Admin user management (create/update/delete = super_admin only, enforced in controller)
+    // Admin user management
     Route::get('admins',            [AdminUserController::class, 'index']);
     Route::get('admins/{id}',       [AdminUserController::class, 'show']);
     Route::post('admins',           [AdminUserController::class, 'store']);
     Route::put('admins/{id}',       [AdminUserController::class, 'update']);
-    Route::delete('admins/{id}',    [AdminUserController::class, 'destroy']);
 
     Route::get('tutors',             [AdminTutorController::class, 'index']);
     Route::get('tutors/{tutorId}',                             [AdminTutorController::class, 'show']);
@@ -155,10 +152,12 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:super_admin', 'log.admin
     Route::put('tutors/{tutorId}/videos/{videoId}/review',     [AdminTutorController::class, 'reviewVideo']);
     Route::delete('tutors/{tutorId}/videos/{videoId}',         [AdminTutorController::class, 'deleteVideo']);
 
-    Route::get('guardians',                  [AdminGuardianController::class, 'index']);
-    Route::get('guardians/{guardianId}',     [AdminGuardianController::class, 'show']);
-    Route::put('guardians/{guardianId}',     [AdminGuardianController::class, 'update']);
-    Route::put('guardians/{guardianId}/status', [AdminGuardianController::class, 'updateStatus']);
+    Route::get('guardians',                        [AdminGuardianController::class, 'index']);
+    Route::get('guardians/{guardianId}',           [AdminGuardianController::class, 'show']);
+    Route::put('guardians/{guardianId}',           [AdminGuardianController::class, 'update']);
+    Route::put('guardians/{guardianId}/status',    [AdminGuardianController::class, 'updateStatus']);
+    Route::post('guardians/{guardianId}/nid',      [AdminGuardianController::class, 'uploadNid']);
+    Route::delete('guardians/{guardianId}/nid',    [AdminGuardianController::class, 'deleteNid']);
 
     Route::get('verifications',              [AdminVerificationController::class, 'queue']);
     Route::put('verifications/{id}/approve', [AdminVerificationController::class, 'approve']);

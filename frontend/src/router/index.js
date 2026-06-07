@@ -29,8 +29,7 @@ const routes = [
       { path: 'profile',             component: () => import('@/views/guardian/GuardianProfilePage.vue'),  name: 'guardian-profile' },
       { path: 'shortlist',           component: () => import('@/views/guardian/Shortlist.vue'),             name: 'shortlist' },
       { path: 'confirmed-tuitions',  component: () => import('@/views/guardian/ConfirmedTuitions.vue'),     name: 'guardian-confirmed-tuitions' },
-      { path: 'post-requirement',    component: () => import('@/views/guardian/PostRequirement.vue'),       name: 'post-requirement' },
-      { path: 'notifications',       component: () => import('@/views/shared/NotificationsPage.vue'),      name: 'guardian-notifications' },
+{ path: 'notifications',       component: () => import('@/views/shared/NotificationsPage.vue'),      name: 'guardian-notifications' },
       { path: 'settings',            component: () => import('@/views/shared/SettingsPage.vue'),            name: 'guardian-settings' },
     ]
   },

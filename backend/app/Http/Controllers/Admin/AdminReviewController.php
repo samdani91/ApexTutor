@@ -69,7 +69,7 @@ class AdminReviewController extends Controller
 
     public function reject(Request $request, int $id): JsonResponse
     {
-        $request->validate(['moderation_note' => 'required|string']);
+        $request->validate(['moderation_note' => 'required|string|max:2000']);
         $review = Review::with([
             'tutorProfile.user:id,name',
             'guardianProfile.user:id,name,email',

@@ -53,10 +53,10 @@
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 flex-wrap mb-1">
             <span class="text-[10px] font-bold font-display uppercase tracking-wide bg-navy-50 text-navy-700 border border-navy-200 px-2 py-0.5 rounded-pill">
-              {{ log.action?.replace(/_/g,' ') }}
+              {{ actionLabel(log.action ?? '') }}
             </span>
             <span class="text-[10px] font-semibold font-display text-paper-400 uppercase tracking-wide">
-              {{ log.target_type }} #{{ log.target_id }}
+              {{ titleCase(log.target_type ?? '') }} #{{ log.target_id }}
             </span>
           </div>
           <p class="text-sm text-navy-800 font-body">{{ log.description }}</p>
@@ -82,19 +82,66 @@ import AdminPagination from '@/components/admin/AdminPagination.vue'
 import DropSelect from '@/components/search/DropSelect.vue'
 
 const logs    = ref([])
-const actions = ref([])
 const loading = ref(true)
 const meta    = ref({ current_page: 1, last_page: 1, total: 0, from: 0, to: 0 })
 const filters = reactive({ search: '', action: '', target_type: '' })
+function titleCase(str) {
+  return str.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
+const ACTION_LABELS = {
+  'create_admin':             'Admin Creation',
+  'update_admin':             'Admin Update',
+  'update_tutor':             'Tutor Profile Edit',
+  'update_tutor_status':      'Tutor Status Change',
+  'upload_tutor_document':    'Tutor Document Upload',
+  'delete_tutor_document':    'Tutor Document Deletion',
+  'update_tutor_video':       'Tutor Video Update',
+  'delete_tutor_video':       'Tutor Video Deletion',
+  'review_tutor_video':       'Tutor Video Review',
+  'update_guardian':          'Guardian Profile Edit',
+  'update_guardian_status':   'Guardian Status Change',
+  'upload_guardian_nid':      'Guardian NID Upload',
+  'delete_guardian_nid':      'Guardian NID Deletion',
+  'replace_user_avatar':      'Avatar Replacement',
+  'remove_user_avatar':       'Avatar Removal',
+  'approve_verification':     'Verification Approval',
+  'reject_verification':      'Verification Rejection',
+  'approve_pending_changes':  'Pending Changes Approval',
+  'reject_pending_changes':   'Pending Changes Rejection',
+  'update_connection_status': 'Connection Status Change',
+  'add_connection_notes':     'Connection Note Added',
+  'approve_review':           'Review Approval',
+  'reject_review':            'Review Rejection',
+  'create_subject':           'Subject Creation',
+  'update_subject':           'Subject Update',
+  'delete_subject':           'Subject Deletion',
+  'create_district':          'District Creation',
+  'update_district':          'District Update',
+  'delete_district':          'District Deletion',
+  'create_area':              'Area Creation',
+  'update_area':              'Area Update',
+  'delete_area':              'Area Deletion',
+}
+
+function actionLabel(slug) {
+  return ACTION_LABELS[slug] ?? titleCase(slug)
+}
+
 const actionOptions = computed(() => [
   { value: '', label: 'All actions' },
-  ...actions.value.map(action => ({ value: action, label: action.replace(/_/g, ' ') })),
+  ...Object.entries(ACTION_LABELS).map(([value, label]) => ({ value, label })),
 ])
 const targetOptions = [
-  { value: '', label: 'All targets' },
-  { value: 'tutor_profile', label: 'Tutor profile' },
-  { value: 'user', label: 'User' },
-  { value: 'review', label: 'Review' },
+  { value: '',                   label: 'All targets' },
+  { value: 'user',               label: 'User' },
+  { value: 'tutor_profile',      label: 'Tutor Profile' },
+  { value: 'guardian_profile',   label: 'Guardian Profile' },
+  { value: 'connection_request', label: 'Connection Request' },
+  { value: 'review',             label: 'Review' },
+  { value: 'subject',            label: 'Subject' },
+  { value: 'district',           label: 'District' },
+  { value: 'area',               label: 'Area' },
 ]
 
 let searchTimer = null
@@ -126,8 +173,5 @@ function formatDate(d) {
   return new Date(d).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-onMounted(async () => {
-  const [, actionsRes] = await Promise.all([load(), adminApi.getAuditActions()])
-  actions.value = actionsRes.data.data
-})
+onMounted(() => load())
 </script>

@@ -142,7 +142,7 @@ async function handleLogin() {
     else if (auth.isAdmin) router.push('/admin/dashboard')
     else router.push('/guardian/dashboard')
   } catch (e) {
-    if (!e._toasted) {
+    if (!e._handled) {
       toast.error(e.response?.data?.message || 'Invalid credentials. Please try again.')
     }
   }

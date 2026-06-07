@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class AdminGuardianController extends Controller
 {
@@ -36,7 +37,6 @@ class AdminGuardianController extends Controller
     {
         $guardian = GuardianProfile::with([
             'user',
-            'tuitionRequirements.subjects',
             'connectionRequests' => fn($q) => $q->with([
                 'tutorProfile:id,user_id,tutor_id,verification_status',
                 'tutorProfile.user:id,name,email',
@@ -106,5 +106,44 @@ class AdminGuardianController extends Controller
         }
 
         return response()->json(['success' => true, 'message' => $data['is_active'] ? 'Guardian activated.' : 'Guardian suspended.']);
+    }
+
+    public function uploadNid(Request $request, string $guardianId): JsonResponse
+    {
+        $request->validate(['nid_document' => 'required|file|mimes:jpg,jpeg,png,pdf|max:4096']);
+
+        $file     = $request->file('nid_document');
+        $realMime = mime_content_type($file->getRealPath());
+
+        if (!in_array($realMime, ['application/pdf', 'image/jpeg', 'image/png'], true)) {
+            return response()->json(['success' => false, 'message' => 'Invalid file type.'], 422);
+        }
+
+        $guardian = GuardianProfile::with('user')->where('guardian_id', $guardianId)->firstOrFail();
+
+        if ($guardian->nid_document) {
+            Storage::disk('public')->delete($guardian->nid_document);
+        }
+
+        $path = $file->store('nid_documents/' . $guardian->user_id, 'public');
+        $guardian->update(['nid_document' => $path]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => ['nid_document_url' => Storage::disk('public')->url($path)],
+            'message' => 'NID document updated.',
+        ]);
+    }
+
+    public function deleteNid(string $guardianId): JsonResponse
+    {
+        $guardian = GuardianProfile::where('guardian_id', $guardianId)->firstOrFail();
+
+        if ($guardian->nid_document) {
+            Storage::disk('public')->delete($guardian->nid_document);
+            $guardian->update(['nid_document' => null]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'NID document removed.']);
     }
 }

@@ -30,7 +30,6 @@ class AdminConnectionController extends Controller
         $conn = ConnectionRequest::with([
             'guardianProfile.user:id,name,email,phone',
             'tutorProfile.user:id,name,email,phone',
-            'requirement',
         ])->findOrFail($id);
         return response()->json(['success' => true, 'data' => $conn]);
     }
@@ -85,7 +84,7 @@ class AdminConnectionController extends Controller
 
     public function addNotes(Request $request, int $id): JsonResponse
     {
-        $data = $request->validate(['admin_notes' => 'required|string']);
+        $data = $request->validate(['admin_notes' => 'required|string|max:2000']);
         ConnectionRequest::findOrFail($id)->update($data);
         return response()->json(['success' => true, 'message' => 'Notes added.']);
     }

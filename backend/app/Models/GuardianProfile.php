@@ -5,6 +5,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
@@ -36,7 +37,6 @@ class GuardianProfile extends Model
     }
 
     public function user(): BelongsTo { return $this->belongsTo(User::class); }
-    public function tuitionRequirements(): HasMany { return $this->hasMany(TuitionRequirement::class); }
     public function connectionRequests(): HasMany { return $this->hasMany(ConnectionRequest::class); }
     public function shortlists(): HasMany { return $this->hasMany(Shortlist::class); }
     public function reviews(): HasMany { return $this->hasMany(Review::class); }

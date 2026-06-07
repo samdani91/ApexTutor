@@ -24,7 +24,6 @@ class LogAdminActivity
     private const DESCRIPTORS = [
         'AdminUserController@store'             => ['create_admin',        'user',           'Created a new admin account'],
         'AdminUserController@update'            => ['update_admin',        'user',           'Updated admin account #:id'],
-        'AdminUserController@destroy'           => ['delete_admin',        'user',           'Deleted admin account #:id'],
 
         'AdminTutorController@update'           => ['update_tutor',        'tutor_profile',  'Edited tutor profile #:id'],
         'AdminTutorController@updateStatus'     => ['update_tutor_status', 'tutor_profile',  'Changed tutor #:id status'],
@@ -32,9 +31,15 @@ class LogAdminActivity
         'AdminTutorController@deleteDocument'   => ['delete_tutor_document','tutor_profile', 'Deleted a document from tutor #:id'],
         'AdminTutorController@updateVideo'      => ['update_tutor_video',  'tutor_profile',  'Updated a teaching video for tutor #:id'],
         'AdminTutorController@deleteVideo'      => ['delete_tutor_video',  'tutor_profile',  'Deleted a teaching video from tutor #:id'],
+        'AdminTutorController@reviewVideo'      => ['review_tutor_video',  'tutor_profile',  'Reviewed a teaching video for tutor #:id'],
 
         'AdminGuardianController@update'        => ['update_guardian',        'guardian_profile', 'Edited guardian profile #:id'],
         'AdminGuardianController@updateStatus'  => ['update_guardian_status', 'guardian_profile', 'Changed guardian #:id account status'],
+        'AdminGuardianController@uploadNid'     => ['upload_guardian_nid',    'guardian_profile', 'Uploaded NID document for guardian #:id'],
+        'AdminGuardianController@deleteNid'     => ['delete_guardian_nid',    'guardian_profile', 'Deleted NID document for guardian #:id'],
+
+        'AdminUserAvatarController@replace' => ['replace_user_avatar', 'user', 'Replaced avatar for user #:id'],
+        'AdminUserAvatarController@remove'  => ['remove_user_avatar',  'user', 'Removed avatar for user #:id'],
 
         'AdminVerificationController@approve'   => ['approve_verification', 'tutor_profile', 'Approved verification for tutor #:id'],
         'AdminVerificationController@reject'    => ['reject_verification',  'tutor_profile', 'Rejected verification for tutor #:id'],
@@ -122,13 +127,22 @@ class LogAdminActivity
 
     private function resolveTargetId(Request $request, Response $response): int
     {
-        // Route param 'id' is the primary target for most actions
+        // Numeric route param 'id' covers most actions
         $id = $request->route('id');
         if ($id !== null) {
             return (int) $id;
         }
 
-        // Create actions have no route id — pull the new record's id from the JSON response
+        // Named public-id params (string slugs like TUT-123456 / GRD-123456)
+        // — pull the numeric DB id from the JSON response body when possible
+        foreach (['tutorId', 'guardianId', 'videoId'] as $param) {
+            if ($request->route($param) !== null) {
+                $payload = json_decode($response->getContent(), true);
+                return (int) ($payload['data']['id'] ?? $payload['data']['data']['id'] ?? 0);
+            }
+        }
+
+        // Create actions — pull the new record's id from the JSON response
         $payload = json_decode($response->getContent(), true);
         return (int) ($payload['data']['id'] ?? $payload['data']['data']['id'] ?? 0);
     }

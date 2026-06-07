@@ -7,6 +7,7 @@ use App\Models\GuardianProfile;
 use App\Models\OtpCode;
 use App\Models\TutorProfile;
 use App\Models\User;
+use App\Notifications\AdminNewUserRegisteredNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -206,6 +207,19 @@ class AuthController extends Controller
 
         $user->email_verified_at = now();
         $user->save();
+
+        // Notify all admins — email + platform notification
+        $admins = User::where('role', 'super_admin')->get();
+        $notification = new AdminNewUserRegisteredNotification(
+            userName:  $user->name,
+            userEmail: $user->email,
+            userRole:  $user->role,
+            userId:    $user->id,
+        );
+        foreach ($admins as $admin) {
+            $admin->notify($notification);
+        }
+
         $user->tokens()->delete();
         $token = $user->createToken('auth_token')->plainTextToken;
 

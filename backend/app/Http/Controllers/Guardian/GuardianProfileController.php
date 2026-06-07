@@ -2,6 +2,8 @@
 namespace App\Http\Controllers\Guardian;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Notifications\AdminGuardianProfileUpdatedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -36,6 +38,9 @@ class GuardianProfileController extends Controller
         $request->user()->guardianProfile->update($profileFields);
 
         $profile = $request->user()->guardianProfile()->with('user:id,name,email,phone,address,avatar')->first();
+
+        $this->notifyAdmins($request->user(), 'profile');
+
         return response()->json(['success' => true, 'data' => $profile, 'message' => 'Profile updated.']);
     }
 
@@ -62,6 +67,8 @@ class GuardianProfileController extends Controller
         $path = $file->store('nid_documents/' . $request->user()->id, 'public');
         $profile->update(['nid_document' => $path]);
 
+        $this->notifyAdmins($request->user(), 'nid_document');
+
         return response()->json([
             'success' => true,
             'data'    => ['nid_document_url' => Storage::disk('public')->url($path)],
@@ -77,5 +84,16 @@ class GuardianProfileController extends Controller
             $profile->update(['nid_document' => null]);
         }
         return response()->json(['success' => true, 'message' => 'NID document removed.']);
+    }
+
+    private function notifyAdmins(User $guardian, string $updateType): void
+    {
+        $notification = new AdminGuardianProfileUpdatedNotification(
+            guardianName:  $guardian->name,
+            guardianEmail: $guardian->email,
+            guardianId:    $guardian->id,
+            updateType:    $updateType,
+        );
+        User::where('role', 'super_admin')->each(fn($admin) => $admin->notify($notification));
     }
 }

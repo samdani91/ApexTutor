@@ -59,8 +59,7 @@ class AdminUserController extends Controller
             'name'     => 'sometimes|string|max:100',
             'email'    => 'sometimes|email|unique:users,email,' . $id,
             'phone'    => 'nullable|string|max:20',
-            'is_active'=> 'sometimes|boolean',
-            'password' => 'nullable|string|min:8|confirmed',
+            'password' => ['nullable', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
         ]);
 
         if (isset($data['password'])) {
@@ -74,20 +73,5 @@ class AdminUserController extends Controller
         return response()->json(['success' => true, 'data' => $admin->fresh(), 'message' => 'Admin updated.']);
     }
 
-    public function destroy(Request $request, int $id): JsonResponse
-    {
-        if ($request->user()->role !== 'super_admin') {
-            return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
-        }
 
-        if ((int) $request->user()->id === $id) {
-            return response()->json(['success' => false, 'message' => 'You cannot delete your own account.'], 422);
-        }
-
-        $admin = User::where('role', 'super_admin')->findOrFail($id);
-        $admin->tokens()->delete();
-        $admin->delete();
-
-        return response()->json(['success' => true, 'message' => 'Admin account deleted.']);
-    }
 }

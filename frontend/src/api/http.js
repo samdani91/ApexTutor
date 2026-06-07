@@ -22,6 +22,7 @@ http.interceptors.response.use(
 
     if (status === 403 && data?.suspended) {
       emit('auth:suspended', { message: 'Your account has been suspended. Please contact support.' })
+      err._handled = true
       return Promise.reject(err)
     }
 

@@ -249,7 +249,6 @@ const roles = [
 const perks = [
   'Free account, no credit card needed',
   'Browse verified tutor profiles',
-  'Post tuition requirements instantly',
 ]
 const form = reactive({
   name: '', email: '', phone: '', role: 'guardian', password: '', password_confirmation: '',
@@ -278,7 +277,7 @@ async function handleRegister() {
       toast.success('Account created! Check your email for the verification code.')
     }
   } catch (e) {
-    if (!e._toasted) {
+    if (!e._handled) {
       const errs = e.response?.data?.errors
       const msg  = errs ? Object.values(errs).flat().join(' ') : (e.response?.data?.message || 'Registration failed.')
       toast.error(msg)
