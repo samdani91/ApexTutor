@@ -35,9 +35,4 @@ return [
         ],
     ],
 
-    'recaptcha' => [
-        'secret'    => env('RECAPTCHA_SECRET_KEY'),
-        'threshold' => env('RECAPTCHA_SCORE_THRESHOLD', 0.5),
-    ],
-
 ];
