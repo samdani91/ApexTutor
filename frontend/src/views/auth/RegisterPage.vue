@@ -204,12 +204,6 @@
                   Log In
                 </RouterLink>
               </p>
-              <p class="mt-4 text-xs text-paper-300 font-body">
-                Protected by reCAPTCHA —
-                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="underline hover:text-paper-400">Privacy</a>
-                &amp;
-                <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="underline hover:text-paper-400">Terms</a>
-              </p>
             </div>
           </template>
 

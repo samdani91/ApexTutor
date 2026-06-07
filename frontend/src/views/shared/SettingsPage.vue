@@ -120,12 +120,6 @@
         <button @click="requestChange" :disabled="requesting" class="btn-primary mt-6 text-sm py-2.5 px-6">
           {{ requesting ? 'Sending Code…' : 'Send Verification Code' }}
         </button>
-        <p class="mt-3 text-xs text-paper-300 font-body">
-          Protected by reCAPTCHA —
-          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" class="underline hover:text-paper-400">Privacy</a>
-          &amp;
-          <a href="https://policies.google.com/terms" target="_blank" rel="noopener" class="underline hover:text-paper-400">Terms</a>
-        </p>
         </div>
       </template>
       </div>
