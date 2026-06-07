@@ -46,29 +46,58 @@
       No audit log entries found.
     </div>
 
-    <div v-else class="space-y-2">
-      <div v-for="log in logs" :key="log.id"
-        class="card py-3 flex flex-col sm:flex-row sm:items-start gap-2">
-        <!-- Left: action badge + description -->
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2 flex-wrap mb-1">
-            <span class="text-[10px] font-bold font-display uppercase tracking-wide bg-navy-50 text-navy-700 border border-navy-200 px-2 py-0.5 rounded-pill">
+    <div v-else class="space-y-3">
+      <article v-for="log in logs" :key="log.id" class="audit-card">
+        <div class="audit-icon" :class="actionTone(log).icon">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" :d="actionTone(log).path" />
+          </svg>
+        </div>
+
+        <div class="min-w-0 flex-1">
+          <div class="mb-2 flex flex-wrap items-center gap-2">
+            <span class="audit-action" :class="actionTone(log).badge">
               {{ actionLabel(log.action ?? '') }}
             </span>
-            <span class="text-[10px] font-semibold font-display text-paper-400 uppercase tracking-wide">
-              {{ titleCase(log.target_type ?? '') }} #{{ log.target_id }}
+            <span v-if="log.target_type" class="audit-target">
+              {{ titleCase(log.target_type) }}<span v-if="log.target_id"> #{{ log.target_id }}</span>
             </span>
           </div>
-          <p class="text-sm text-navy-800 font-body">{{ log.description }}</p>
-          <p class="text-xs text-paper-400 font-body mt-0.5">IP: {{ log.ip_address }}</p>
+
+          <p class="font-body text-sm leading-relaxed text-navy-800">
+            {{ log.description || 'No description provided.' }}
+          </p>
+
+          <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs font-body text-paper-500">
+            <span class="inline-flex items-center gap-1.5">
+              <svg class="h-3.5 w-3.5 text-paper-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l3.5 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+              {{ formatDate(log.created_at) }}
+            </span>
+            <span v-if="log.ip_address" class="inline-flex items-center gap-1.5">
+              <svg class="h-3.5 w-3.5 text-paper-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9Zm0 0c2.25-2.25 3.375-5.25 3.375-9S14.25 5.25 12 3m0 18c-2.25-2.25-3.375-5.25-3.375-9S9.75 5.25 12 3m0 0a9 9 0 0 1 9 9M12 3a9 9 0 0 0-9 9" />
+              </svg>
+              {{ log.ip_address }}
+            </span>
+          </div>
         </div>
-        <!-- Right: admin + time -->
-        <div class="text-right shrink-0">
-          <p class="text-sm font-semibold font-display text-navy-900">{{ log.admin?.name }}</p>
-          <p class="text-xs text-paper-400 font-body capitalize">{{ log.admin?.role?.replace('_',' ') }}</p>
-          <p class="text-xs text-paper-400 font-body mt-0.5">{{ formatDate(log.created_at) }}</p>
+
+        <div class="audit-admin">
+          <div class="audit-avatar">
+            {{ initials(log.admin?.name) }}
+          </div>
+          <div class="min-w-0 sm:text-right">
+            <p class="truncate font-display text-sm font-bold text-navy-900">
+              {{ log.admin?.name || 'System' }}
+            </p>
+            <p class="mt-0.5 text-xs font-body capitalize text-paper-500">
+              {{ roleLabel(log.admin?.role) }}
+            </p>
+          </div>
         </div>
-      </div>
+      </article>
     </div>
 
     <AdminPagination :meta="meta" @page="load" />
@@ -144,6 +173,72 @@ const targetOptions = [
   { value: 'area',               label: 'Area' },
 ]
 
+const ACTION_TONES = {
+  create: {
+    icon: 'bg-emerald-700 text-white',
+    badge: 'bg-emerald-700 text-white border-emerald-800',
+    path: 'M12 4.5v15m7.5-7.5h-15',
+  },
+  update: {
+    icon: 'bg-blue-700 text-white',
+    badge: 'bg-blue-700 text-white border-blue-800',
+    path: 'm16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z',
+  },
+  approve: {
+    icon: 'bg-green-700 text-white',
+    badge: 'bg-green-700 text-white border-green-800',
+    path: 'M9 12.75 11.25 15 15.75 9M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+  },
+  reject: {
+    icon: 'bg-red-100 text-red-700',
+    badge: 'bg-red-100 text-red-800 border-red-300',
+    path: 'm9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+  },
+  delete: {
+    icon: 'bg-red-600 text-white',
+    badge: 'bg-red-600 text-white border-red-700',
+    path: 'm14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166M18 6l-.867 12.142A2.25 2.25 0 0 1 14.889 20.25H9.11a2.25 2.25 0 0 1-2.244-2.108L6 6m3 0V4.875c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V6',
+  },
+  danger: {
+    icon: 'bg-red-600 text-white',
+    badge: 'bg-red-600 text-white border-red-700',
+    path: 'M12 9v3.75m0 3.75h.008v.008H12V16.5Zm8.25-4.5a8.25 8.25 0 1 1-16.5 0 8.25 8.25 0 0 1 16.5 0Z',
+  },
+  upload: {
+    icon: 'bg-amber-400 text-navy-900',
+    badge: 'bg-amber-400 text-navy-900 border-amber-500',
+    path: 'M12 16.5V3.75m0 0L7.5 8.25M12 3.75l4.5 4.5M4.5 19.5h15',
+  },
+  default: {
+    icon: 'bg-sky-700 text-white',
+    badge: 'bg-sky-700 text-white border-sky-800',
+    path: 'M9 12h6m-6 4.5h6M7.5 3.75h9A2.25 2.25 0 0 1 18.75 6v12A2.25 2.25 0 0 1 16.5 20.25h-9A2.25 2.25 0 0 1 5.25 18V6A2.25 2.25 0 0 1 7.5 3.75Z',
+  },
+}
+
+const DANGER_WORDS = ['suspend', 'suspended', 'delete', 'deleted', 'remove', 'removed', 'ban', 'banned', 'disable', 'disabled', 'block', 'blocked', 'deactivate', 'deactivated']
+
+function actionTone(log = {}) {
+  const action = String(log.action || '')
+  const haystack = `${action} ${log.description || ''}`.toLowerCase()
+
+  if (DANGER_WORDS.some(word => haystack.includes(word))) {
+    return ACTION_TONES.danger
+  }
+
+  const key = action.split('_')[0]
+  return ACTION_TONES[key] || ACTION_TONES.default
+}
+
+function initials(name = '') {
+  const parts = String(name || 'System').trim().split(/\s+/).filter(Boolean)
+  return parts.slice(0, 2).map(part => part[0]?.toUpperCase()).join('') || 'S'
+}
+
+function roleLabel(role = '') {
+  return role ? String(role).replace(/_/g, ' ') : 'system'
+}
+
 let searchTimer = null
 function debouncedLoad() {
   clearTimeout(searchTimer)
@@ -175,3 +270,102 @@ function formatDate(d) {
 
 onMounted(() => load())
 </script>
+
+<style scoped>
+.audit-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: start;
+  border: 1px solid #e7e1d5;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  padding: 1rem;
+  box-shadow: 0 12px 28px rgba(15, 46, 92, 0.055);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.audit-card:hover {
+  border-color: #d8cfbe;
+  box-shadow: 0 16px 36px rgba(15, 46, 92, 0.09);
+  transform: translateY(-1px);
+}
+
+.audit-icon {
+  display: flex;
+  height: 2.75rem;
+  width: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.65rem;
+}
+
+.audit-action {
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  font-family: var(--font-display, inherit);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.audit-target {
+  border-radius: 999px;
+  border: 1px solid #e7e1d5;
+  background: #fbf9f3;
+  padding: 0.25rem 0.65rem;
+  font-family: var(--font-display, inherit);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+  color: #6d6254;
+  text-transform: uppercase;
+}
+
+.audit-admin {
+  display: flex;
+  max-width: 14rem;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.audit-avatar {
+  display: flex;
+  height: 2.35rem;
+  width: 2.35rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #0f2e5c;
+  color: #ffffff;
+  font-family: var(--font-display, inherit);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+@media (max-width: 640px) {
+  .audit-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .audit-admin {
+    grid-column: 2;
+    max-width: none;
+    padding-top: 0.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .audit-card {
+    transition: none;
+  }
+
+  .audit-card:hover {
+    transform: none;
+  }
+}
+</style>
