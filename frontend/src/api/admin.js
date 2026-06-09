@@ -1,7 +1,7 @@
 import http from './http.js'
 export const adminApi = {
   getDashboard: () => http.get('/admin/dashboard'),
-  getAnalytics:  () => http.get('/admin/dashboard/analytics'),
+  getAnalytics:  (params = {}) => http.get('/admin/dashboard/analytics', { params }),
 
   // Admin user management
   getAdmins: (params) => http.get('/admin/admins', { params }),

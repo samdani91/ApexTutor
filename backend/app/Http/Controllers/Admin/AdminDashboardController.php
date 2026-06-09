@@ -43,19 +43,39 @@ class AdminDashboardController extends Controller
         ]]);
     }
 
-    public function analytics(): JsonResponse
+    public function analytics(\Illuminate\Http\Request $request): JsonResponse
     {
-        $months = collect(range(5, 0))->map(function ($i) {
-            $date = now()->subMonths($i);
-            return [
-                'month'       => $date->format('M Y'),
-                'connections' => ConnectionRequest::whereYear('created_at', $date->year)
-                    ->whereMonth('created_at', $date->month)->count(),
+        $from = $request->filled('from')
+            ? \Carbon\Carbon::createFromFormat('Y-m', $request->from)->startOfMonth()
+            : now()->subMonths(11)->startOfMonth();
+
+        $to = $request->filled('to')
+            ? \Carbon\Carbon::createFromFormat('Y-m', $request->to)->endOfMonth()
+            : now()->endOfMonth();
+
+        // Never go into the future
+        if ($to->isAfter(now())) {
+            $to = now()->endOfMonth();
+        }
+        // Enforce a sensible maximum range (60 months) to avoid huge queries
+        if ($from->diffInMonths($to) > 59) {
+            $from = $to->copy()->subMonths(59)->startOfMonth();
+        }
+
+        $cursor  = $from->copy();
+        $months  = collect();
+        while ($cursor->lte($to)) {
+            $months->push([
+                'month'       => $cursor->format('M Y'),
+                'month_key'   => $cursor->format('Y-m'),
+                'connections' => ConnectionRequest::whereYear('created_at', $cursor->year)
+                    ->whereMonth('created_at', $cursor->month)->count(),
                 'confirmed'   => ConnectionRequest::where('status', 'confirmed')
-                    ->whereYear('confirmed_at', $date->year)
-                    ->whereMonth('confirmed_at', $date->month)->count(),
-            ];
-        });
+                    ->whereYear('confirmed_at', $cursor->year)
+                    ->whereMonth('confirmed_at', $cursor->month)->count(),
+            ]);
+            $cursor->addMonth();
+        }
 
         return response()->json(['success' => true, 'data' => [
             'monthly_connections' => $months,
