@@ -10,6 +10,9 @@ export const authApi = {
   verifyOtp:             (data) => http.post('/auth/otp/verify', data),
   uploadAvatar:          (formData) => http.post('/user/avatar', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   updateProfile:         (data) => http.put('/user/profile', data),
+  forgotPassword:        (data) => http.post('/auth/forgot-password', data),
+  verifyResetOtp:        (data) => http.post('/auth/verify-reset-otp', data),
+  resetPassword:         (data) => http.post('/auth/reset-password', data),
   requestPasswordChange: (data) => http.post('/user/password/request-change', data),
   changePassword:        (data) => http.put('/user/password', data),
 }

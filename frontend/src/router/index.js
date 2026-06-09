@@ -7,6 +7,7 @@ const routes = [
   { path: '/tutors/:publicId', component: () => import('@/views/public/TutorProfilePage.vue'), name: 'tutor-profile' },
   { path: '/login', component: () => import('@/views/auth/LoginPage.vue'), name: 'login' },
   { path: '/register', component: () => import('@/views/auth/RegisterPage.vue'), name: 'register' },
+  { path: '/forgot-password', component: () => import('@/views/auth/ForgotPassword.vue'), name: 'forgot-password' },
   {
     path: '/tutor',
     component: () => import('@/layouts/DashboardLayout.vue'),

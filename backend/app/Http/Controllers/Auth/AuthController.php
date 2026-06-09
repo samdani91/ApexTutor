@@ -243,6 +243,110 @@ class AuthController extends Controller
         return response()->json(['success' => true, 'message' => 'Verification code resent.']);
     }
 
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('email', $request->email)
+            ->whereNotNull('email_verified_at')
+            ->first();
+
+        // Always return the same success shape to avoid email enumeration
+        if (!$user) {
+            return response()->json([
+                'success' => true,
+                'data'    => ['email' => $this->maskEmail($request->email)],
+                'message' => 'If that email is registered, a reset code has been sent.',
+            ]);
+        }
+
+        $this->sendEmailOtp($user->email, 'password_reset');
+
+        return response()->json([
+            'success' => true,
+            'data'    => ['email' => $this->maskEmail($user->email)],
+            'message' => 'A password reset code has been sent to your email.',
+        ]);
+    }
+
+    public function verifyResetOtp(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'code'  => 'required|string|size:6',
+        ]);
+
+        $rateLimitKey = 'reset_otp_verify:' . $request->email;
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 5)) {
+            $seconds = RateLimiter::availableIn($rateLimitKey);
+            return response()->json([
+                'success' => false,
+                'message' => "Too many attempts. Try again in {$seconds} seconds.",
+            ], 429);
+        }
+
+        $otp = OtpCode::where('email', $request->email)
+            ->where('code', hash('sha256', $request->code))
+            ->where('purpose', 'password_reset')
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now())
+            ->latest()
+            ->first();
+
+        if (!$otp) {
+            RateLimiter::hit($rateLimitKey, 600);
+            return response()->json(['success' => false, 'message' => 'Invalid or expired code.'], 422);
+        }
+
+        RateLimiter::clear($rateLimitKey);
+
+        return response()->json(['success' => true, 'message' => 'Code verified.']);
+    }
+
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'email'                 => 'required|email',
+            'code'                  => 'required|string|size:6',
+            'password'              => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'password_confirmation' => 'required|string',
+        ]);
+
+        $rateLimitKey = 'reset_password:' . $request->email;
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 5)) {
+            $seconds = RateLimiter::availableIn($rateLimitKey);
+            return response()->json([
+                'success' => false,
+                'message' => "Too many attempts. Try again in {$seconds} seconds.",
+            ], 429);
+        }
+
+        $otp = OtpCode::where('email', $request->email)
+            ->where('code', hash('sha256', $request->code))
+            ->where('purpose', 'password_reset')
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now())
+            ->latest()
+            ->first();
+
+        if (!$otp) {
+            RateLimiter::hit($rateLimitKey, 600);
+            return response()->json(['success' => false, 'message' => 'Invalid or expired code.'], 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'User not found.'], 404);
+        }
+
+        RateLimiter::clear($rateLimitKey);
+        $otp->update(['used_at' => now()]);
+        $user->update(['password' => Hash::make($data['password'])]);
+        $user->tokens()->delete();
+
+        return response()->json(['success' => true, 'message' => 'Password reset successfully. Please log in with your new password.']);
+    }
+
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();

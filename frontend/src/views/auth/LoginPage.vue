@@ -64,7 +64,12 @@
             </div>
 
             <div class="space-y-1.5">
-              <label class="block text-sm font-semibold font-display text-navy-700">Password</label>
+              <div class="flex items-center justify-between">
+                <label class="block text-sm font-semibold font-display text-navy-700">Password</label>
+                <RouterLink to="/forgot-password" class="text-xs font-semibold font-display text-navy-500 hover:text-navy-900 transition-colors">
+                  Forgot password?
+                </RouterLink>
+              </div>
               <div class="relative">
                 <input v-model="form.password" :type="showPassword ? 'text' : 'password'"
                   id="password" name="password" autocomplete="current-password" placeholder="••••••••" class="input pr-10" required />

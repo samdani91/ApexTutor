@@ -20,6 +20,7 @@ class OtpMail extends Mailable
     {
         $subject = match ($this->purpose) {
             'email_verification' => 'Verify your email — TutorKhujo',
+            'password_reset'     => 'Reset your password — TutorKhujo',
             'password_change'    => 'Password change request — TutorKhujo',
             default              => 'Your verification code — TutorKhujo',
         };

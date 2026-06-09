@@ -1,9 +1,22 @@
+@php
+  $icon        = $purpose === 'email_verification' ? '&#9993;' : '&#128274;';
+  $headline    = match($purpose) {
+    'email_verification' => 'Verify Your Email',
+    'password_reset'     => 'Reset Your Password',
+    default              => 'Password Change Request',
+  };
+  $subheadline = match($purpose) {
+    'email_verification' => 'Use this code to activate your account',
+    'password_reset'     => 'Use this code to set a new password',
+    default              => 'Use this code to confirm the change',
+  };
+@endphp
 @extends('emails.layout', [
   'accentColor' => '#0F2E5C',
-  'icon' => $purpose === 'email_verification' ? '&#9993;' : '&#128274;',
-  'headline' => $purpose === 'email_verification' ? 'Verify Your Email' : 'Password Change Request',
-  'subheadline' => $purpose === 'email_verification' ? 'Use this code to activate your account' : 'Use this code to confirm the change',
-  'preheader' => 'Your TutorKhujo verification code is ' . $code,
+  'icon'        => $icon,
+  'headline'    => $headline,
+  'subheadline' => $subheadline,
+  'preheader'   => 'Your TutorKhujo verification code is ' . $code,
 ])
 
 @section('content')
@@ -11,6 +24,10 @@
   @if($purpose === 'email_verification')
     <p style="margin:0 0 22px;font-size:14px;color:#4A4332;line-height:1.7;">
       Thanks for joining TutorKhujo. Enter the code below to verify your email and activate your account.
+    </p>
+  @elseif($purpose === 'password_reset')
+    <p style="margin:0 0 22px;font-size:14px;color:#4A4332;line-height:1.7;">
+      We received a request to reset the password for your TutorKhujo account. Enter the code below to proceed.
     </p>
   @else
     <p style="margin:0 0 22px;font-size:14px;color:#4A4332;line-height:1.7;">
