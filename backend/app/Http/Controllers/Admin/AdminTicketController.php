@@ -69,6 +69,14 @@ class AdminTicketController extends Controller
         ]);
 
         $ticket = SupportTicket::findOrFail($id);
+
+        if ($ticket->assigned_to !== Auth::id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You must claim this ticket before updating its status or priority.',
+            ], 403);
+        }
+
         $oldStatus = $ticket->status;
 
         $updates = ['status' => $data['status']];

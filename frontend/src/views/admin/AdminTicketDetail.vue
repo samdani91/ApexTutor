@@ -80,16 +80,24 @@
           <div class="flex flex-col gap-2 shrink-0">
             <div>
               <span class="mb-1 block text-xs font-semibold font-display text-navy-700">Change Status</span>
-              <DropSelect v-model="newStatus" :options="statusOptions" class="w-44" />
+              <div :class="!claimedByMe ? 'opacity-50 pointer-events-none' : ''">
+                <DropSelect v-model="newStatus" :options="statusOptions" class="w-44" />
+              </div>
             </div>
             <div>
               <span class="mb-1 block text-xs font-semibold font-display text-navy-700">Priority</span>
-              <DropSelect v-model="newPriority" :options="priorityOptions" class="w-44" />
+              <div :class="!claimedByMe ? 'opacity-50 pointer-events-none' : ''">
+                <DropSelect v-model="newPriority" :options="priorityOptions" class="w-44" />
+              </div>
             </div>
-            <button @click="updateStatus" :disabled="statusLoading"
+            <button @click="updateStatus" :disabled="statusLoading || !claimedByMe"
+              :title="!claimedByMe ? 'Claim this ticket first' : ''"
               class="rounded-sm bg-navy-800 px-4 py-2 text-sm font-semibold font-display text-white hover:bg-navy-900 transition-colors disabled:opacity-50">
               {{ statusLoading ? 'Saving…' : 'Update' }}
             </button>
+            <p v-if="!claimedByMe" class="text-xs text-paper-400 font-body text-center">
+              Claim ticket to update
+            </p>
           </div>
         </div>
 
