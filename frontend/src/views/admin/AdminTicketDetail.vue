@@ -62,7 +62,7 @@
                 Unclaimed
               </span>
 
-              <button v-if="!claimedByOther" @click="toggleClaim" :disabled="claimLoading"
+              <button v-if="!claimedByOther" @click="showClaimDialog = true" :disabled="claimLoading"
                 class="inline-flex items-center gap-1.5 text-xs font-semibold font-display px-3 py-1.5 rounded-sm transition-colors disabled:opacity-50"
                 :class="claimedByMe
                   ? 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'
@@ -174,6 +174,18 @@
           </div>
         </template>
       </div>
+    <!-- Claim / Unclaim confirmation dialog -->
+    <AdminConfirmDialog
+      :show="showClaimDialog"
+      :title="claimedByMe ? 'Unclaim this ticket?' : 'Claim this ticket?'"
+      :message="claimedByMe
+        ? 'Are you sure you want to release this ticket? Other admins will be able to claim it.'
+        : 'Are you sure you want to claim this ticket? You will be responsible for resolving it and only you can reply until it is unclaimed.'"
+      :confirm-label="claimedByMe ? 'Yes, unclaim' : 'Yes, claim it'"
+      :danger="claimedByMe"
+      @confirm="toggleClaim"
+      @cancel="showClaimDialog = false"
+    />
     </template>
   </div>
 </template>
@@ -185,6 +197,7 @@ import { adminTicketApi } from '@/api/tickets.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { toast } from 'vue-sonner'
 import DropSelect from '@/components/search/DropSelect.vue'
+import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog.vue'
 
 const route       = useRoute()
 const auth        = useAuthStore()
@@ -200,6 +213,7 @@ const newPriority = ref('')
 
 const claimedByMe    = computed(() => ticket.value?.assigned_to === auth.user?.id)
 const claimedByOther = computed(() => ticket.value?.assigned_to !== null && !claimedByMe.value)
+const showClaimDialog = ref(false)
 
 const statusOptions = [
   { value: 'open',        label: 'Open'        },
@@ -292,6 +306,7 @@ async function submitReply() {
 }
 
 async function toggleClaim() {
+  showClaimDialog.value = false
   claimLoading.value = true
   try {
     if (claimedByMe.value) {
