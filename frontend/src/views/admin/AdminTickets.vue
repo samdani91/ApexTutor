@@ -96,6 +96,15 @@
           <p class="text-xs text-paper-400 font-body mt-0.5">
             {{ ticket.user?.name }} · {{ ticket.user?.email }}
           </p>
+          <p class="text-xs mt-1">
+            <span v-if="ticket.assigned_admin" class="inline-flex items-center gap-1 text-emerald-700 font-semibold font-display">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/>
+              </svg>
+              Claimed by {{ ticket.assigned_admin.name }}
+            </span>
+            <span v-else class="text-paper-400 font-body">Unclaimed</span>
+          </p>
         </div>
 
         <div class="text-xs text-paper-400 font-body shrink-0 text-right sm:text-left">

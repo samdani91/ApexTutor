@@ -40,6 +40,40 @@
               ({{ ticket.user?.email }}) ·
               {{ formatDate(ticket.created_at) }}
             </p>
+
+            <!-- Claim status -->
+            <div class="mt-3 flex items-center gap-3">
+              <span v-if="claimedByMe"
+                class="inline-flex items-center gap-1.5 text-xs font-semibold font-display px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/>
+                </svg>
+                Claimed by you
+              </span>
+              <span v-else-if="claimedByOther"
+                class="inline-flex items-center gap-1.5 text-xs font-semibold font-display px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/>
+                </svg>
+                Claimed by {{ ticket.assigned_admin?.name }}
+              </span>
+              <span v-else
+                class="inline-flex items-center gap-1.5 text-xs font-semibold font-display px-2.5 py-1 rounded-full bg-paper-100 text-paper-500 border border-paper-200">
+                Unclaimed
+              </span>
+
+              <button v-if="!claimedByOther" @click="toggleClaim" :disabled="claimLoading"
+                class="inline-flex items-center gap-1.5 text-xs font-semibold font-display px-3 py-1.5 rounded-sm transition-colors disabled:opacity-50"
+                :class="claimedByMe
+                  ? 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'
+                  : 'bg-navy-800 text-white hover:bg-navy-900'">
+                <svg v-if="claimLoading" class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                {{ claimLoading ? '…' : claimedByMe ? 'Unclaim' : 'Claim Ticket' }}
+              </button>
+            </div>
           </div>
 
           <!-- Status actions -->
@@ -123,21 +157,27 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { adminTicketApi } from '@/api/tickets.js'
+import { useAuthStore } from '@/stores/auth.js'
 import { toast } from 'vue-sonner'
 import DropSelect from '@/components/search/DropSelect.vue'
 
 const route       = useRoute()
+const auth        = useAuthStore()
 const ticket      = ref(null)
 const loading     = ref(true)
 const statusLoading = ref(false)
+const claimLoading  = ref(false)
 const replyLoading  = ref(false)
 const replyBody   = ref('')
 const isInternal  = ref(false)
 const newStatus   = ref('')
 const newPriority = ref('')
+
+const claimedByMe    = computed(() => ticket.value?.assigned_to === auth.user?.id)
+const claimedByOther = computed(() => ticket.value?.assigned_to !== null && !claimedByMe.value)
 
 const statusOptions = [
   { value: 'open',        label: 'Open'        },
@@ -226,6 +266,27 @@ async function submitReply() {
     toast.error('Failed to send reply.')
   } finally {
     replyLoading.value = false
+  }
+}
+
+async function toggleClaim() {
+  claimLoading.value = true
+  try {
+    if (claimedByMe.value) {
+      const { data } = await adminTicketApi.unclaim(ticket.value.id)
+      ticket.value.assigned_to    = data.data.assigned_to
+      ticket.value.assigned_admin = data.data.assigned_admin
+      toast.success('Ticket unclaimed.')
+    } else {
+      const { data } = await adminTicketApi.claim(ticket.value.id)
+      ticket.value.assigned_to    = data.data.assigned_to
+      ticket.value.assigned_admin = data.data.assigned_admin
+      toast.success('Ticket claimed.')
+    }
+  } catch (e) {
+    toast.error(e.response?.data?.message || 'Action failed.')
+  } finally {
+    claimLoading.value = false
   }
 }
 

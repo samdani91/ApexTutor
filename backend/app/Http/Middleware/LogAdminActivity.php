@@ -65,6 +65,8 @@ class LogAdminActivity
 
         'AdminTicketController@updateStatus'           => ['update_ticket_status', 'support_ticket', 'Updated ticket #:id status'],
         'AdminTicketController@reply'                  => ['reply_ticket',         'support_ticket', 'Replied to ticket #:id'],
+        'AdminTicketController@claim'                  => ['claim_ticket',         'support_ticket', 'Claimed ticket #:id'],
+        'AdminTicketController@unclaim'                => ['unclaim_ticket',       'support_ticket', 'Unclaimed ticket #:id'],
     ];
 
     public function handle(Request $request, Closure $next): Response

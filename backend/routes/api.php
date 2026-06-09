@@ -220,5 +220,7 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:super_admin', 'log.admin
     Route::get('tickets/counts',             [AdminTicketController::class, 'counts']);
     Route::get('tickets/{id}',               [AdminTicketController::class, 'show']);
     Route::put('tickets/{id}/status',        [AdminTicketController::class, 'updateStatus']);
+    Route::post('tickets/{id}/claim',        [AdminTicketController::class, 'claim']);
+    Route::post('tickets/{id}/unclaim',      [AdminTicketController::class, 'unclaim']);
     Route::post('tickets/{id}/reply',        [AdminTicketController::class, 'reply']);
 });

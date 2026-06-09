@@ -13,5 +13,7 @@ export const adminTicketApi = {
   getCounts:    ()            => http.get('/admin/tickets/counts'),
   getOne:       (id)          => http.get(`/admin/tickets/${id}`),
   updateStatus: (id, data)    => http.put(`/admin/tickets/${id}/status`, data),
+  claim:        (id)          => http.post(`/admin/tickets/${id}/claim`),
+  unclaim:      (id)          => http.post(`/admin/tickets/${id}/unclaim`),
   reply:        (id, data)    => http.post(`/admin/tickets/${id}/reply`, data),
 }

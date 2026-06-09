@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\SupportTicket;
 use App\Models\TicketReply;
+use App\Notifications\AdminTicketClaimNotification;
+use App\Notifications\AdminTicketClaimEmailNotification;
 use App\Notifications\TicketRepliedNotification;
 use App\Notifications\TicketRepliedEmailNotification;
 use App\Notifications\TicketStatusUpdatedNotification;
 use App\Notifications\TicketStatusUpdatedEmailNotification;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -41,6 +44,7 @@ class AdminTicketController extends Controller
             };
         }
 
+        $query->with('assignedAdmin:id,name');
         $tickets = $query->paginate(15);
 
         return response()->json(['success' => true, 'data' => $tickets]);
@@ -50,6 +54,7 @@ class AdminTicketController extends Controller
     {
         $ticket = SupportTicket::with([
             'user:id,name,email,role',
+            'assignedAdmin:id,name',
             'replies.user:id,name,role',
         ])->findOrFail($id);
 
@@ -119,6 +124,47 @@ class AdminTicketController extends Controller
         $reply->load('user:id,name,role');
 
         return response()->json(['success' => true, 'data' => $reply], 201);
+    }
+
+    public function claim(int $id): JsonResponse
+    {
+        $ticket = SupportTicket::findOrFail($id);
+
+        if ($ticket->assigned_to !== null) {
+            return response()->json(['success' => false, 'message' => 'This ticket is already claimed.'], 422);
+        }
+
+        $actor = Auth::user();
+        $ticket->update(['assigned_to' => $actor->id]);
+        $ticket->load('assignedAdmin:id,name');
+
+        $this->notifyAllAdmins($ticket, $actor, 'claimed');
+
+        return response()->json(['success' => true, 'data' => $ticket->fresh(['assignedAdmin'])]);
+    }
+
+    public function unclaim(int $id): JsonResponse
+    {
+        $ticket = SupportTicket::findOrFail($id);
+
+        if ($ticket->assigned_to !== Auth::id()) {
+            return response()->json(['success' => false, 'message' => 'You can only unclaim a ticket you have claimed.'], 403);
+        }
+
+        $actor = Auth::user();
+        $ticket->update(['assigned_to' => null]);
+
+        $this->notifyAllAdmins($ticket, $actor, 'unclaimed');
+
+        return response()->json(['success' => true, 'data' => $ticket->fresh(['assignedAdmin'])]);
+    }
+
+    private function notifyAllAdmins(SupportTicket $ticket, $actor, string $action): void
+    {
+        User::where('role', 'super_admin')->each(function ($admin) use ($ticket, $actor, $action) {
+            $admin->notify(new AdminTicketClaimNotification($ticket, $actor, $action));      // DB: immediate
+            $admin->notify(new AdminTicketClaimEmailNotification($ticket, $actor, $action)); // Email: queued
+        });
     }
 
     public function counts(): JsonResponse
