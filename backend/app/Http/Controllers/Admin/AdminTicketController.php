@@ -100,6 +100,13 @@ class AdminTicketController extends Controller
     {
         $ticket = SupportTicket::with('user:id,name,email')->findOrFail($id);
 
+        if ($ticket->assigned_to !== Auth::id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You must claim this ticket before you can reply.',
+            ], 403);
+        }
+
         $data = $request->validate([
             'body'        => 'required|string|max:5000',
             'is_internal' => 'sometimes|boolean',

@@ -95,7 +95,7 @@
 
         <!-- Original description -->
         <div class="mt-4 pt-4 border-t border-paper-100">
-          <p class="text-xs font-semibold font-display text-paper-400 uppercase tracking-wide mb-2">Original Message</p>
+          <p class="text-xs font-semibold font-display text-paper-400 uppercase tracking-wide mb-2">Issue Description</p>
           <p class="text-sm text-paper-700 font-body leading-relaxed whitespace-pre-wrap">{{ ticket.description }}</p>
         </div>
       </div>
@@ -132,25 +132,47 @@
       <!-- Reply form -->
       <div class="card">
         <h2 class="font-display font-semibold text-navy-800 mb-3">Add Reply</h2>
-        <textarea v-model="replyBody" rows="4" placeholder="Write your response…"
-          class="input w-full resize-none text-sm mb-3" />
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <label class="flex items-center gap-2 cursor-pointer select-none">
-            <div @click="isInternal = !isInternal"
-              class="relative w-9 h-5 rounded-full transition-colors duration-200 cursor-pointer"
-              :class="isInternal ? 'bg-amber-500' : 'bg-paper-300'">
-              <div class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200"
-                :class="isInternal ? 'translate-x-4' : ''"></div>
-            </div>
-            <span class="text-sm font-semibold font-display text-navy-700">Internal note</span>
-            <span class="text-xs text-paper-400 font-body">(not visible to user)</span>
-          </label>
-          <button @click="submitReply" :disabled="!replyBody.trim() || replyLoading"
-            class="rounded-sm px-5 py-2.5 text-sm font-semibold font-display text-white transition-colors disabled:opacity-50"
-            :class="isInternal ? 'bg-amber-600 hover:bg-amber-700' : 'bg-navy-800 hover:bg-navy-900'">
-            {{ replyLoading ? 'Sending…' : isInternal ? 'Add Note' : 'Send Reply' }}
-          </button>
+
+        <!-- Blocked: not claimed by anyone -->
+        <div v-if="!ticket.assigned_to"
+          class="flex items-center gap-3 rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-body text-amber-800">
+          <svg class="w-5 h-5 shrink-0 text-amber-600" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/>
+          </svg>
+          Claim this ticket first before adding a reply.
         </div>
+
+        <!-- Blocked: claimed by another admin -->
+        <div v-else-if="claimedByOther"
+          class="flex items-center gap-3 rounded-sm border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-body text-blue-800">
+          <svg class="w-5 h-5 shrink-0 text-blue-600" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/>
+          </svg>
+          This ticket is claimed by <strong class="ml-1">{{ ticket.assigned_admin?.name }}</strong>. Only they can reply.
+        </div>
+
+        <!-- Active reply form: claimed by current admin -->
+        <template v-else>
+          <textarea v-model="replyBody" rows="4" placeholder="Write your response…"
+            class="input w-full resize-none text-sm mb-3" />
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <div @click="isInternal = !isInternal"
+                class="relative w-9 h-5 rounded-full transition-colors duration-200 cursor-pointer"
+                :class="isInternal ? 'bg-amber-500' : 'bg-paper-300'">
+                <div class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200"
+                  :class="isInternal ? 'translate-x-4' : ''"></div>
+              </div>
+              <span class="text-sm font-semibold font-display text-navy-700">Internal note</span>
+              <span class="text-xs text-paper-400 font-body">(not visible to user)</span>
+            </label>
+            <button @click="submitReply" :disabled="!replyBody.trim() || replyLoading"
+              class="rounded-sm px-5 py-2.5 text-sm font-semibold font-display text-white transition-colors disabled:opacity-50"
+              :class="isInternal ? 'bg-amber-600 hover:bg-amber-700' : 'bg-navy-800 hover:bg-navy-900'">
+              {{ replyLoading ? 'Sending…' : isInternal ? 'Add Note' : 'Send Reply' }}
+            </button>
+          </div>
+        </template>
       </div>
     </template>
   </div>
