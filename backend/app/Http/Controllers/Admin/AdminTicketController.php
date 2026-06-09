@@ -27,13 +27,18 @@ class AdminTicketController extends Controller
         if ($request->priority) {
             $query->where('priority', $request->priority);
         }
-        if ($request->search) {
-            $q = '%' . $request->search . '%';
-            $query->where(fn($sq) =>
-                $sq->where('subject', 'like', $q)
-                   ->orWhere('ticket_number', 'like', $q)
-                   ->orWhereHas('user', fn($uq) => $uq->where('name', 'like', $q)->orWhere('email', 'like', $q))
-            );
+        if ($request->search && $request->search_by) {
+            $term = $request->search;
+            match ($request->search_by) {
+                'ticket_number' => $query->where('ticket_number', 'like', '%' . $term . '%'),
+                'user_email'    => $query->whereHas('user', fn($uq) => $uq->where('email', 'like', '%' . $term . '%')),
+                'user_phone'    => $query->whereHas('user', fn($uq) => $uq->where('phone', 'like', '%' . $term . '%')),
+                'user_id'       => $query->whereHas('user', function ($uq) use ($term) {
+                    $uq->whereHas('tutorProfile',   fn($q) => $q->where('tutor_id',   'like', '%' . $term . '%'))
+                       ->orWhereHas('guardianProfile', fn($q) => $q->where('guardian_id', 'like', '%' . $term . '%'));
+                }),
+                default         => null,
+            };
         }
 
         $tickets = $query->paginate(15);

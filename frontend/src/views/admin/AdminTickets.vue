@@ -17,15 +17,22 @@
 
     <!-- Filters -->
     <div class="card mb-5">
-      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_160px_160px_160px_auto] lg:items-end">
+      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-[160px_minmax(0,1fr)_160px_160px_160px_auto] xl:items-end lg:grid-cols-3 lg:items-end">
         <div>
-          <span class="mb-1 block text-xs font-semibold font-display text-navy-700">Search</span>
+          <span class="mb-1 block text-xs font-semibold font-display text-navy-700">Search by</span>
+          <DropSelect v-model="filters.searchBy" :options="searchByOptions"
+            @update:modelValue="filters.searchValue = ''; loadTickets()" />
+        </div>
+        <div>
+          <span class="mb-1 block text-xs font-semibold font-display text-navy-700">Search value</span>
           <div class="relative">
-            <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-paper-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-paper-400 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
             </svg>
-            <input v-model="filters.search" @input="debouncedLoad" type="search"
-              placeholder="Search ticket, subject, name…" class="input pl-9 text-sm" />
+            <input v-model="filters.searchValue" @input="debouncedLoad"
+              :type="filters.searchBy === 'user_id' ? 'number' : 'search'"
+              :placeholder="searchPlaceholder"
+              class="input pl-9 text-sm" />
           </div>
         </div>
         <div>
@@ -116,7 +123,21 @@ const tickets = ref([])
 const counts  = ref(null)
 const loading = ref(true)
 const meta    = ref({ current_page: 1, last_page: 1, total: 0 })
-const filters = reactive({ search: '', status: '', category: '', priority: '' })
+const filters = reactive({ searchBy: 'ticket_number', searchValue: '', status: '', category: '', priority: '' })
+
+const searchByOptions = [
+  { value: 'ticket_number', label: 'Ticket ID'    },
+  { value: 'user_email',    label: 'User Email'   },
+  { value: 'user_phone',    label: 'Phone'        },
+  { value: 'user_id',       label: 'Profile ID'   },
+]
+
+const searchPlaceholder = computed(() => ({
+  ticket_number: 'e.g. TKT-4A2F1B',
+  user_email:    'e.g. user@example.com',
+  user_phone:    'e.g. 017xxxxxxxx',
+  user_id:       'e.g. TUT-598508 or GRD-123456',
+}[filters.searchBy] ?? 'Search…'))
 
 const statusOptions   = [
   { value: 'open',        label: 'Open'        },
@@ -137,7 +158,7 @@ const priorityOptions = [
 ]
 
 const hasFilters = computed(() =>
-  filters.search || filters.status || filters.category || filters.priority
+  filters.searchValue || filters.status || filters.category || filters.priority
 )
 
 function statusLabel(s) {
@@ -148,7 +169,7 @@ function statusClass(s) {
     open:        'bg-amber-50  text-amber-700  border-amber-200',
     in_progress: 'bg-blue-50   text-blue-700   border-blue-200',
     resolved:    'bg-emerald-50 text-emerald-700 border-emerald-200',
-    closed:      'bg-paper-100 text-paper-500  border-paper-200',
+    closed:      'bg-red-50    text-red-600    border-red-200',
   }[s] ?? 'bg-paper-100 text-paper-500 border-paper-200'
 }
 function priorityClass(p) {
@@ -172,14 +193,18 @@ function debouncedLoad() {
 }
 
 function clearFilters() {
-  Object.assign(filters, { search: '', status: '', category: '', priority: '' })
+  Object.assign(filters, { searchBy: 'ticket_number', searchValue: '', status: '', category: '', priority: '' })
   loadTickets()
 }
 
 async function loadTickets(page = 1) {
   loading.value = true
   try {
-    const params = { page, per_page: 15, ...Object.fromEntries(Object.entries(filters).filter(([,v]) => v)) }
+    const params = { page, per_page: 15 }
+    if (filters.status)      params.status   = filters.status
+    if (filters.category)    params.category = filters.category
+    if (filters.priority)    params.priority = filters.priority
+    if (filters.searchValue) { params.search = filters.searchValue; params.search_by = filters.searchBy }
     const { data } = await adminTicketApi.getAll(params)
     tickets.value = data.data?.data ?? []
     meta.value    = data.data ?? {}

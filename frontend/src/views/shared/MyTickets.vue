@@ -185,7 +185,7 @@ function statusClass(s) {
     open:        'bg-amber-50   text-amber-700   border-amber-200',
     in_progress: 'bg-blue-50    text-blue-700    border-blue-200',
     resolved:    'bg-emerald-50 text-emerald-700 border-emerald-200',
-    closed:      'bg-paper-100  text-paper-500   border-paper-200',
+    closed:      'bg-red-50     text-red-600     border-red-200',
   }[s] ?? ''
 }
 function categoryLabel(c) {
