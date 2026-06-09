@@ -17,6 +17,8 @@ const routes = [
       { path: 'confirmed-tuitions',  component: () => import('@/views/tutor/ConfirmedTuitions.vue'),    name: 'tutor-confirmed-tuitions' },
       { path: 'reviews',             component: () => import('@/views/tutor/TutorReviews.vue'),         name: 'tutor-reviews' },
       { path: 'notifications',       component: () => import('@/views/shared/NotificationsPage.vue'),  name: 'tutor-notifications' },
+      { path: 'support',             component: () => import('@/views/shared/MyTickets.vue'),            name: 'tutor-support' },
+      { path: 'support/:id',         component: () => import('@/views/shared/TicketDetail.vue'),         name: 'tutor-ticket-detail' },
       { path: 'settings',            component: () => import('@/views/shared/SettingsPage.vue'),        name: 'tutor-settings' },
     ]
   },
@@ -29,7 +31,9 @@ const routes = [
       { path: 'profile',             component: () => import('@/views/guardian/GuardianProfilePage.vue'),  name: 'guardian-profile' },
       { path: 'shortlist',           component: () => import('@/views/guardian/Shortlist.vue'),             name: 'shortlist' },
       { path: 'confirmed-tuitions',  component: () => import('@/views/guardian/ConfirmedTuitions.vue'),     name: 'guardian-confirmed-tuitions' },
-{ path: 'notifications',       component: () => import('@/views/shared/NotificationsPage.vue'),      name: 'guardian-notifications' },
+      { path: 'notifications',       component: () => import('@/views/shared/NotificationsPage.vue'),      name: 'guardian-notifications' },
+      { path: 'support',             component: () => import('@/views/shared/MyTickets.vue'),                name: 'guardian-support' },
+      { path: 'support/:id',         component: () => import('@/views/shared/TicketDetail.vue'),             name: 'guardian-ticket-detail' },
       { path: 'settings',            component: () => import('@/views/shared/SettingsPage.vue'),            name: 'guardian-settings' },
     ]
   },
@@ -53,6 +57,8 @@ const routes = [
       { path: 'analytics', component: () => import('@/views/admin/AdminAnalytics.vue'), name: 'admin-analytics' },
       { path: 'audit-log', component: () => import('@/views/admin/AdminAuditLog.vue'), name: 'admin-audit-log' },
       { path: 'notifications', component: () => import('@/views/admin/AdminNotifications.vue'), name: 'admin-notifications' },
+      { path: 'tickets',    component: () => import('@/views/admin/AdminTickets.vue'),       name: 'admin-tickets' },
+      { path: 'tickets/:id', component: () => import('@/views/admin/AdminTicketDetail.vue'), name: 'admin-ticket-detail' },
       { path: 'settings', component: () => import('@/views/admin/AdminSettings.vue'), name: 'admin-settings' },
     ]
   },

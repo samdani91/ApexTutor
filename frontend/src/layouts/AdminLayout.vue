@@ -80,6 +80,8 @@
               d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/>
             <path v-else-if="item.icon === 'photo'" stroke-linecap="round" stroke-linejoin="round"
               d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316zM16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z"/>
+            <path v-else-if="item.icon === 'ticket'" stroke-linecap="round" stroke-linejoin="round"
+              d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z"/>
           </svg>
           {{ item.label }}
           <span v-if="getNavCount(item.to) > 0"
@@ -183,6 +185,7 @@ function getNavCount(to) {
   if (to === '/admin/pending-changes') return pendingCounts.pendingChanges + (pendingCounts.pendingAvatars ?? 0)
   if (to === '/admin/reviews')         return pendingCounts.reviews
   if (to === '/admin/notifications')   return unreadCount.value
+  if (to === '/admin/tickets')         return pendingCounts.openTickets ?? 0
   return 0
 }
 
@@ -196,8 +199,9 @@ async function loadCounts() {
     pendingCounts.verifications  = d.pending_verifications   ?? 0
     pendingCounts.pendingChanges = d.pending_profile_changes ?? 0
     pendingCounts.reviews        = d.pending_reviews         ?? 0
-    pendingCounts.pendingAvatars = d.pending_avatars         ?? 0
-    unreadCount.value            = notifRes.data.unread      ?? 0
+    pendingCounts.pendingAvatars = d.pending_avatars          ?? 0
+    pendingCounts.openTickets    = d.open_tickets             ?? 0
+    unreadCount.value            = notifRes.data.unread       ?? 0
   } catch { /* counts are non-critical */ }
 }
 
@@ -220,6 +224,7 @@ const navItems = [
   { to: '/admin/reviews',         label: 'Reviews',           icon: 'star'     },
   { to: '/admin/reference-data',  label: 'Reference Data',    icon: 'database' },
   { to: '/admin/audit-log',       label: 'Audit Log',         icon: 'shield'   },
+  { to: '/admin/tickets',         label: 'Support Tickets',   icon: 'ticket'   },
   { to: '/admin/notifications',   label: 'Notifications',     icon: 'heart'    },
 ]
 

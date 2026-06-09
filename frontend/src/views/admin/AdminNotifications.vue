@@ -88,6 +88,9 @@
             <svg v-else-if="n.data.type === 'review_submitted'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/>
             </svg>
+            <svg v-else-if="n.data.type === 'new_support_ticket'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z"/>
+            </svg>
             <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
             </svg>
@@ -175,6 +178,25 @@
               </RouterLink>
             </div>
 
+            <!-- Support ticket detail -->
+            <div v-else-if="n.data.type === 'new_support_ticket'" class="mt-3">
+              <div class="grid gap-2 sm:grid-cols-2">
+                <div class="rounded-md bg-paper-50 px-3 py-2">
+                  <p class="text-[11px] font-bold font-display text-paper-400 uppercase tracking-wide">From</p>
+                  <p class="mt-0.5 truncate text-sm font-semibold font-body text-navy-800">{{ n.data.user_name }}</p>
+                </div>
+                <div class="rounded-md bg-paper-50 px-3 py-2">
+                  <p class="text-[11px] font-bold font-display text-paper-400 uppercase tracking-wide">Ticket</p>
+                  <p class="mt-0.5 truncate text-sm font-semibold font-body text-navy-800">{{ n.data.ticket_number }}</p>
+                </div>
+              </div>
+              <RouterLink :to="`/admin/tickets/${n.data.ticket_id}`"
+                class="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold font-display text-blue-700 hover:text-blue-900 transition-colors">
+                View ticket
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+              </RouterLink>
+            </div>
+
             <p class="text-xs text-paper-400 font-body mt-3">{{ formatDate(n.created_at) }}</p>
           </div>
 
@@ -222,6 +244,7 @@ const typeOptions = [
   { value: 'pending_profile_change', label: 'Profile Change' },
   { value: 'pending_video',          label: 'Video Review' },
   { value: 'review_submitted',       label: 'Review' },
+  { value: 'new_support_ticket',     label: 'Support Ticket' },
 ]
 
 const sortDropOptions = [
@@ -285,9 +308,11 @@ function typeMeta(type) {
     case 'pending_video':
       return { label: 'Video Review',   badge: 'bg-violet-50 text-violet-700',  iconBg: 'bg-violet-50 text-violet-600 ring-violet-100', accent: 'bg-violet-500' }
     case 'review_submitted':
-      return { label: 'Review',         badge: 'bg-purple-50 text-purple-700',  iconBg: 'bg-purple-50 text-purple-600 ring-purple-100', accent: 'bg-purple-500' }
+      return { label: 'Review',          badge: 'bg-purple-50 text-purple-700',  iconBg: 'bg-purple-50 text-purple-600 ring-purple-100', accent: 'bg-purple-500' }
+    case 'new_support_ticket':
+      return { label: 'Support Ticket',  badge: 'bg-blue-50 text-blue-700',      iconBg: 'bg-blue-50 text-blue-600 ring-blue-100',       accent: 'bg-blue-500' }
     default:
-      return { label: 'Notification',   badge: 'bg-navy-50 text-navy-700',      iconBg: 'bg-navy-50 text-navy-600 ring-navy-100',       accent: 'bg-navy-400' }
+      return { label: 'Notification',    badge: 'bg-navy-50 text-navy-700',      iconBg: 'bg-navy-50 text-navy-600 ring-navy-100',       accent: 'bg-navy-400' }
   }
 }
 

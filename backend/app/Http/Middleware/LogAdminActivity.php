@@ -62,6 +62,9 @@ class LogAdminActivity
         'AdminReferenceDataController@storeArea'       => ['create_area',     'area',     'Created an area'],
         'AdminReferenceDataController@updateArea'      => ['update_area',     'area',     'Updated area #:id'],
         'AdminReferenceDataController@destroyArea'     => ['delete_area',     'area',     'Deleted area #:id'],
+
+        'AdminTicketController@updateStatus'           => ['update_ticket_status', 'support_ticket', 'Updated ticket #:id status'],
+        'AdminTicketController@reply'                  => ['reply_ticket',         'support_ticket', 'Replied to ticket #:id'],
     ];
 
     public function handle(Request $request, Closure $next): Response

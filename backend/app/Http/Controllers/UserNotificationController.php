@@ -17,6 +17,8 @@ class UserNotificationController extends Controller
             'tutor_verified', 'tutor_verification_rejected',
             // guardian
             'connection_status_changed', 'review_approved', 'review_rejected',
+            // shared
+            'ticket_status_updated', 'ticket_replied',
         ];
 
         $request->validate([

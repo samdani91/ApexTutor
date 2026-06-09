@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ConnectionRequest;
 use App\Models\GuardianProfile;
 use App\Models\Review;
+use App\Models\SupportTicket;
 use App\Models\TeachingVideo;
 use App\Models\TutorProfile;
 use App\Models\User;
@@ -38,6 +39,7 @@ class AdminDashboardController extends Controller
                              );
                       });
                 })->count(),
+            'open_tickets'            => SupportTicket::whereIn('status', ['open', 'in_progress'])->count(),
         ]]);
     }
 

@@ -3,6 +3,7 @@ use App\Http\Controllers\Admin\AdminAuditLogController;
 use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminPendingAvatarController;
 use App\Http\Controllers\Admin\AdminPendingChangesController;
+use App\Http\Controllers\Admin\AdminTicketController;
 use App\Http\Controllers\Admin\AdminUserAvatarController;
 use App\Http\Controllers\Admin\AdminReferenceDataController;
 use App\Http\Controllers\Admin\AdminUserController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\Guardian\GuardianReviewController;
 use App\Http\Controllers\Guardian\ShortlistController;
 use App\Http\Controllers\Public\TutorPublicProfileController;
 use App\Http\Controllers\Public\TutorSearchController;
+use App\Http\Controllers\TicketController;
 use App\Http\Controllers\Tutor\DocumentController;
 use App\Http\Controllers\Tutor\EducationController;
 use App\Http\Controllers\Tutor\TeachingVideoController;
@@ -72,6 +74,13 @@ Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
     Route::get('notifications',             [UserNotificationController::class, 'index']);
     Route::put('notifications/read-all',    [UserNotificationController::class, 'markAllRead']);
     Route::put('notifications/{id}/read',   [UserNotificationController::class, 'markRead']);
+
+    // Support tickets (tutors & guardians)
+    Route::get('tickets/counts',      [TicketController::class, 'counts']);
+    Route::get('tickets',             [TicketController::class, 'index']);
+    Route::post('tickets',            [TicketController::class, 'store']);
+    Route::get('tickets/{id}',        [TicketController::class, 'show']);
+    Route::post('tickets/{id}/reply', [TicketController::class, 'reply']);
 });
 
 // Public search & tutor profiles
@@ -203,4 +212,10 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:super_admin', 'log.admin
     Route::get('notifications',             [AdminNotificationController::class, 'index']);
     Route::put('notifications/read-all',    [AdminNotificationController::class, 'markAllRead']);
     Route::put('notifications/{id}/read',   [AdminNotificationController::class, 'markRead']);
+
+    Route::get('tickets',                    [AdminTicketController::class, 'index']);
+    Route::get('tickets/counts',             [AdminTicketController::class, 'counts']);
+    Route::get('tickets/{id}',               [AdminTicketController::class, 'show']);
+    Route::put('tickets/{id}/status',        [AdminTicketController::class, 'updateStatus']);
+    Route::post('tickets/{id}/reply',        [AdminTicketController::class, 'reply']);
 });
