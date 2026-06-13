@@ -3,10 +3,14 @@ namespace App\Notifications;
 
 use App\Models\SupportTicket;
 use App\Models\TicketReply;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class TicketRepliedNotification extends Notification
+class TicketRepliedNotification extends Notification implements ShouldQueue
 {
+    use Queueable;
+
     public function __construct(
         public readonly SupportTicket $ticket,
         public readonly TicketReply   $reply,

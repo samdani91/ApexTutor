@@ -2,10 +2,14 @@
 namespace App\Notifications;
 
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class TutorProfileEditedByAdminNotification extends Notification
+class TutorProfileEditedByAdminNotification extends Notification implements ShouldQueue
 {
+    use Queueable;
+
 
     public function via(object $notifiable): array
     {

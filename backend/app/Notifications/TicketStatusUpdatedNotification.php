@@ -2,10 +2,14 @@
 namespace App\Notifications;
 
 use App\Models\SupportTicket;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class TicketStatusUpdatedNotification extends Notification
+class TicketStatusUpdatedNotification extends Notification implements ShouldQueue
 {
+    use Queueable;
+
     public function __construct(
         public readonly SupportTicket $ticket,
         public readonly string        $oldStatus,
