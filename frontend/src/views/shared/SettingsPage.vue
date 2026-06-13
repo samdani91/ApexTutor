@@ -82,7 +82,7 @@
             <label class="block text-xs font-semibold font-display text-navy-700 mb-1">New password</label>
             <div class="relative">
               <input v-model="form.password" :type="show.password ? 'text' : 'password'"
-                class="input text-sm pr-10" placeholder="At least 8 characters" autocomplete="new-password" />
+                class="input text-sm pr-10" placeholder="At least 6 characters" autocomplete="new-password" />
               <button type="button" @click="show.password = !show.password"
                 class="absolute inset-y-0 right-0 px-3 flex items-center text-paper-400 hover:text-navy-700 transition-colors">
                 <svg v-if="show.password" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

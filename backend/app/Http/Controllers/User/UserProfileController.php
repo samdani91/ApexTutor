@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
 class UserProfileController extends Controller
@@ -155,7 +154,7 @@ class UserProfileController extends Controller
                     $fail('Current password is incorrect.');
                 }
             }],
-            'password'         => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'password'         => ['required', 'confirmed', 'min:6'],
             'otp_code'         => 'required|string|size:6',
         ]);
 

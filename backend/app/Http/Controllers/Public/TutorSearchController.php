@@ -35,8 +35,6 @@ class TutorSearchController extends Controller
             'district_id'  => 'nullable|integer',
             'area_id'      => 'nullable|integer|exists:areas,id',
             'tutor_gender' => 'nullable|in:male,female,no_preference',
-            'days_per_week'        => 'nullable|integer|min:1|max:7',
-            'hours_per_day'        => 'nullable|numeric',
             'place_of_tutoring'    => 'nullable|array',
             'place_of_tutoring.*'  => 'in:student_home,tutor_home,online',
             'tutoring_styles'      => 'nullable|array',
@@ -87,12 +85,6 @@ class TutorSearchController extends Controller
         }
         if (!empty($filters['tutor_gender']) && $filters['tutor_gender'] !== 'no_preference') {
             $query->whereHas('personalInfo', fn($q) => $q->where('gender', $filters['tutor_gender']));
-        }
-        if (!empty($filters['days_per_week'])) {
-            $query->whereHas('tuitionPreference', fn($q) => $q->where('days_per_week', $filters['days_per_week']));
-        }
-        if (!empty($filters['hours_per_day'])) {
-            $query->whereHas('tuitionPreference', fn($q) => $q->where('hours_per_day', (float)$filters['hours_per_day']));
         }
         if (!empty($filters['place_of_tutoring'])) {
             $places = $filters['place_of_tutoring'];

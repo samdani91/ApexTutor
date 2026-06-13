@@ -6,8 +6,6 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
-
 class AdminUserController extends Controller
 {
     public function index(Request $request): JsonResponse
@@ -37,7 +35,7 @@ class AdminUserController extends Controller
             'name'     => 'required|string|max:100',
             'email'    => 'required|email|max:255|unique:users,email',
             'phone'    => ['required', 'string', 'max:11', 'unique:users,phone', 'regex:/^01[3-9]\d{8}$/'],
-            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'password' => ['required', 'confirmed', 'min:6'],
             'role'     => 'required|in:super_admin',
         ]);
 
@@ -59,7 +57,7 @@ class AdminUserController extends Controller
             'name'     => 'sometimes|string|max:100',
             'email'    => 'sometimes|email|unique:users,email,' . $id,
             'phone'    => 'nullable|string|max:20',
-            'password' => ['nullable', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'password' => ['nullable', 'confirmed', 'min:6'],
         ]);
 
         if (isset($data['password'])) {

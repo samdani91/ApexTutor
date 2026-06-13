@@ -69,7 +69,6 @@ export function useTutorSearch() {
       chips.push({ key: 'area_id', label: areas.find(a => a.id === f.area_id)?.name || 'Area' })
     }
     if (f.tutor_gender) chips.push({ key: 'tutor_gender', label: f.tutor_gender === 'male' ? 'Male tutor' : 'Female tutor' })
-    if (f.days_per_week) chips.push({ key: 'days_per_week', label: `${f.days_per_week}d/wk` })
     if (f.salary_max)   chips.push({ key: 'salary_max',   label: `≤ ৳${Number(f.salary_max).toLocaleString()}` })
     if (f.verified_only) chips.push({ key: 'verified_only', label: 'Verified only' })
     return chips
@@ -85,7 +84,7 @@ export function useTutorSearch() {
   function removeChip(key) {
     const updated = { ...lastFilters.value }
     if (key === 'verified_only') updated[key] = false
-    else if (['days_per_week', 'salary_max', 'area_id'].includes(key)) updated[key] = null
+    else if (['salary_max', 'area_id'].includes(key)) updated[key] = null
     else if (key === 'subject_ids') updated[key] = []
     else {
       updated[key] = ''

@@ -15,7 +15,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -26,7 +25,7 @@ class AuthController extends Controller
             'name'            => ['required', 'string', 'max:150', 'regex:/^[A-Za-z\s.]+$/'],
             'email'           => 'required|email|max:255',
             'phone'           => ['required', 'digits:11'],
-            'password'        => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'password'        => ['required', 'confirmed', 'min:6'],
             'role'            => 'required|in:tutor,guardian,student',
         ], [
             'name.regex'  => 'Name can only contain letters, spaces, and dots.',
@@ -308,7 +307,7 @@ class AuthController extends Controller
         $data = $request->validate([
             'email'                 => 'required|email',
             'code'                  => 'required|string|size:6',
-            'password'              => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'password'              => ['required', 'confirmed', 'min:6'],
             'password_confirmation' => 'required|string',
         ]);
 

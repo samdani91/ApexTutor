@@ -166,7 +166,7 @@
                 <label class="block text-sm font-semibold font-display text-navy-700">New password</label>
                 <div class="relative">
                   <input v-model="newPassword" :type="showPassword ? 'text' : 'password'"
-                    autocomplete="new-password" placeholder="Min. 8 characters" class="input pr-10" required minlength="8" />
+                    autocomplete="new-password" placeholder="Min. 6 characters" class="input pr-10" required minlength="6" />
                   <button type="button" @click="showPassword = !showPassword"
                     class="absolute inset-y-0 right-0 flex items-center px-3 text-paper-400 hover:text-navy-700 transition-colors">
                     <svg v-if="showPassword" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -252,7 +252,7 @@ const steps = [
 ]
 
 const passwordsMatch = computed(() =>
-  newPassword.value.length >= 8 && newPassword.value === confirmPassword.value
+  newPassword.value.length >= 6 && newPassword.value === confirmPassword.value
 )
 
 function handleBack() {

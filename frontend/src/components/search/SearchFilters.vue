@@ -45,30 +45,6 @@
       <DropSelect v-model="filters.tutor_gender" :options="genderOpts" placeholder="No preference" />
     </FilterSection>
 
-    <!-- Days per week -->
-    <FilterSection label="Days per week">
-      <div class="flex flex-wrap gap-2">
-        <button type="button" v-for="d in [1,2,3,4,5,6,7]" :key="d"
-          @click="toggleNum('days_per_week', d)"
-          class="w-9 h-9 rounded-sm text-sm font-semibold font-display border transition-colors focus:outline-none"
-          :class="filters.days_per_week === d ? 'choice-btn-active' : 'choice-btn-idle'">
-          {{ d }}
-        </button>
-      </div>
-    </FilterSection>
-
-    <!-- Hours per session -->
-    <FilterSection label="Hours per session">
-      <div class="flex flex-wrap gap-2">
-        <button type="button" v-for="h in HOURS" :key="h.value"
-          @click="toggleNum('hours_per_day', h.value)"
-          class="pill-btn"
-          :class="filters.hours_per_day === h.value ? 'pill-btn-active' : 'pill-btn-idle'">
-          {{ h.label }}
-        </button>
-      </div>
-    </FilterSection>
-
     <!-- Place of tutoring -->
     <FilterSection label="Place of tutoring">
       <div class="flex flex-wrap gap-2">
@@ -141,12 +117,6 @@ const props = defineProps({
 const emit = defineEmits(['search'])
 const searchStore = useSearchStore()
 
-const HOURS = [
-  { value: 1, label: '1 hr' },
-  { value: 1.5, label: '1.5 hr' },
-  { value: 2, label: '2 hr' },
-  { value: 3, label: '3 hr' },
-]
 const PLACE_OPTIONS  = PLACE_OF_TUTORING
 const STYLE_OPTIONS  = TUTORING_STYLES
 const BUDGET_PRESETS = [2000, 3000, 5000, 8000]
@@ -184,8 +154,6 @@ const filters = reactive({
   district_id: '',
   area_id: null,
   tutor_gender: '',
-  days_per_week: null,
-  hours_per_day: null,
   place_of_tutoring: [],
   tutoring_styles: [],
   salary_max: '',
@@ -215,8 +183,7 @@ async function loadSubjectsForClass(classLevel) {
 const activeCount = computed(() => {
   const singles = [
     filters.medium, filters.class_level, filters.district_id, filters.area_id,
-    filters.tutor_gender, filters.days_per_week, filters.hours_per_day,
-    filters.salary_max, filters.min_rating,
+    filters.tutor_gender, filters.salary_max, filters.min_rating,
   ].filter(v => v !== '' && v !== null).length
   const arrays = filters.subject_ids.length + filters.place_of_tutoring.length + filters.tutoring_styles.length
   return singles + arrays
@@ -265,8 +232,6 @@ async function syncFilters(value) {
     district_id: value.district_id || '',
     area_id: value.area_id ?? null,
     tutor_gender: value.tutor_gender || '',
-    days_per_week: value.days_per_week ?? null,
-    hours_per_day: value.hours_per_day ?? null,
     place_of_tutoring: Array.isArray(value.place_of_tutoring) ? [...value.place_of_tutoring] : [],
     tutoring_styles: Array.isArray(value.tutoring_styles) ? [...value.tutoring_styles] : [],
     salary_max: value.salary_max ?? '',
@@ -303,8 +268,7 @@ function normalizeIdArray(value) {
 function clearFilters() {
   Object.assign(filters, {
     medium: '', class_level: '', subject_ids: [], district_id: '', area_id: null,
-    tutor_gender: '', days_per_week: null, hours_per_day: null,
-    place_of_tutoring: [], tutoring_styles: [], salary_max: '',
+    tutor_gender: '', place_of_tutoring: [], tutoring_styles: [], salary_max: '',
     min_rating: null,
   })
   allAreas.value = []

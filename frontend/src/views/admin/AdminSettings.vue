@@ -124,7 +124,7 @@
           <div class="relative">
             <input v-model="passwordForm.password" :type="showNew ? 'text' : 'password'"
               name="new-password" id="new-password" autocomplete="new-password"
-              class="input pr-10" required placeholder="Min. 8 characters" minlength="8" />
+              class="input pr-10" required placeholder="Min. 6 characters" minlength="6" />
             <button type="button" @click="showNew = !showNew"
               class="absolute inset-y-0 right-0 flex items-center px-3 text-paper-400 hover:text-navy-700 transition-colors">
               <EyeIcon :open="showNew" />
