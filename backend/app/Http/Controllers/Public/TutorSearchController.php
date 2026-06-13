@@ -174,10 +174,11 @@ class TutorSearchController extends Controller
         // 2. Class level — higher/longer aliases first so "class 1" never
         //    swallows "class 10".
         $classAliases = [
-            'hsc'      => ['hsc', 'higher secondary', 'intermediate'],
-            'ssc'      => ['ssc'],
-            'a_level'  => ['a level', 'a-level', 'alevel'],
-            'o_level'  => ['o level', 'o-level', 'olevel'],
+            'hsc'            => ['hsc', 'higher secondary', 'intermediate'],
+            'admission_test' => ['admission test', 'admission'],
+            'ssc'            => ['ssc'],
+            'a_level'        => ['a level', 'a-level', 'alevel'],
+            'o_level'        => ['o level', 'o-level', 'olevel'],
             'class_10' => ['class 10', 'class-10', 'grade 10'],
             'class_9'  => ['class 9', 'class-9', 'grade 9'],
             'class_8'  => ['class 8', 'grade 8'],

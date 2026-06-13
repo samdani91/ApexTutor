@@ -5,6 +5,7 @@ export const CLASS_LEVELS = [
   { value: 'class_7', label: 'Class 7' }, { value: 'class_8', label: 'Class 8' },
   { value: 'class_9', label: 'Class 9' }, { value: 'class_10', label: 'Class 10' },
   { value: 'ssc', label: 'SSC' }, { value: 'hsc', label: 'HSC' },
+  { value: 'admission_test', label: 'Admission Test' },
   { value: 'o_level', label: 'O Level' }, { value: 'a_level', label: 'A Level' },
 ]
 

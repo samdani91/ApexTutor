@@ -13,6 +13,7 @@ class SubjectSeeder extends Seeder
             $this->middleSchoolSubjects(),
             $this->sscSubjects(),
             $this->hscSubjects(),
+            $this->admissionTestSubjects(),
             $this->olevelSubjects(),
             $this->alevelSubjects(),
             $this->universitySubjects(),
@@ -160,6 +161,38 @@ class SubjectSeeder extends Seeder
             'name' => $subject,
             'name_bn' => null,
             'class_level' => 'hsc',
+            'medium' => null,
+        ])->values()->all();
+    }
+
+    private function admissionTestSubjects(): array
+    {
+        $subjects = [
+            'Bangla',
+            'English',
+            'Physics',
+            'Chemistry',
+            'Biology',
+            'Higher Mathematics',
+            'ICT',
+            'Statistics',
+            'Economics',
+            'Civics & Good Governance',
+            'History',
+            'Logic',
+            'Sociology',
+            'Geography',
+            'Social Work',
+            'Islamic History & Culture',
+            'Accounting',
+            'Business Organization & Management',
+            'Finance, Banking & Insurance',
+        ];
+
+        return collect($subjects)->map(fn ($subject) => [
+            'name' => $subject,
+            'name_bn' => null,
+            'class_level' => 'admission_test',
             'medium' => null,
         ])->values()->all();
     }
