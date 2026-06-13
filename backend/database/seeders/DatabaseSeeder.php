@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder
             DistrictSeeder::class,
             AreaSeeder::class,
             SubjectSeeder::class,
+            UniversitySeeder::class,
             AdminSeeder::class,
         ]);
     }

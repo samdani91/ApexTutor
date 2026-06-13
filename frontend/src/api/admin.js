@@ -70,6 +70,12 @@ export const adminApi = {
   createArea: (data) => http.post('/admin/reference/areas', data),
   updateArea: (id, data) => http.put(`/admin/reference/areas/${id}`, data),
   deleteArea: (id) => http.delete(`/admin/reference/areas/${id}`),
+  getUniversities: (params) => http.get('/admin/reference/universities', { params }),
+  createUniversity: (data) => http.post('/admin/reference/universities', data),
+  updateUniversity: (id, data) => http.put(`/admin/reference/universities/${id}`, data),
+  deleteUniversity: (id) => http.delete(`/admin/reference/universities/${id}`),
+  uploadUniversityLogo: (id, formData) => http.post(`/admin/reference/universities/${id}/logo`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  removeUniversityLogo: (id) => http.delete(`/admin/reference/universities/${id}/logo`),
 
   // Audit log
   getAuditLog: (params) => http.get('/admin/audit-log', { params }),

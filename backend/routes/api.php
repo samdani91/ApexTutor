@@ -92,9 +92,10 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::prefix('search')->group(function () {
         Route::get('tutors',    [TutorSearchController::class, 'search']);
         Route::get('resolve',   [TutorSearchController::class, 'resolve']);
-        Route::get('subjects',  [TutorSearchController::class, 'subjects']);
-        Route::get('districts', [TutorSearchController::class, 'districts']);
-        Route::get('areas',     [TutorSearchController::class, 'areas']);
+        Route::get('subjects',      [TutorSearchController::class, 'subjects']);
+        Route::get('districts',     [TutorSearchController::class, 'districts']);
+        Route::get('areas',         [TutorSearchController::class, 'areas']);
+        Route::get('universities',  [TutorSearchController::class, 'universities']);
     });
     Route::get('tutors/{publicId}',         [TutorPublicProfileController::class, 'show']);
     Route::get('tutors/{publicId}/reviews', [TutorPublicProfileController::class, 'reviews']);
@@ -208,6 +209,12 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:super_admin', 'log.admin
     Route::post('reference/areas',                [AdminReferenceDataController::class, 'storeArea']);
     Route::put('reference/areas/{id}',            [AdminReferenceDataController::class, 'updateArea']);
     Route::delete('reference/areas/{id}',         [AdminReferenceDataController::class, 'destroyArea']);
+    Route::get('reference/universities',                    [AdminReferenceDataController::class, 'universities']);
+    Route::post('reference/universities',                   [AdminReferenceDataController::class, 'storeUniversity']);
+    Route::put('reference/universities/{id}',               [AdminReferenceDataController::class, 'updateUniversity']);
+    Route::delete('reference/universities/{id}',            [AdminReferenceDataController::class, 'destroyUniversity']);
+    Route::post('reference/universities/{id}/logo',         [AdminReferenceDataController::class, 'uploadLogo']);
+    Route::delete('reference/universities/{id}/logo',       [AdminReferenceDataController::class, 'removeLogo']);
 
     Route::get('audit-log',         [AdminAuditLogController::class, 'index']);
     Route::get('audit-log/actions', [AdminAuditLogController::class, 'actions']);

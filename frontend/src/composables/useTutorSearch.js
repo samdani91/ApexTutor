@@ -68,7 +68,11 @@ export function useTutorSearch() {
       const areas = (filtersRef?.allAreas || mobileFiltersRef?.allAreas || [])
       chips.push({ key: 'area_id', label: areas.find(a => a.id === f.area_id)?.name || 'Area' })
     }
-    if (f.tutor_gender) chips.push({ key: 'tutor_gender', label: f.tutor_gender === 'male' ? 'Male tutor' : 'Female tutor' })
+    if (f.tutor_gender)   chips.push({ key: 'tutor_gender',  label: f.tutor_gender === 'male' ? 'Male tutor' : 'Female tutor' })
+    if (f.university_id) {
+      const unis = (filtersRef?.allUniversities || mobileFiltersRef?.allUniversities || [])
+      chips.push({ key: 'university_id', label: unis.find(u => u.id === f.university_id)?.name || 'University' })
+    }
     if (f.salary_max)   chips.push({ key: 'salary_max',   label: `≤ ৳${Number(f.salary_max).toLocaleString()}` })
     if (f.verified_only) chips.push({ key: 'verified_only', label: 'Verified only' })
     return chips
@@ -84,7 +88,7 @@ export function useTutorSearch() {
   function removeChip(key) {
     const updated = { ...lastFilters.value }
     if (key === 'verified_only') updated[key] = false
-    else if (['salary_max', 'area_id'].includes(key)) updated[key] = null
+    else if (['salary_max', 'area_id', 'university_id'].includes(key)) updated[key] = null
     else if (key === 'subject_ids') updated[key] = []
     else {
       updated[key] = ''

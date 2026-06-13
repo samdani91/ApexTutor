@@ -187,7 +187,7 @@ export function buildDiff(item) {
 
 export function educationSummary(entries) {
   return (entries || []).map(e =>
-    [e.level, e.degree_title, e.institute_name, e.year_of_passing].filter(Boolean).join(' - ')
+    [e.level, e.degree_title, e.major_group, e.institute_name, e.year_of_passing].filter(Boolean).join(' - ')
   )
 }
 

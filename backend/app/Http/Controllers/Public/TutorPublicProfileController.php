@@ -12,7 +12,7 @@ class TutorPublicProfileController extends Controller
     {
         $profile = TutorProfile::with([
             'user:id,name,avatar',
-            'educationEntries',
+            'educationEntries.university:id,name,logo',
             'tuitionPreference.subjects',
             'tuitionPreference.days',
             'tuitionPreference.district:id,name',

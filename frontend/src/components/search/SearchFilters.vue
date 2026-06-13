@@ -45,6 +45,12 @@
       <DropSelect v-model="filters.tutor_gender" :options="genderOpts" placeholder="No preference" />
     </FilterSection>
 
+    <!-- University — only shown when a district is selected -->
+    <FilterSection v-if="filters.district_id" label="University">
+      <div v-if="uniLoading" class="text-xs text-paper-400 font-body py-2">Loading universities…</div>
+      <DropSelect v-else v-model="filters.university_id" :options="universityOpts" placeholder="Any university" />
+    </FilterSection>
+
     <!-- Place of tutoring -->
     <FilterSection label="Place of tutoring">
       <div class="flex flex-wrap gap-2">
@@ -147,12 +153,20 @@ const areaOpts = computed(() => [
 ])
 const subjectOpts = computed(() => allSubjects.value.map(s => ({ value: s.id, label: s.name })))
 
+const allUniversities = ref([])
+const uniLoading      = ref(false)
+const universityOpts  = computed(() => [
+  { value: null, label: 'Any university' },
+  ...allUniversities.value.map(u => ({ value: u.id, label: u.name })),
+])
+
 const filters = reactive({
   medium: '',
   class_level: '',
   subject_ids: [],
   district_id: '',
   area_id: null,
+  university_id: null,
   tutor_gender: '',
   place_of_tutoring: [],
   tutoring_styles: [],
@@ -161,9 +175,23 @@ const filters = reactive({
 })
 
 async function onDistrictChange(newId) {
-  filters.district_id = newId
-  filters.area_id     = null
-  await loadAreas(newId)
+  filters.district_id  = newId
+  filters.area_id      = null
+  filters.university_id = null
+  allUniversities.value = []
+  await Promise.all([loadAreas(newId), loadUniversities(newId)])
+}
+
+async function loadUniversities(districtId) {
+  allUniversities.value = []
+  if (!districtId) return
+  const district = searchStore.districts.find(d => d.id === districtId)
+  if (!district) return
+  uniLoading.value = true
+  try {
+    const { data } = await searchApi.universities({ district: district.name })
+    allUniversities.value = data.data || []
+  } finally { uniLoading.value = false }
 }
 
 async function loadSubjectsForClass(classLevel) {
@@ -183,7 +211,7 @@ async function loadSubjectsForClass(classLevel) {
 const activeCount = computed(() => {
   const singles = [
     filters.medium, filters.class_level, filters.district_id, filters.area_id,
-    filters.tutor_gender, filters.salary_max, filters.min_rating,
+    filters.university_id, filters.tutor_gender, filters.salary_max, filters.min_rating,
   ].filter(v => v !== '' && v !== null).length
   const arrays = filters.subject_ids.length + filters.place_of_tutoring.length + filters.tutoring_styles.length
   return singles + arrays
@@ -231,6 +259,7 @@ async function syncFilters(value) {
     subject_ids: value.class_level ? normalizeIdArray(value.subject_ids) : [],
     district_id: value.district_id || '',
     area_id: value.area_id ?? null,
+    university_id: value.university_id ?? null,
     tutor_gender: value.tutor_gender || '',
     place_of_tutoring: Array.isArray(value.place_of_tutoring) ? [...value.place_of_tutoring] : [],
     tutoring_styles: Array.isArray(value.tutoring_styles) ? [...value.tutoring_styles] : [],
@@ -239,9 +268,10 @@ async function syncFilters(value) {
   })
 
   if (filters.district_id) {
-    await loadAreas(filters.district_id)
+    await Promise.all([loadAreas(filters.district_id), loadUniversities(filters.district_id)])
   } else {
     allAreas.value = []
+    allUniversities.value = []
   }
   await loadSubjectsForClass(filters.class_level)
   syncingFromParent.value = false
@@ -268,10 +298,11 @@ function normalizeIdArray(value) {
 function clearFilters() {
   Object.assign(filters, {
     medium: '', class_level: '', subject_ids: [], district_id: '', area_id: null,
-    tutor_gender: '', place_of_tutoring: [], tutoring_styles: [], salary_max: '',
+    university_id: null, tutor_gender: '', place_of_tutoring: [], tutoring_styles: [], salary_max: '',
     min_rating: null,
   })
   allAreas.value = []
+  allUniversities.value = []
   allSubjects.value = []
   emit('search', {})
 }
@@ -290,7 +321,7 @@ function applyFilters() {
   emit('search', payload)
 }
 
-defineExpose({ activeCount, filters, allAreas, allSubjects, areaOpts, applyFilters })
+defineExpose({ activeCount, filters, allAreas, allSubjects, allUniversities, areaOpts, applyFilters })
 </script>
 
 <style scoped>

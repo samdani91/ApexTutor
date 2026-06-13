@@ -163,6 +163,104 @@
       </div>
     </div>
 
+    <!-- ── Universities tab ──────────────────────────────────────────── -->
+    <div v-else-if="activeTab === 'universities'">
+      <!-- Add form -->
+      <div class="card mb-5">
+        <p class="font-display font-semibold text-navy-900 mb-3">Add university</p>
+        <div class="grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_140px_auto] lg:items-end">
+          <input v-model="newUniversity.name" type="text" placeholder="University name" class="input text-sm" />
+          <input v-model="newUniversity.district" type="text" placeholder="District" class="input text-sm" />
+          <DropSelect v-model="newUniversity.type" :options="uniTypeOptions" placeholder="Type" />
+          <button @click="addUniversity" :disabled="!newUniversity.name || !newUniversity.district || !newUniversity.type || uniAdding"
+            class="btn-primary text-sm px-4 py-2 disabled:opacity-50">
+            {{ uniAdding ? 'Adding…' : 'Add' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter -->
+      <div class="card mb-4">
+        <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_140px_auto] md:items-end">
+          <div>
+            <span class="mb-1 block text-xs font-semibold font-display text-navy-700">Search</span>
+            <input v-model="uniSearch" @input="loadUniversities" type="search" placeholder="Filter universities…" class="input text-sm" />
+          </div>
+          <div>
+            <span class="mb-1 block text-xs font-semibold font-display text-navy-700">District</span>
+            <input v-model="uniDistrictFilter" @input="loadUniversities" type="text" placeholder="District" class="input text-sm" />
+          </div>
+          <div>
+            <span class="mb-1 block text-xs font-semibold font-display text-navy-700">Type</span>
+            <DropSelect v-model="uniTypeFilter" :options="uniTypeFilterOptions" @update:modelValue="loadUniversities" placeholder="All types" />
+          </div>
+          <button v-if="uniSearch || uniDistrictFilter || uniTypeFilter" @click="clearUniFilters"
+            class="min-h-[44px] rounded-sm bg-red-600 px-4 text-sm font-semibold font-display text-white transition-colors hover:bg-red-700">
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <div v-if="uniLoading" class="text-paper-500 font-body">Loading…</div>
+      <div v-else-if="!universities.length" class="card text-center py-8 text-paper-500 font-body">No universities found.</div>
+      <div v-else class="card overflow-hidden">
+        <table class="w-full text-sm font-body">
+          <thead>
+            <tr class="border-b border-paper-200 bg-paper-50">
+              <th class="text-left px-4 py-2.5 text-xs font-semibold font-display text-paper-400 uppercase tracking-wide">Name</th>
+              <th class="text-left px-4 py-2.5 text-xs font-semibold font-display text-paper-400 uppercase tracking-wide">District</th>
+              <th class="text-left px-4 py-2.5 text-xs font-semibold font-display text-paper-400 uppercase tracking-wide">Type</th>
+              <th class="text-left px-4 py-2.5 text-xs font-semibold font-display text-paper-400 uppercase tracking-wide">Logo</th>
+              <th class="px-4 py-2.5"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="u in universities" :key="u.id" class="border-b border-paper-100 last:border-0 hover:bg-paper-50">
+              <td class="px-4 py-2.5">
+                <input v-if="editingUni === u.id" v-model="editBuf.name" class="input text-sm w-full" />
+                <span v-else class="font-semibold text-navy-900">{{ u.name }}</span>
+              </td>
+              <td class="px-4 py-2.5">
+                <input v-if="editingUni === u.id" v-model="editBuf.district" class="input text-sm w-28" />
+                <span v-else>{{ u.district }}</span>
+              </td>
+              <td class="px-4 py-2.5">
+                <DropSelect v-if="editingUni === u.id" v-model="editBuf.type" :options="uniTypeOptions" placeholder="Type" />
+                <span v-else :class="u.type === 'public' ? 'text-emerald-700 font-semibold' : 'text-paper-500'">
+                  {{ u.type === 'public' ? 'Public' : 'Private' }}
+                </span>
+              </td>
+              <td class="px-4 py-2.5">
+                <div class="flex items-center gap-2">
+                  <img v-if="u.logo_url" :src="u.logo_url" :alt="u.name" class="h-8 w-8 rounded object-contain border border-paper-200 bg-white" />
+                  <span v-else class="text-xs text-paper-400 font-body">None</span>
+                  <label class="cursor-pointer rounded-sm bg-navy-50 px-2 py-1 text-xs font-semibold font-display text-navy-700 border border-navy-100 hover:bg-navy-100">
+                    {{ u.logo_url ? 'Replace' : 'Upload' }}
+                    <input type="file" accept="image/jpeg,image/png,image/webp" class="hidden" @change="(e) => handleLogoUpload(u, e)" />
+                  </label>
+                  <button v-if="u.logo_url" @click="handleLogoRemove(u)"
+                    class="rounded-sm bg-red-50 px-2 py-1 text-xs font-semibold font-display text-red-600 border border-red-100 hover:bg-red-100">
+                    Remove
+                  </button>
+                </div>
+              </td>
+              <td class="px-4 py-2.5 text-right">
+                <template v-if="editingUni === u.id">
+                  <button @click="saveUniversity(u)" class="rounded-sm bg-emerald-600 px-3 py-1.5 text-xs font-semibold font-display text-white hover:bg-emerald-700 mr-2">Save</button>
+                  <button @click="editingUni = null" class="rounded-sm bg-paper-100 px-3 py-1.5 text-xs font-semibold font-display text-paper-600 hover:bg-paper-200">Cancel</button>
+                </template>
+                <template v-else>
+                  <button @click="startEditUni(u)" class="rounded-sm bg-navy-50 px-3 py-1.5 text-xs font-semibold font-display text-navy-700 border border-navy-100 hover:bg-navy-100 mr-2">Edit</button>
+                  <button @click="openDelete('university', u)" class="rounded-sm bg-red-600 px-3 py-1.5 text-xs font-semibold font-display text-white hover:bg-red-700">Delete</button>
+                </template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <AdminPagination :meta="uniMeta" @page="fetchUniversities" />
+    </div>
+
     <AdminConfirmDialog
       :show="!!deleteTarget"
       :title="deleteDialogTitle"
@@ -184,7 +282,11 @@ import AdminPagination from '@/components/admin/AdminPagination.vue'
 import DropSelect from '@/components/search/DropSelect.vue'
 
 const activeTab = ref('subjects')
-const tabs = [{ key: 'subjects', label: 'Subjects' }, { key: 'districts', label: 'Districts & Areas' }]
+const tabs = [
+  { key: 'subjects', label: 'Subjects' },
+  { key: 'districts', label: 'Districts & Areas' },
+  { key: 'universities', label: 'Universities' },
+]
 const deleteTarget = ref(null)
 const deleteDialogTitle = computed(() => {
   if (!deleteTarget.value) return 'Delete item?'
@@ -358,10 +460,105 @@ async function confirmDelete() {
   if (target.type === 'subject') await removeSubject(target.item)
   if (target.type === 'district') await removeDistrict(target.item)
   if (target.type === 'area') await removeArea(target.item, target.parent)
+  if (target.type === 'university') await removeUniversity(target.item)
+}
+
+// ── Universities ──────────────────────────────────────────────────────────
+const universities    = ref([])
+const uniLoading      = ref(false)
+const uniSearch       = ref('')
+const uniDistrictFilter = ref('')
+const uniTypeFilter   = ref('')
+const uniAdding       = ref(false)
+const editingUni      = ref(null)
+const newUniversity   = reactive({ name: '', district: '', type: '' })
+const uniMeta         = ref({ current_page: 1, last_page: 1, total: 0, from: 0, to: 0 })
+const uniTypeOptions  = [
+  { value: 'public', label: 'Public' },
+  { value: 'private', label: 'Private' },
+]
+const uniTypeFilterOptions = [
+  { value: '', label: 'All types' },
+  { value: 'public', label: 'Public' },
+  { value: 'private', label: 'Private' },
+]
+
+let uniTimer = null
+function loadUniversities() {
+  clearTimeout(uniTimer)
+  uniTimer = setTimeout(() => fetchUniversities(), 300)
+}
+
+async function fetchUniversities(page = 1) {
+  uniLoading.value = true
+  try {
+    const { data } = await adminApi.getUniversities({ search: uniSearch.value, district: uniDistrictFilter.value, type: uniTypeFilter.value, page, per_page: 20 })
+    universities.value = data.data.data ?? data.data
+    uniMeta.value = data.data
+  } finally { uniLoading.value = false }
+}
+
+function clearUniFilters() {
+  uniSearch.value = ''
+  uniDistrictFilter.value = ''
+  uniTypeFilter.value = ''
+  fetchUniversities()
+}
+
+async function addUniversity() {
+  uniAdding.value = true
+  try {
+    await adminApi.createUniversity({ ...newUniversity })
+    Object.assign(newUniversity, { name: '', district: '', type: '' })
+    await fetchUniversities()
+    toast.success('University added.')
+  } catch { toast.error('Could not add university.') }
+  finally { uniAdding.value = false }
+}
+
+function startEditUni(u) { editingUni.value = u.id; Object.assign(editBuf, { name: u.name, district: u.district, type: u.type }) }
+
+async function saveUniversity(u) {
+  try {
+    await adminApi.updateUniversity(u.id, { ...editBuf })
+    Object.assign(u, { ...editBuf })
+    editingUni.value = null
+    toast.success('University updated.')
+  } catch { toast.error('Could not update.') }
+}
+
+async function removeUniversity(u) {
+  try {
+    await adminApi.deleteUniversity(u.id)
+    universities.value = universities.value.filter(x => x.id !== u.id)
+    toast.success('University deleted.')
+  } catch { toast.error('Could not delete.') }
+}
+
+async function handleLogoUpload(u, event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  const formData = new FormData()
+  formData.append('logo', file)
+  try {
+    const { data } = await adminApi.uploadUniversityLogo(u.id, formData)
+    u.logo_url = data.logo_url
+    toast.success('Logo uploaded.')
+  } catch { toast.error('Could not upload logo.') }
+  event.target.value = ''
+}
+
+async function handleLogoRemove(u) {
+  try {
+    await adminApi.removeUniversityLogo(u.id)
+    u.logo_url = null
+    toast.success('Logo removed.')
+  } catch { toast.error('Could not remove logo.') }
 }
 
 onMounted(async () => {
   await fetchSubjects()
   await fetchDistricts()
+  await fetchUniversities()
 })
 </script>

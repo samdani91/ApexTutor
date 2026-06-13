@@ -21,10 +21,7 @@
           <div class="min-w-0 text-center md:text-left">
             <div class="flex items-center justify-center md:justify-start gap-2 flex-wrap">
               <h1 class="font-display font-bold text-2xl md:text-3xl text-navy-900 break-words">{{ tutor.user?.name }}</h1>
-              <span v-if="tutor.is_verified"
-                class="status-pill bg-emerald-50 text-emerald-700 border-emerald-200">
-                ✓ Verified
-              </span>
+              <VerifiedBadge v-if="tutor.is_verified" size="md" />
               <span v-if="tutor.tutor_id"
                 class="status-pill text-navy-500 bg-navy-50 border-navy-200">
                 {{ tutor.tutor_id }}
@@ -70,11 +67,15 @@
         <h2 class="section-title">Educational Information</h2>
         <div class="grid md:grid-cols-2 gap-3">
           <div v-for="edu in tutor.education_entries" :key="edu.id"
-            class="info-card border-l-4 border-l-gold-400">
+            class="info-card border-l-4 border-l-gold-400 relative">
+            <img v-if="edu.university?.logo_url" :src="edu.university.logo_url" :alt="edu.university.name"
+              class="absolute top-3 right-3 h-14 w-14 rounded object-contain bg-white" />
             <p class="text-xs font-semibold font-display text-blue-700 uppercase tracking-wide mb-1">
               {{ formatLevel(edu.level) }}
             </p>
-            <p class="font-display font-semibold text-navy-900 text-sm">{{ edu.degree_title }}</p>
+            <p class="font-display font-semibold text-navy-900 text-sm">
+              {{ edu.degree_title }}<span v-if="edu.major_group"> — {{ edu.major_group }}</span>
+            </p>
             <p class="text-sm text-paper-500 font-body mt-0.5">{{ edu.institute_name }}</p>
             <div class="flex items-center gap-3 mt-1 flex-wrap">
               <span v-if="edu.result" class="text-xs text-paper-400 font-body">GPA / Result: {{ edu.result }}</span>
@@ -352,6 +353,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import StarRating from '@/components/common/StarRating.vue'
+import VerifiedBadge from '@/components/common/VerifiedBadge.vue'
 import { searchApi } from '@/api/search.js'
 import { guardianApi } from '@/api/guardian.js'
 import { useAuthStore } from '@/stores/auth.js'

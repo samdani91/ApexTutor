@@ -1,6 +1,8 @@
 <template>
   <RouterLink :to="`/tutors/${tutor.public_id}`"
-    class="group block h-full cursor-pointer rounded-md border border-paper-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-gold-200 hover:shadow-lg md:p-5">
+    class="group relative block h-full cursor-pointer rounded-md border border-paper-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-gold-200 hover:shadow-lg md:p-5">
+    <img v-if="topUniversityLogo" :src="topUniversityLogo" alt=""
+      class="absolute top-3 right-3 h-14 w-14 rounded object-contain bg-white" />
     <div class="flex h-full flex-col gap-4">
       <div class="flex items-start gap-3">
         <div
@@ -21,10 +23,7 @@
                 class="rounded-pill border border-paper-200 bg-paper-50 px-2 py-0.5 font-display text-[11px] font-semibold text-paper-600">
                 {{ tutor.tutor_id }}
               </span>
-              <span v-if="tutor.is_verified"
-                class="rounded-pill border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-display text-[11px] font-semibold text-emerald-700">
-                Verified
-              </span>
+              <VerifiedBadge v-if="tutor.is_verified" size="sm" />
             </div>
           </div>
 
@@ -100,10 +99,20 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import StarRating from '@/components/common/StarRating.vue'
+import VerifiedBadge from '@/components/common/VerifiedBadge.vue'
 import { getInitials, formatSalaryRange } from '@/utils/helpers.js'
 
 const props = defineProps({ tutor: { type: Object, required: true } })
 const initials = computed(() => getInitials(props.tutor.user?.name))
+
+const LEVEL_ORDER = { phd: 3, masters: 2, bachelor: 1 }
+const topUniversityLogo = computed(() => {
+  const entries = props.tutor.education_entries || []
+  return entries
+    .filter(e => e.university?.logo_url)
+    .sort((a, b) => (LEVEL_ORDER[b.level] || 0) - (LEVEL_ORDER[a.level] || 0))[0]
+    ?.university?.logo_url || null
+})
 
 const allSubjects = computed(() => {
   const seen = new Set()

@@ -7,6 +7,7 @@ use App\Models\ConnectionRequest;
 use App\Models\District;
 use App\Models\Subject;
 use App\Models\TutorProfile;
+use App\Models\University;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -40,8 +41,9 @@ class TutorSearchController extends Controller
             'tutoring_styles'      => 'nullable|array',
             'tutoring_styles.*'    => 'in:one_to_one,group,online',
             'salary_max'           => 'nullable|integer',
-            'min_rating'   => 'nullable|numeric|min:1|max:5',
-            'verified_only'=> 'nullable|boolean',
+            'min_rating'    => 'nullable|numeric|min:1|max:5',
+            'university_id' => 'nullable|integer|exists:universities,id',
+            'verified_only' => 'nullable|boolean',
             'sort'         => 'nullable|in:relevance,rating,newest,salary_asc,salary_desc',
             'per_page'     => 'nullable|integer|min:1|max:24',
             'page'         => 'nullable|integer|min:1',
@@ -59,6 +61,9 @@ class TutorSearchController extends Controller
                 'tuitionPreference.locations.area:id,name',
                 'activeTravelAvailabilities.district:id,name',
                 'personalInfo:id,tutor_profile_id,gender',
+                'educationEntries' => fn($q) => $q->with('university:id,name,logo')
+                    ->whereNotNull('university_id')
+                    ->whereIn('level', ['phd', 'masters', 'bachelor']),
             ])
             ->where('status', 'active')
             ->where('is_verified', true);
@@ -111,6 +116,9 @@ class TutorSearchController extends Controller
         }
         if (!empty($filters['min_rating'])) {
             $query->where('rating', '>=', (float)$filters['min_rating']);
+        }
+        if (!empty($filters['university_id'])) {
+            $query->whereHas('educationEntries', fn($q) => $q->where('university_id', $filters['university_id']));
         }
         if (!empty($filters['verified_only'])) {
             $query->where('is_verified', true);
@@ -256,5 +264,14 @@ class TutorSearchController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
         return response()->json(['success' => true, 'data' => $areas]);
+    }
+
+    public function universities(Request $request): JsonResponse
+    {
+        $universities = University::when($request->district, fn($q, $d) => $q->where('district', $d))
+            ->orderByRaw("FIELD(type,'public','private')")
+            ->orderBy('name')
+            ->get(['id', 'name', 'district', 'type', 'logo']);
+        return response()->json(['success' => true, 'data' => $universities]);
     }
 }

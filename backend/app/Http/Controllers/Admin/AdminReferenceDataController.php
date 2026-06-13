@@ -5,8 +5,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Area;
 use App\Models\District;
 use App\Models\Subject;
+use App\Models\University;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class AdminReferenceDataController extends Controller
 {
@@ -112,5 +114,75 @@ class AdminReferenceDataController extends Controller
     {
         Area::findOrFail($id)->delete();
         return response()->json(['success' => true, 'message' => 'Area deleted.']);
+    }
+
+    // ── Universities ──────────────────────────────────────────────────────
+
+    public function universities(Request $request): JsonResponse
+    {
+        $universities = University::when($request->search, fn($q, $s) => $q->where('name', 'like', "%{$s}%"))
+            ->when($request->district, fn($q, $d) => $q->where('district', $d))
+            ->when($request->type, fn($q, $t) => $q->where('type', $t))
+            ->orderByRaw("FIELD(type,'public','private')")
+            ->orderBy('name')
+            ->paginate($request->integer('per_page', 20));
+        return response()->json(['success' => true, 'data' => $universities]);
+    }
+
+    public function storeUniversity(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name'     => 'required|string|max:255|unique:universities,name',
+            'district' => 'required|string|max:100',
+            'type'     => 'required|in:public,private',
+        ]);
+        $university = University::create($data);
+        return response()->json(['success' => true, 'data' => $university, 'message' => 'University added.'], 201);
+    }
+
+    public function updateUniversity(Request $request, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'name'     => 'sometimes|string|max:255|unique:universities,name,' . $id,
+            'district' => 'sometimes|string|max:100',
+            'type'     => 'sometimes|in:public,private',
+        ]);
+        University::findOrFail($id)->update($data);
+        return response()->json(['success' => true, 'message' => 'University updated.']);
+    }
+
+    public function destroyUniversity(int $id): JsonResponse
+    {
+        $university = University::findOrFail($id);
+        if ($university->logo) {
+            Storage::disk('public')->delete($university->logo);
+        }
+        $university->delete();
+        return response()->json(['success' => true, 'message' => 'University deleted.']);
+    }
+
+    public function uploadLogo(Request $request, int $id): JsonResponse
+    {
+        $request->validate(['logo' => 'required|image|mimes:jpeg,png,webp|max:512']);
+        $university = University::findOrFail($id);
+
+        if ($university->logo) {
+            Storage::disk('public')->delete($university->logo);
+        }
+
+        $path = $request->file('logo')->store("university-logos/{$id}", 'public');
+        $university->update(['logo' => $path]);
+
+        return response()->json(['success' => true, 'logo_url' => Storage::disk('public')->url($path)]);
+    }
+
+    public function removeLogo(int $id): JsonResponse
+    {
+        $university = University::findOrFail($id);
+        if ($university->logo) {
+            Storage::disk('public')->delete($university->logo);
+            $university->update(['logo' => null]);
+        }
+        return response()->json(['success' => true, 'message' => 'Logo removed.']);
     }
 }

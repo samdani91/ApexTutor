@@ -33,7 +33,7 @@
                 class="text-xs font-semibold font-display text-navy-600 bg-navy-50 border border-navy-200 px-2 py-0.5 rounded-pill">
                 {{ tutor.tutor_id }}
               </span>
-              <span v-if="tutor.is_verified" class="badge-verified text-xs">✓ Verified</span>
+              <VerifiedBadge v-if="tutor.is_verified" size="md" />
               <span v-if="tutor.is_verified"
                 class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-pill bg-amber-50 text-amber-700 border border-amber-200">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -420,6 +420,7 @@ import { toast } from 'vue-sonner'
 import { getInitials } from '@/utils/helpers.js'
 import { PREFERRED_TIMES } from '@/utils/constants.js'
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog.vue'
+import VerifiedBadge from '@/components/common/VerifiedBadge.vue'
 
 const TIME_MAP = Object.fromEntries(PREFERRED_TIMES.map(t => [t.value, `${t.label} (${t.hint})`]))
 
