@@ -223,7 +223,28 @@
         </div>
       </div>
 
-      <!-- ── 3. Personal Information (no email / phone) ── -->
+      <!-- ── 3. Visiting Districts ── -->
+      <div v-if="tutor.travel_availabilities?.length" class="profile-card reveal">
+        <h2 class="section-title">Visiting Districts</h2>
+        <div class="space-y-2">
+          <div v-for="entry in tutor.travel_availabilities" :key="entry.id"
+            class="flex items-center justify-between gap-3 rounded-md border border-paper-200 bg-paper-50 px-4 py-2.5">
+            <div>
+              <p class="font-display font-semibold text-navy-900 text-sm">{{ entry.district?.name }}</p>
+              <p class="text-xs text-paper-500 font-body mt-0.5">
+                {{ formatProfileDate(entry.from_date) }} – {{ formatProfileDate(entry.to_date) }}
+              </p>
+              <p v-if="entry.notes" class="text-xs text-paper-400 font-body mt-0.5 italic">{{ entry.notes }}</p>
+            </div>
+            <span class="shrink-0 text-[11px] font-semibold font-display px-2 py-0.5 rounded-pill border"
+              :class="travelStatusClass(entry)">
+              {{ travelStatusLabel(entry) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 4. Personal Information (no email / phone) ── -->
       <div v-if="tutor.personal_info" class="profile-card reveal">
         <h2 class="section-title">Personal Information</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -423,6 +444,27 @@ function asArray(val) {
 
 function formatLevel(level) {
   return LEVEL_LABELS[level?.toLowerCase()] ?? (level ?? 'Other')
+}
+
+function formatProfileDate(iso) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function travelStatusLabel(entry) {
+  const now  = new Date()
+  const from = new Date(entry.from_date)
+  const to   = new Date(entry.to_date)
+  if (now < from) return 'Upcoming'
+  if (now > to)   return 'Expired'
+  return 'Active'
+}
+
+function travelStatusClass(entry) {
+  const s = travelStatusLabel(entry)
+  if (s === 'Active')   return 'bg-emerald-50 text-emerald-700 border-emerald-200'
+  if (s === 'Upcoming') return 'bg-blue-50 text-blue-700 border-blue-200'
+  return 'bg-paper-100 text-paper-500 border-paper-200'
 }
 
 onMounted(async () => {

@@ -228,14 +228,12 @@ const activeChips = computed(() => buildActiveChips(filtersRef.value, mobileFilt
 const sortOptions = [
   { value: 'relevance', label: 'Best match' },
   { value: 'rating', label: 'Highest rated' },
-  { value: 'newest', label: 'Newest' },
   { value: 'salary_asc', label: 'Salary: low to high' },
   { value: 'salary_desc', label: 'Salary: high to low' },
 ]
 const mobileSortOptions = [
   { value: 'relevance', label: 'Best match' },
   { value: 'rating', label: 'Top rated' },
-  { value: 'newest', label: 'Newest' },
   { value: 'salary_asc', label: 'Salary ↑' },
   { value: 'salary_desc', label: 'Salary ↓' },
 ]

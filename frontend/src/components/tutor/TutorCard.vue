@@ -39,29 +39,53 @@
       </div>
 
       <div class="min-h-[92px] space-y-3">
-        <div v-if="subjectTags.length">
+        <div v-if="allSubjects.length">
           <p class="mb-1.5 font-display text-[11px] font-semibold uppercase tracking-wide text-paper-400">Subjects</p>
-          <div class="flex flex-wrap gap-1.5">
+          <!-- below lg: 4 chips -->
+          <div class="lg:hidden flex flex-nowrap items-center gap-1.5">
+            <span v-for="subject in subjectTagsSm" :key="subject"
+              class="shrink-0 rounded-pill border border-gold-100 bg-gold-50 px-2.5 py-1 font-display text-xs font-semibold text-gold-800">
+              {{ subject }}
+            </span>
+            <span v-if="extraSubjectCountSm > 0"
+              class="shrink-0 rounded-pill border border-paper-200 bg-paper-100 px-2.5 py-1 font-display text-xs font-semibold text-paper-500">
+              +{{ extraSubjectCountSm }}
+            </span>
+          </div>
+          <!-- lg and up: 2 chips -->
+          <div class="hidden lg:flex flex-nowrap items-center gap-1.5">
             <span v-for="subject in subjectTags" :key="subject"
-              class="rounded-pill border border-gold-100 bg-gold-50 px-2.5 py-1 font-display text-xs font-semibold text-gold-800">
+              class="shrink-0 rounded-pill border border-gold-100 bg-gold-50 px-2.5 py-1 font-display text-xs font-semibold text-gold-800">
               {{ subject }}
             </span>
             <span v-if="extraSubjectCount > 0"
-              class="rounded-pill border border-paper-200 bg-paper-100 px-2.5 py-1 font-display text-xs font-semibold text-paper-500">
+              class="shrink-0 rounded-pill border border-paper-200 bg-paper-100 px-2.5 py-1 font-display text-xs font-semibold text-paper-500">
               +{{ extraSubjectCount }}
             </span>
           </div>
         </div>
 
-        <div v-if="classTags.length">
+        <div v-if="allClasses.length">
           <p class="mb-1.5 font-display text-[11px] font-semibold uppercase tracking-wide text-paper-400">Classes</p>
-          <div class="flex flex-wrap gap-1.5">
+          <!-- below lg: 4 chips -->
+          <div class="lg:hidden flex flex-nowrap items-center gap-1.5">
+            <span v-for="cls in classTagsSm" :key="cls"
+              class="shrink-0 rounded-pill border border-navy-100 bg-navy-50 px-2.5 py-1 font-display text-xs font-semibold text-navy-700">
+              {{ cls }}
+            </span>
+            <span v-if="extraClassCountSm > 0"
+              class="shrink-0 rounded-pill border border-paper-200 bg-paper-100 px-2.5 py-1 font-display text-xs font-semibold text-paper-500">
+              +{{ extraClassCountSm }}
+            </span>
+          </div>
+          <!-- lg and up: 2 chips -->
+          <div class="hidden lg:flex flex-nowrap items-center gap-1.5">
             <span v-for="cls in classTags" :key="cls"
-              class="rounded-pill border border-navy-100 bg-navy-50 px-2.5 py-1 font-display text-xs font-semibold text-navy-700">
+              class="shrink-0 rounded-pill border border-navy-100 bg-navy-50 px-2.5 py-1 font-display text-xs font-semibold text-navy-700">
               {{ cls }}
             </span>
             <span v-if="extraClassCount > 0"
-              class="rounded-pill border border-paper-200 bg-paper-100 px-2.5 py-1 font-display text-xs font-semibold text-paper-500">
+              class="shrink-0 rounded-pill border border-paper-200 bg-paper-100 px-2.5 py-1 font-display text-xs font-semibold text-paper-500">
               +{{ extraClassCount }}
             </span>
           </div>
@@ -88,6 +112,13 @@
           <span v-if="experienceLabel"
             class="rounded-pill border border-paper-200 bg-paper-50 px-2.5 py-1 font-display text-xs font-semibold text-paper-600">
             {{ experienceLabel }}
+          </span>
+          <span v-if="visitingLabel"
+            class="inline-flex items-center gap-1 rounded-pill border border-teal-200 bg-teal-50 px-2.5 py-1 font-display text-xs font-semibold text-teal-700">
+            <svg class="h-3 w-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>
+            </svg>
+            {{ visitingLabel }}
           </span>
         </div>
       </div>
@@ -116,9 +147,8 @@ const topUniversityLogo = computed(() => {
 
 const allSubjects = computed(() => {
   const seen = new Set()
-
   return (props.tutor.tuition_preference?.subjects || [])
-    .map(subject => String(subject.name || '').trim())
+    .map(s => String(s.name || '').trim())
     .filter(name => {
       if (!name) return false
       const key = name.toLowerCase()
@@ -127,16 +157,20 @@ const allSubjects = computed(() => {
       return true
     })
 })
-const subjectTags = computed(() => allSubjects.value.slice(0, 3))
-const extraSubjectCount = computed(() => Math.max(0, allSubjects.value.length - 3))
+const subjectTags        = computed(() => allSubjects.value.slice(0, 2))
+const extraSubjectCount  = computed(() => Math.max(0, allSubjects.value.length - 2))
+const subjectTagsSm      = computed(() => allSubjects.value.slice(0, 4))
+const extraSubjectCountSm = computed(() => Math.max(0, allSubjects.value.length - 4))
 
 const allClasses = computed(() => (props.tutor.tuition_preference?.preferred_classes || [])
   .map(c => c.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())))
-const classTags = computed(() => allClasses.value.slice(0, 3))
-const extraClassCount = computed(() => Math.max(0, allClasses.value.length - 3))
+const classTags        = computed(() => allClasses.value.slice(0, 2))
+const extraClassCount  = computed(() => Math.max(0, allClasses.value.length - 2))
+const classTagsSm      = computed(() => allClasses.value.slice(0, 4))
+const extraClassCountSm = computed(() => Math.max(0, allClasses.value.length - 4))
 
 const locationTags = computed(() => (props.tutor.tuition_preference?.locations || [])
-  .map(location => location.area_name || location.area?.name)
+  .map(loc => loc.area_name || loc.area?.name)
   .filter(Boolean)
   .slice(0, 3))
 
@@ -151,5 +185,12 @@ const experienceLabel = computed(() => {
   const years = props.tutor.tuition_preference?.total_experience_years
   if (years === null || years === undefined || years === '') return ''
   return `${Number(years) >= 21 ? '20+' : years} yr exp`
+})
+
+const visitingLabel = computed(() => {
+  const entries = props.tutor.travel_availabilities || []
+  if (!entries.length) return null
+  if (entries.length === 1) return `Visiting ${entries[0].district?.name || 'area'}`
+  return `Visiting ${entries.length} districts`
 })
 </script>

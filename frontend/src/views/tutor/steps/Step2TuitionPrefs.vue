@@ -191,6 +191,85 @@
       @confirm="saveConfirmOpen = false; save()"
       @cancel="saveConfirmOpen = false"
     />
+
+    <!-- Visiting Districts -->
+    <div class="mt-8 pt-7 border-t border-paper-200">
+      <h3 class="font-display font-semibold text-navy-700 text-base mb-0.5">Visiting Districts</h3>
+      <p class="text-xs text-paper-500 font-body mb-5">
+        Add a district and date range when you'll be visiting and open to tutoring. You'll appear in search results for that district during those dates.
+      </p>
+
+      <!-- Add form -->
+      <div class="border border-paper-200 rounded-lg p-4 mb-5 bg-paper-50/60">
+        <p class="text-sm font-semibold font-display text-navy-800 mb-3">Add visiting period</p>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold font-display text-navy-700 mb-1">District</label>
+            <DropSelect v-model="travelForm.district_id" :options="districtOptions" placeholder="Select district" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold font-display text-navy-700 mb-1">From date</label>
+            <input v-model="travelForm.from_date" type="date" class="input text-sm" :min="today" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold font-display text-navy-700 mb-1">To date</label>
+            <input v-model="travelForm.to_date" type="date" class="input text-sm" :min="travelForm.from_date || today" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-semibold font-display text-navy-700 mb-1">
+              Notes <span class="text-paper-400 font-normal">(optional)</span>
+            </label>
+            <input v-model="travelForm.notes" type="text" class="input text-sm"
+              placeholder="e.g. Available 2 hrs/day evenings" maxlength="500" />
+          </div>
+        </div>
+        <button @click="addTravel"
+          :disabled="travelAdding || travelForm.district_id === null || !travelForm.from_date || !travelForm.to_date"
+          class="mt-4 btn-primary text-sm py-2 px-5 disabled:opacity-50">
+          {{ travelAdding ? 'Adding…' : 'Add' }}
+        </button>
+      </div>
+
+      <!-- Entries list -->
+      <div v-if="travelLoading" class="text-xs text-paper-400 font-body py-4 text-center">Loading…</div>
+
+      <div v-else-if="!travelEntries.length"
+        class="rounded-lg border border-dashed border-paper-300 py-8 text-center text-paper-400 font-body text-sm">
+        No visiting periods added yet.
+      </div>
+
+      <div v-else class="space-y-3">
+        <div v-for="entry in travelEntries" :key="entry.id"
+          class="flex items-start justify-between gap-3 rounded-lg border border-paper-200 bg-white px-4 py-3 shadow-xs">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <p class="font-display font-semibold text-navy-900 text-sm">{{ entry.district?.name }}</p>
+              <span class="text-[11px] font-semibold font-display px-2 py-0.5 rounded-pill border"
+                :class="travelStatusClass(entry)">
+                {{ travelStatusLabel(entry) }}
+              </span>
+            </div>
+            <p class="text-xs text-paper-500 font-body mt-0.5">
+              {{ formatTravelDate(entry.from_date) }} &ndash; {{ formatTravelDate(entry.to_date) }}
+            </p>
+            <p v-if="entry.notes" class="text-xs text-paper-400 font-body mt-1 italic">{{ entry.notes }}</p>
+          </div>
+          <button @click="openTravelRemove(entry)"
+            class="shrink-0 rounded-sm bg-red-600 px-3 py-1.5 text-xs font-semibold font-display text-white hover:bg-red-700 transition-colors">
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <ConfirmDialog
+      :show="!!travelRemoveTarget"
+      title="Remove visiting period?"
+      :message="travelRemoveTarget ? `Remove visiting period for ${travelRemoveTarget.district?.name} (${formatTravelDate(travelRemoveTarget.from_date)} – ${formatTravelDate(travelRemoveTarget.to_date)})?` : ''"
+      confirm-label="Remove"
+      @confirm="confirmTravelRemove"
+      @cancel="travelRemoveTarget = null"
+    />
   </div>
 </template>
 
@@ -201,6 +280,7 @@ import { searchApi } from '@/api/search.js'
 import { toast } from 'vue-sonner'
 import { MEDIUMS, CLASS_LEVELS, PLACE_OF_TUTORING, TUTORING_STYLES, DAYS, PREFERRED_TIMES } from '@/utils/constants.js'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import DropSelect from '@/components/search/DropSelect.vue'
 
 const emit = defineEmits(['saved'])
 const saving         = ref(false)
@@ -275,6 +355,7 @@ async function onDistrictChange() {
 
 onMounted(async () => {
   subjectsLoading.value = true
+  travelLoading.value   = true
   try {
     const [prefRes, subjRes, distRes] = await Promise.all([
       tutorApi.getPreferences(),
@@ -318,6 +399,13 @@ onMounted(async () => {
   } finally {
     subjectsLoading.value = false
   }
+
+  // Load travel entries independently so a failure here doesn't break the main form
+  try {
+    const { data } = await tutorApi.getTravel()
+    travelEntries.value = [...(data.data || [])].sort((a, b) => new Date(a.from_date) - new Date(b.from_date))
+  } catch { /* silently ignore */ }
+  finally { travelLoading.value = false }
 })
 
 function toggleNum(key, val) {
@@ -352,6 +440,68 @@ function toggleArea(id) {
 
 function nullIfEmpty(val) {
   return val === '' || val === undefined ? null : val
+}
+
+// ── Visiting districts ────────────────────────────────────────────────────────
+
+const today         = new Date().toISOString().slice(0, 10)
+const travelEntries = ref([])
+const travelLoading = ref(false)
+const travelAdding  = ref(false)
+const travelRemoveTarget = ref(null)
+const travelForm    = reactive({ district_id: null, from_date: '', to_date: '', notes: '' })
+
+function travelStatusLabel(entry) {
+  const now  = new Date()
+  const from = new Date(entry.from_date)
+  const to   = new Date(entry.to_date)
+  if (now < from) return 'Upcoming'
+  if (now > to)   return 'Expired'
+  return 'Active'
+}
+
+function travelStatusClass(entry) {
+  const s = travelStatusLabel(entry)
+  if (s === 'Active')   return 'bg-emerald-50 text-emerald-700 border-emerald-200'
+  if (s === 'Upcoming') return 'bg-blue-50 text-blue-700 border-blue-200'
+  return 'bg-paper-100 text-paper-500 border-paper-200'
+}
+
+function formatTravelDate(iso) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+async function addTravel() {
+  if (travelForm.district_id === null || !travelForm.from_date || !travelForm.to_date) return
+  travelAdding.value = true
+  try {
+    const { data } = await tutorApi.addTravel({
+      district_id:      travelForm.district_id,
+      from_date:        travelForm.from_date,
+      to_date:          travelForm.to_date,
+      notes:            travelForm.notes || null,
+      open_to_tuitions: true,
+    })
+    const district = allDistricts.value.find(d => d.id === travelForm.district_id)
+    travelEntries.value = [...travelEntries.value, { ...data.data, district }]
+      .sort((a, b) => new Date(a.from_date) - new Date(b.from_date))
+    Object.assign(travelForm, { district_id: null, from_date: '', to_date: '', notes: '' })
+    toast.success('Visiting period added.')
+  } catch { toast.error('Could not add visiting period.') }
+  finally { travelAdding.value = false }
+}
+
+function openTravelRemove(entry) { travelRemoveTarget.value = entry }
+
+async function confirmTravelRemove() {
+  const entry = travelRemoveTarget.value
+  travelRemoveTarget.value = null
+  try {
+    await tutorApi.deleteTravel(entry.id)
+    travelEntries.value = travelEntries.value.filter(e => e.id !== entry.id)
+    toast.success('Visiting period removed.')
+  } catch { toast.error('Could not remove.') }
 }
 
 async function save() {

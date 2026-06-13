@@ -44,7 +44,7 @@ class TutorSearchController extends Controller
             'min_rating'    => 'nullable|numeric|min:1|max:5',
             'university_id' => 'nullable|integer|exists:universities,id',
             'verified_only' => 'nullable|boolean',
-            'sort'         => 'nullable|in:relevance,rating,newest,salary_asc,salary_desc',
+            'sort'         => 'nullable|in:relevance,rating,salary_asc,salary_desc',
             'per_page'     => 'nullable|integer|min:1|max:24',
             'page'         => 'nullable|integer|min:1',
         ]);
@@ -59,7 +59,9 @@ class TutorSearchController extends Controller
                 'tuitionPreference:id,tutor_profile_id,district_id,preferred_curricula,preferred_classes,expected_salary_min,expected_salary_max,tutoring_methods,tutoring_styles,total_experience_years,place_of_tutoring',
                 'tuitionPreference.subjects:id,name',
                 'tuitionPreference.locations.area:id,name',
-                'activeTravelAvailabilities.district:id,name',
+                'travelAvailabilities' => fn($q) => $q->with('district:id,name')
+                    ->where('open_to_tuitions', true)
+                    ->where('to_date', '>=', now()->toDateString()),
                 'personalInfo:id,tutor_profile_id,gender',
                 'educationEntries' => fn($q) => $q->with('university:id,name,logo')
                     ->whereNotNull('university_id')
@@ -82,7 +84,9 @@ class TutorSearchController extends Controller
             $did = $filters['district_id'];
             $query->where(function ($q) use ($did) {
                 $q->whereHas('tuitionPreference', fn($q) => $q->where('district_id', $did))
-                  ->orWhereHas('activeTravelAvailabilities', fn($q) => $q->where('district_id', $did));
+                  ->orWhereHas('travelAvailabilities', fn($q) => $q->where('district_id', $did)
+                        ->where('open_to_tuitions', true)
+                        ->where('to_date', '>=', now()->toDateString()));
             });
         }
         if (!empty($filters['area_id'])) {
@@ -127,7 +131,6 @@ class TutorSearchController extends Controller
         $sort = $filters['sort'] ?? 'relevance';
         match($sort) {
             'rating'      => $query->orderByDesc('rating'),
-            'newest'      => $query->latest(),
             'salary_asc'  => $query->orderByRaw('(SELECT expected_salary_min FROM tuition_preferences WHERE tutor_profile_id = tutor_profiles.id LIMIT 1) ASC'),
             'salary_desc' => $query->orderByRaw('(SELECT expected_salary_max FROM tuition_preferences WHERE tutor_profile_id = tutor_profiles.id LIMIT 1) DESC'),
             default       => $query->orderByRaw('(profile_completion_percent/100*4)+(is_verified*3)+(rating/5*2)+(LEAST(review_count,50)/50)+(LEAST(profile_view_count,1000)/1000) DESC'),

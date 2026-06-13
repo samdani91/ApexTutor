@@ -18,6 +18,9 @@ class TutorPublicProfileController extends Controller
             'tuitionPreference.district:id,name',
             'tuitionPreference.locations.area:id,name',
             'personalInfo:id,tutor_profile_id,gender,religion,nationality,fathers_name,mothers_name',
+            'travelAvailabilities' => fn($q) => $q->with('district:id,name')
+                ->where('open_to_tuitions', true)
+                ->where('to_date', '>=', now()->toDateString()),
             'teachingVideos' => fn($q) => $q->where('review_status', 'approved'),
             'reviews' => fn($q) => $q->with('guardianProfile.user:id,name,avatar')->latest()->take(10),
         ])
