@@ -2,6 +2,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\PlatformFeedback;
+use App\Models\User;
+use App\Notifications\AdminNewFeedbackNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -28,6 +30,18 @@ class PlatformFeedbackController extends Controller
                 'moderation_status' => 'pending',
                 'show_on_landing'   => false,
             ]
+        );
+
+        $notification = new AdminNewFeedbackNotification(
+            userName:     $user->name,
+            userRole:     $user->role,
+            displayLabel: $label,
+            quote:        $data['quote'],
+            feedbackId:   $feedback->id,
+        );
+
+        User::where('role', 'super_admin')->get()->each(
+            fn(User $admin) => $admin->notify($notification)
         );
 
         return response()->json([

@@ -53,6 +53,9 @@ class LogAdminActivity
         'AdminReviewController@approve'         => ['approve_review', 'review', 'Approved review #:id'],
         'AdminReviewController@reject'          => ['reject_review',  'review', 'Rejected review #:id'],
 
+        'AdminPlatformFeedbackController@approve' => ['approve_feedback', 'platform_feedback', 'Approved platform feedback #:id'],
+        'AdminPlatformFeedbackController@reject'  => ['reject_feedback',  'platform_feedback', 'Rejected platform feedback #:id'],
+
         'AdminReferenceDataController@storeSubject'    => ['create_subject',  'subject',  'Created a subject'],
         'AdminReferenceDataController@updateSubject'   => ['update_subject',  'subject',  'Updated subject #:id'],
         'AdminReferenceDataController@destroySubject'  => ['delete_subject',  'subject',  'Deleted subject #:id'],
