@@ -6,7 +6,6 @@ use App\Models\Area;
 use App\Models\ConnectionRequest;
 use App\Models\District;
 use App\Models\PlatformFeedback;
-use App\Models\Review;
 use App\Models\Subject;
 use App\Models\TutorProfile;
 use App\Models\University;
@@ -256,38 +255,31 @@ class TutorSearchController extends Controller
 
     public function landingTestimonials(): JsonResponse
     {
-        $guardianTestimonials = Review::where('moderation_status', 'approved')
-            ->whereNotNull('review_text')
-            ->with('guardianProfile.user:id,name,avatar')
-            ->latest()
-            ->limit(8)
-            ->get()
-            ->map(fn($r) => [
-                'name'   => $r->guardianProfile?->user?->name ?? 'Guardian',
-                'avatar' => $r->guardianProfile?->user?->avatar_url ?? null,
-                'quote'  => $r->review_text,
-                'rating' => $r->rating,
-                'role'   => 'Guardian',
-            ]);
+        $map = fn($f) => [
+            'name'   => $f->user?->name ?? 'User',
+            'avatar' => $f->user?->avatar_url ?? null,
+            'quote'  => $f->quote,
+            'role'   => $f->display_label,
+        ];
 
-        $platformTestimonials = PlatformFeedback::where('moderation_status', 'approved')
+        $base = PlatformFeedback::where('moderation_status', 'approved')
             ->where('show_on_landing', true)
-            ->with('user:id,name,avatar')
-            ->latest()
-            ->limit(8)
-            ->get()
-            ->map(fn($f) => [
-                'name'   => $f->user?->name ?? 'User',
-                'avatar' => $f->user?->avatar_url ?? null,
-                'quote'  => $f->quote,
-                'role'   => $f->display_label,
-            ]);
+            ->with('user:id,name,avatar,role')
+            ->latest();
+
+        $guardianTestimonials = (clone $base)
+            ->whereHas('user', fn($q) => $q->whereIn('role', ['guardian', 'student']))
+            ->limit(8)->get()->map($map);
+
+        $tutorTestimonials = (clone $base)
+            ->whereHas('user', fn($q) => $q->where('role', 'tutor'))
+            ->limit(8)->get()->map($map);
 
         return response()->json([
             'success' => true,
             'data'    => [
-                'guardian'  => $guardianTestimonials,
-                'platform'  => $platformTestimonials,
+                'guardian' => $guardianTestimonials,
+                'platform' => $tutorTestimonials,
             ],
         ]);
     }
