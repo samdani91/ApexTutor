@@ -15,14 +15,18 @@ class TutorSearchController extends Controller
 {
     public function landingStats(): JsonResponse
     {
+        $avgRating = TutorProfile::where('status', 'active')
+            ->where('is_verified', true)
+            ->where('review_count', '>', 0)
+            ->avg('rating');
+
         return response()->json([
             'success' => true,
             'data' => [
-                'verified_tutors' => TutorProfile::where('status', 'active')
-                    ->where('is_verified', true)
-                    ->count(),
-                'districts' => District::count(),
-                'student_matches' => ConnectionRequest::where('status', 'confirmed')->count(),
+                'verified_tutors'  => TutorProfile::where('status', 'active')->where('is_verified', true)->count(),
+                'districts'        => District::count(),
+                'student_matches'  => ConnectionRequest::where('status', 'confirmed')->count(),
+                'avg_rating'       => $avgRating ? round((float) $avgRating, 1) : null,
             ],
         ]);
     }

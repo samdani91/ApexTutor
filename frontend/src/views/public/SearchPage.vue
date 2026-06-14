@@ -267,8 +267,10 @@ function submitMobileFilters() {
 onMounted(async () => {
   const filters = {}
   // Tag links pass exact filter params directly.
-  if (route.query.class_level) filters.class_level = route.query.class_level
-  if (route.query.medium)      filters.medium      = route.query.medium
+  if (route.query.class_level)       filters.class_level       = route.query.class_level
+  if (route.query.medium)            filters.medium            = route.query.medium
+  if (route.query.place_of_tutoring) filters.place_of_tutoring = [route.query.place_of_tutoring]
+  if (route.query.tutoring_styles)   filters.tutoring_styles   = [route.query.tutoring_styles]
 
   // Free-text search bar passes ?q=… — resolve it into real filters
   // (subject, area, district, class, medium) so the panel auto-selects them.
