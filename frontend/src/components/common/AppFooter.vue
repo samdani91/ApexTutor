@@ -46,9 +46,8 @@
         </RouterLink>
       </div>
 
-      <div class="mt-7 flex flex-col gap-3 border-t border-white/10 pt-5 font-body text-xs text-navy-300 sm:flex-row sm:items-center sm:justify-between">
+      <div class="mt-7 border-t border-white/10 pt-5 font-body text-xs text-navy-300">
         <span>© {{ currentYear }} TutorKhujo. All rights reserved.</span>
-        <span>Built for Bangladesh tuition search.</span>
       </div>
     </div>
   </footer>
