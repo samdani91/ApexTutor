@@ -20,6 +20,12 @@ class AdminPlatformFeedbackController extends Controller
         return response()->json(['success' => true, 'data' => $feedbacks]);
     }
 
+    public function forUser(int $userId): JsonResponse
+    {
+        $feedback = PlatformFeedback::where('user_id', $userId)->first();
+        return response()->json(['success' => true, 'data' => $feedback]);
+    }
+
     public function approve(int $id): JsonResponse
     {
         $feedback = PlatformFeedback::with('user')->findOrFail($id);

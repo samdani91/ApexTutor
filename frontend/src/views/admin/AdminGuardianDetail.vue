@@ -348,6 +348,25 @@
           <p v-else class="empty-state">No tutors shortlisted.</p>
         </div>
 
+        <!-- Platform Feedback -->
+        <div class="card">
+          <h2 class="section-title">Platform Feedback</h2>
+          <div v-if="feedback" class="rounded-lg border border-paper-200 bg-paper-50 p-4 space-y-2">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <p class="text-xs text-paper-400 font-body">Showing as: <span class="font-semibold text-navy-700">{{ feedback.display_label }}</span></p>
+              <span class="text-xs font-semibold font-display px-2 py-0.5 rounded-pill border"
+                :class="feedback.moderation_status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : feedback.moderation_status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200'
+                      : 'bg-gold-50 text-gold-700 border-gold-200'">
+                {{ feedback.moderation_status }}
+              </span>
+            </div>
+            <p class="text-sm font-body text-navy-800 italic leading-relaxed">"{{ feedback.quote }}"</p>
+            <p class="text-xs text-paper-400 font-body">Submitted {{ formatDate(feedback.updated_at) }}</p>
+          </div>
+          <p v-else class="empty-state">No platform feedback submitted.</p>
+        </div>
+
       </div>
     </template>
 
@@ -394,12 +413,14 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { adminApi } from '@/api/admin.js'
+import { feedbackApi } from '@/api/feedback.js'
 import { getInitials } from '@/utils/helpers.js'
 import { toast } from 'vue-sonner'
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog.vue'
 
 const route               = useRoute()
 const guardian            = ref(null)
+const feedback            = ref(null)
 const loading             = ref(true)
 const editing             = ref(false)
 const editSaving          = ref(false)
@@ -427,6 +448,8 @@ onMounted(async () => {
   try {
     const { data } = await adminApi.getGuardian(route.params.guardianId)
     guardian.value = data.data
+    const fbRes = await feedbackApi.adminGetUserFeedback(guardian.value.user.id).catch(() => null)
+    feedback.value = fbRes?.data?.data ?? null
   } finally {
     loading.value = false
   }

@@ -54,12 +54,12 @@
             :class="statusClass(item.moderation_status)">
             {{ item.moderation_status }}
           </span>
-          <button v-if="item.moderation_status !== 'approved'" @click="approve(item)"
+          <button v-if="item.moderation_status !== 'approved'" @click="approveTarget = item"
             :disabled="!!acting[item.id]"
             class="rounded-sm bg-emerald-600 px-3 py-1.5 text-xs font-semibold font-display text-white hover:bg-emerald-700 transition-colors disabled:opacity-50">
             Approve
           </button>
-          <button v-if="item.moderation_status !== 'rejected'" @click="reject(item)"
+          <button v-if="item.moderation_status !== 'rejected'" @click="rejectTarget = item"
             :disabled="!!acting[item.id]"
             class="rounded-sm bg-red-600 px-3 py-1.5 text-xs font-semibold font-display text-white hover:bg-red-700 transition-colors disabled:opacity-50">
             Reject
@@ -67,6 +67,27 @@
         </div>
       </div>
     </div>
+
+    <!-- Approve confirm -->
+    <AdminConfirmDialog
+      :show="!!approveTarget"
+      title="Approve Feedback?"
+      :message="approveTarget ? `Approve feedback from ${approveTarget.user?.name}? It will be added to the landing page testimonials.` : ''"
+      confirm-label="Approve"
+      @confirm="doApprove"
+      @cancel="approveTarget = null"
+    />
+
+    <!-- Reject confirm -->
+    <AdminConfirmDialog
+      :show="!!rejectTarget"
+      title="Reject Feedback?"
+      :message="rejectTarget ? `Reject this feedback from ${rejectTarget.user?.name}? It will be removed from the landing page.` : ''"
+      confirm-label="Reject"
+      :danger="true"
+      @confirm="doReject"
+      @cancel="rejectTarget = null"
+    />
   </div>
 </template>
 
@@ -74,6 +95,7 @@
 import { ref, onMounted } from 'vue'
 import { feedbackApi } from '@/api/feedback.js'
 import { toast } from 'vue-sonner'
+import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog.vue'
 
 const tabs = [
   { value: 'pending',  label: 'Pending' },
@@ -82,10 +104,12 @@ const tabs = [
   { value: 'all',      label: 'All' },
 ]
 
-const activeTab = ref('pending')
-const items     = ref([])
-const loading   = ref(false)
-const acting    = ref({})
+const activeTab    = ref('pending')
+const items        = ref([])
+const loading      = ref(false)
+const acting       = ref({})
+const approveTarget = ref(null)
+const rejectTarget  = ref(null)
 
 async function load() {
   loading.value = true
@@ -102,7 +126,10 @@ function switchTab(tab) {
   load()
 }
 
-async function approve(item) {
+async function doApprove() {
+  const item = approveTarget.value
+  approveTarget.value = null
+  if (!item) return
   acting.value[item.id] = true
   try {
     await feedbackApi.adminApprove(item.id)
@@ -113,7 +140,10 @@ async function approve(item) {
   finally { delete acting.value[item.id] }
 }
 
-async function reject(item) {
+async function doReject() {
+  const item = rejectTarget.value
+  rejectTarget.value = null
+  if (!item) return
   acting.value[item.id] = true
   try {
     await feedbackApi.adminReject(item.id)

@@ -336,6 +336,25 @@
           <p v-else class="empty-state">No reviews yet.</p>
         </div>
 
+        <!-- Platform Feedback -->
+        <div class="card">
+          <h2 class="section-title">Platform Feedback</h2>
+          <div v-if="feedback" class="rounded-lg border border-paper-200 bg-paper-50 p-4 space-y-2">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <p class="text-xs text-paper-400 font-body">Showing as: <span class="font-semibold text-navy-700">{{ feedback.display_label }}</span></p>
+              <span class="text-xs font-semibold font-display px-2 py-0.5 rounded-pill border"
+                :class="feedback.moderation_status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : feedback.moderation_status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200'
+                      : 'bg-gold-50 text-gold-700 border-gold-200'">
+                {{ feedback.moderation_status }}
+              </span>
+            </div>
+            <p class="text-sm font-body text-navy-800 italic leading-relaxed">"{{ feedback.quote }}"</p>
+            <p class="text-xs text-paper-400 font-body">Submitted {{ formatFeedbackDate(feedback.updated_at) }}</p>
+          </div>
+          <p v-else class="empty-state">No platform feedback submitted.</p>
+        </div>
+
       </div>
     </template>
 
@@ -416,6 +435,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { adminApi } from '@/api/admin.js'
+import { feedbackApi } from '@/api/feedback.js'
 import { toast } from 'vue-sonner'
 import { getInitials } from '@/utils/helpers.js'
 import { PREFERRED_TIMES } from '@/utils/constants.js'
@@ -424,9 +444,10 @@ import VerifiedBadge from '@/components/common/VerifiedBadge.vue'
 
 const TIME_MAP = Object.fromEntries(PREFERRED_TIMES.map(t => [t.value, `${t.label} (${t.hint})`]))
 
-const route  = useRoute()
-const tutor  = ref(null)
-const loading = ref(true)
+const route    = useRoute()
+const tutor    = ref(null)
+const feedback = ref(null)
+const loading  = ref(true)
 const acting  = ref(false)
 const statusValue      = ref('active')
 const showApproveDialog = ref(false)
@@ -516,6 +537,8 @@ onMounted(async () => {
     const { data } = await adminApi.getTutor(route.params.tutorId)
     tutor.value = data.data
     statusValue.value = tutor.value.status || 'active'
+    const fbRes = await feedbackApi.adminGetUserFeedback(tutor.value.user.id).catch(() => null)
+    feedback.value = fbRes?.data?.data ?? null
   } finally {
     loading.value = false
   }
@@ -538,6 +561,10 @@ function connStatusClass(status) {
 function formatDate(iso) {
   if (!iso) return ''
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function formatFeedbackDate(iso) {
+  return formatDate(iso)
 }
 
 function formatSize(bytes) {

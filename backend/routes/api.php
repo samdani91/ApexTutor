@@ -207,9 +207,10 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:super_admin', 'log.admin
     Route::put('reviews/{id}/approve',[AdminReviewController::class, 'approve']);
     Route::put('reviews/{id}/reject', [AdminReviewController::class, 'reject']);
 
-    Route::get('feedback',                [AdminPlatformFeedbackController::class, 'index']);
-    Route::put('feedback/{id}/approve',   [AdminPlatformFeedbackController::class, 'approve']);
-    Route::put('feedback/{id}/reject',    [AdminPlatformFeedbackController::class, 'reject']);
+    Route::get('feedback',                  [AdminPlatformFeedbackController::class, 'index']);
+    Route::get('feedback/user/{userId}',    [AdminPlatformFeedbackController::class, 'forUser']);
+    Route::put('feedback/{id}/approve',     [AdminPlatformFeedbackController::class, 'approve']);
+    Route::put('feedback/{id}/reject',      [AdminPlatformFeedbackController::class, 'reject']);
 
     Route::get('reference/subjects',              [AdminReferenceDataController::class, 'subjects']);
     Route::post('reference/subjects',             [AdminReferenceDataController::class, 'storeSubject']);
