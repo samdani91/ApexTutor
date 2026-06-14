@@ -119,7 +119,3 @@ Tuition_Platform/
 ```
 
 ---
-
-## License
-
-MIT
