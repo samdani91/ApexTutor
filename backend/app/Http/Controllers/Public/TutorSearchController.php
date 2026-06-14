@@ -5,6 +5,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Area;
 use App\Models\ConnectionRequest;
 use App\Models\District;
+use App\Models\PlatformFeedback;
+use App\Models\Review;
 use App\Models\Subject;
 use App\Models\TutorProfile;
 use App\Models\University;
@@ -250,6 +252,44 @@ class TutorSearchController extends Controller
         }
 
         return response()->json(['success' => true, 'data' => $filters]);
+    }
+
+    public function landingTestimonials(): JsonResponse
+    {
+        $guardianTestimonials = Review::where('moderation_status', 'approved')
+            ->whereNotNull('review_text')
+            ->with('guardianProfile.user:id,name,avatar')
+            ->latest()
+            ->limit(8)
+            ->get()
+            ->map(fn($r) => [
+                'name'   => $r->guardianProfile?->user?->name ?? 'Guardian',
+                'avatar' => $r->guardianProfile?->user?->avatar_url ?? null,
+                'quote'  => $r->review_text,
+                'rating' => $r->rating,
+                'role'   => 'Guardian',
+            ]);
+
+        $platformTestimonials = PlatformFeedback::where('moderation_status', 'approved')
+            ->where('show_on_landing', true)
+            ->with('user:id,name,avatar')
+            ->latest()
+            ->limit(8)
+            ->get()
+            ->map(fn($f) => [
+                'name'   => $f->user?->name ?? 'User',
+                'avatar' => $f->user?->avatar_url ?? null,
+                'quote'  => $f->quote,
+                'role'   => $f->display_label,
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'guardian'  => $guardianTestimonials,
+                'platform'  => $platformTestimonials,
+            ],
+        ]);
     }
 
     public function subjects(Request $request): JsonResponse

@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminConnectionController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminGuardianController;
+use App\Http\Controllers\Admin\AdminPlatformFeedbackController;
 use App\Http\Controllers\Admin\AdminReviewController;
 use App\Http\Controllers\Admin\AdminTutorController;
 use App\Http\Controllers\Admin\AdminVerificationController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\Guardian\GuardianReviewController;
 use App\Http\Controllers\Guardian\ShortlistController;
 use App\Http\Controllers\Public\TutorPublicProfileController;
 use App\Http\Controllers\Public\TutorSearchController;
+use App\Http\Controllers\PlatformFeedbackController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\Tutor\DocumentController;
 use App\Http\Controllers\Tutor\EducationController;
@@ -88,7 +90,8 @@ Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
 
 // Public search & tutor profiles
 Route::middleware('throttle:60,1')->group(function () {
-    Route::get('landing/stats', [TutorSearchController::class, 'landingStats']);
+    Route::get('landing/stats',        [TutorSearchController::class, 'landingStats']);
+    Route::get('landing/testimonials', [TutorSearchController::class, 'landingTestimonials']);
     Route::prefix('search')->group(function () {
         Route::get('tutors',    [TutorSearchController::class, 'search']);
         Route::get('resolve',   [TutorSearchController::class, 'resolve']);
@@ -123,6 +126,12 @@ Route::middleware(['auth:sanctum', 'active.user', 'verified', 'role:tutor'])->pr
     Route::delete('videos/{id}',   [TeachingVideoController::class, 'destroy']);
     Route::apiResource('travel', TravelAvailabilityController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::get('reviews', [TutorReviewController::class, 'index']);
+});
+
+// Platform feedback — any verified authenticated user
+Route::middleware(['auth:sanctum', 'active.user', 'verified'])->group(function () {
+    Route::get('feedback/platform',  [PlatformFeedbackController::class, 'show']);
+    Route::post('feedback/platform', [PlatformFeedbackController::class, 'store']);
 });
 
 // Guardian routes
@@ -197,6 +206,10 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:super_admin', 'log.admin
     Route::get('reviews/pending',     [AdminReviewController::class, 'pending']);
     Route::put('reviews/{id}/approve',[AdminReviewController::class, 'approve']);
     Route::put('reviews/{id}/reject', [AdminReviewController::class, 'reject']);
+
+    Route::get('feedback',                [AdminPlatformFeedbackController::class, 'index']);
+    Route::put('feedback/{id}/approve',   [AdminPlatformFeedbackController::class, 'approve']);
+    Route::put('feedback/{id}/reject',    [AdminPlatformFeedbackController::class, 'reject']);
 
     Route::get('reference/subjects',              [AdminReferenceDataController::class, 'subjects']);
     Route::post('reference/subjects',             [AdminReferenceDataController::class, 'storeSubject']);

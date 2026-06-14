@@ -1,6 +1,7 @@
 import http from './http.js'
 export const searchApi = {
-  landingStats: () => http.get('/landing/stats'),
+  landingStats:        () => http.get('/landing/stats'),
+  landingTestimonials: () => http.get('/landing/testimonials'),
   tutors: (params) => http.get('/search/tutors', { params }),
   resolve: (q) => http.get('/search/resolve', { params: { q } }),
   subjects: (params) => http.get('/search/subjects', { params }),

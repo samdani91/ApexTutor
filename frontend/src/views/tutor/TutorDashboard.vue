@@ -143,6 +143,8 @@
         Edit Profile
       </RouterLink>
     </div>
+
+    <PlatformFeedbackWidget class="reveal" />
   </div>
 </template>
 
@@ -153,6 +155,7 @@ import { tutorApi } from '@/api/tutor.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { getInitials } from '@/utils/helpers.js'
 import { toast } from 'vue-sonner'
+import PlatformFeedbackWidget from '@/components/common/PlatformFeedbackWidget.vue'
 
 const auth = useAuthStore()
 
