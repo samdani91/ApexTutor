@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/auth.js'
 const routes = [
   { path: '/', component: () => import('@/views/public/HomePage.vue'), name: 'home' },
   { path: '/search', component: () => import('@/views/public/SearchPage.vue'), name: 'search' },
-  { path: '/tutors/:publicId', component: () => import('@/views/public/TutorProfilePage.vue'), name: 'tutor-profile' },
+  { path: '/tutors/:publicId', component: () => import('@/views/public/TutorProfilePage.vue'), name: 'tutor-profile', meta: { requiresAuth: true } },
   { path: '/login', component: () => import('@/views/auth/LoginPage.vue'), name: 'login' },
   { path: '/register', component: () => import('@/views/auth/RegisterPage.vue'), name: 'register' },
   { path: '/forgot-password', component: () => import('@/views/auth/ForgotPassword.vue'), name: 'forgot-password' },

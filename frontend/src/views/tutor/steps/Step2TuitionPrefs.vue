@@ -205,8 +205,27 @@
         <div class="grid sm:grid-cols-2 gap-3">
           <div class="sm:col-span-2">
             <label class="block text-xs font-semibold font-display text-navy-700 mb-1">District</label>
-            <DropSelect v-model="travelForm.district_id" :options="districtOptions" placeholder="Select district" />
+            <DropSelect v-model="travelForm.district_id" :options="districtOptions" placeholder="Select district"
+              @update:modelValue="onTravelDistrictChange" />
           </div>
+
+          <!-- Area chips — shown once a district is selected -->
+          <div v-if="travelForm.district_id !== null" class="sm:col-span-2">
+            <label class="block text-xs font-semibold font-display text-navy-700 mb-1.5">
+              Areas <span class="text-paper-400 font-normal">(optional)</span>
+            </label>
+            <div v-if="travelAreasLoading" class="text-xs text-paper-400 font-body">Loading areas…</div>
+            <div v-else-if="travelAreas.length" class="flex flex-wrap gap-1.5">
+              <button type="button" v-for="a in travelAreas" :key="a.id"
+                @click="toggleTravelArea(a.id)"
+                class="choice-btn text-xs px-2.5 py-1"
+                :class="travelForm.area_ids.includes(a.id) ? 'choice-btn-active' : 'choice-btn-idle'">
+                {{ a.name }}
+              </button>
+            </div>
+            <p v-else class="text-xs text-paper-400 font-body">No areas found for this district.</p>
+          </div>
+
           <div>
             <label class="block text-xs font-semibold font-display text-navy-700 mb-1">From date</label>
             <input v-model="travelForm.from_date" type="date" class="input text-sm" :min="today" />
@@ -252,6 +271,12 @@
             <p class="text-xs text-paper-500 font-body mt-0.5">
               {{ formatTravelDate(entry.from_date) }} &ndash; {{ formatTravelDate(entry.to_date) }}
             </p>
+            <div v-if="entry.areas?.length" class="flex flex-wrap gap-1 mt-1.5">
+              <span v-for="area in entry.areas" :key="area.id"
+                class="rounded-pill border border-navy-100 bg-navy-50 px-2 py-0.5 font-display text-[11px] font-semibold text-navy-700">
+                {{ area.name }}
+              </span>
+            </div>
             <p v-if="entry.notes" class="text-xs text-paper-400 font-body mt-1 italic">{{ entry.notes }}</p>
           </div>
           <button @click="openTravelRemove(entry)"
@@ -444,12 +469,33 @@ function nullIfEmpty(val) {
 
 // ── Visiting districts ────────────────────────────────────────────────────────
 
-const today         = new Date().toISOString().slice(0, 10)
-const travelEntries = ref([])
-const travelLoading = ref(false)
-const travelAdding  = ref(false)
+const today              = new Date().toISOString().slice(0, 10)
+const travelEntries      = ref([])
+const travelLoading      = ref(false)
+const travelAdding       = ref(false)
 const travelRemoveTarget = ref(null)
-const travelForm    = reactive({ district_id: null, from_date: '', to_date: '', notes: '' })
+const travelAreas        = ref([])
+const travelAreasLoading = ref(false)
+const travelForm         = reactive({ district_id: null, area_ids: [], from_date: '', to_date: '', notes: '' })
+
+async function onTravelDistrictChange() {
+  travelForm.area_ids = []
+  travelAreas.value   = []
+  if (travelForm.district_id === null) return
+  travelAreasLoading.value = true
+  try {
+    const { data } = await searchApi.areas(travelForm.district_id)
+    travelAreas.value = data.data || []
+  } finally {
+    travelAreasLoading.value = false
+  }
+}
+
+function toggleTravelArea(id) {
+  const i = travelForm.area_ids.indexOf(id)
+  if (i === -1) travelForm.area_ids.push(id)
+  else travelForm.area_ids.splice(i, 1)
+}
 
 function travelStatusLabel(entry) {
   const now  = new Date()
@@ -478,15 +524,16 @@ async function addTravel() {
   try {
     const { data } = await tutorApi.addTravel({
       district_id:      travelForm.district_id,
+      area_ids:         travelForm.area_ids,
       from_date:        travelForm.from_date,
       to_date:          travelForm.to_date,
       notes:            travelForm.notes || null,
       open_to_tuitions: true,
     })
-    const district = allDistricts.value.find(d => d.id === travelForm.district_id)
-    travelEntries.value = [...travelEntries.value, { ...data.data, district }]
+    travelEntries.value = [...travelEntries.value, data.data]
       .sort((a, b) => new Date(a.from_date) - new Date(b.from_date))
-    Object.assign(travelForm, { district_id: null, from_date: '', to_date: '', notes: '' })
+    Object.assign(travelForm, { district_id: null, area_ids: [], from_date: '', to_date: '', notes: '' })
+    travelAreas.value = []
     toast.success('Visiting period added.')
   } catch { toast.error('Could not add visiting period.') }
   finally { travelAdding.value = false }

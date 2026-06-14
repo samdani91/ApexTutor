@@ -229,11 +229,17 @@
         <div class="space-y-2">
           <div v-for="entry in tutor.travel_availabilities" :key="entry.id"
             class="flex items-center justify-between gap-3 rounded-md border border-paper-200 bg-paper-50 px-4 py-2.5">
-            <div>
+            <div class="min-w-0">
               <p class="font-display font-semibold text-navy-900 text-sm">{{ entry.district?.name }}</p>
               <p class="text-xs text-paper-500 font-body mt-0.5">
                 {{ formatProfileDate(entry.from_date) }} – {{ formatProfileDate(entry.to_date) }}
               </p>
+              <div v-if="entry.areas?.length" class="flex flex-wrap gap-1 mt-1.5">
+                <span v-for="area in entry.areas" :key="area.id"
+                  class="rounded-pill border border-navy-100 bg-navy-50 px-2 py-0.5 font-display text-[11px] font-semibold text-navy-700">
+                  {{ area.name }}
+                </span>
+              </div>
               <p v-if="entry.notes" class="text-xs text-paper-400 font-body mt-0.5 italic">{{ entry.notes }}</p>
             </div>
             <span class="shrink-0 text-[11px] font-semibold font-display px-2 py-0.5 rounded-pill border"

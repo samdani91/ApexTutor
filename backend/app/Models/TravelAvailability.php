@@ -4,6 +4,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class TravelAvailability extends Model
 {
@@ -18,4 +19,5 @@ class TravelAvailability extends Model
     ];
     public function tutorProfile(): BelongsTo { return $this->belongsTo(TutorProfile::class); }
     public function district(): BelongsTo { return $this->belongsTo(District::class); }
+    public function areas(): BelongsToMany { return $this->belongsToMany(Area::class, 'travel_availability_areas'); }
 }

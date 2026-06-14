@@ -59,7 +59,7 @@ class TutorSearchController extends Controller
                 'tuitionPreference:id,tutor_profile_id,district_id,preferred_curricula,preferred_classes,expected_salary_min,expected_salary_max,tutoring_methods,tutoring_styles,total_experience_years,place_of_tutoring',
                 'tuitionPreference.subjects:id,name',
                 'tuitionPreference.locations.area:id,name',
-                'travelAvailabilities' => fn($q) => $q->with('district:id,name')
+                'travelAvailabilities' => fn($q) => $q->with(['district:id,name', 'areas:id,name'])
                     ->where('open_to_tuitions', true)
                     ->where('to_date', '>=', now()->toDateString()),
                 'personalInfo:id,tutor_profile_id,gender',

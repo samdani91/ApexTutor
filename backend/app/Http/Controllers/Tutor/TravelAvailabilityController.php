@@ -9,19 +9,27 @@ class TravelAvailabilityController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        return response()->json(['success' => true, 'data' => $request->user()->tutorProfile->travelAvailabilities()->with('district')->get()]);
+        return response()->json(['success' => true, 'data' => $request->user()->tutorProfile->travelAvailabilities()->with(['district', 'areas'])->get()]);
     }
 
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'district_id'    => 'required|exists:districts,id',
-            'from_date'      => 'required|date|after_or_equal:today',
-            'to_date'        => 'required|date|after:from_date',
+            'district_id'      => 'required|exists:districts,id',
+            'area_ids'         => 'nullable|array',
+            'area_ids.*'       => 'integer|exists:areas,id',
+            'from_date'        => 'required|date|after_or_equal:today',
+            'to_date'          => 'required|date|after:from_date',
             'open_to_tuitions' => 'boolean',
-            'notes'          => 'nullable|string|max:500',
+            'notes'            => 'nullable|string|max:500',
         ]);
+        $areaIds = $data['area_ids'] ?? [];
+        unset($data['area_ids']);
         $entry = $request->user()->tutorProfile->travelAvailabilities()->create($data);
+        if ($areaIds) {
+            $entry->areas()->sync($areaIds);
+        }
+        $entry->load(['district', 'areas']);
         return response()->json(['success' => true, 'data' => $entry, 'message' => 'Travel availability added.'], 201);
     }
 
