@@ -180,6 +180,7 @@ const pendingCounts = reactive({
   verifications:   0,
   pendingChanges:  0,
   reviews:         0,
+  feedbacks:       0,
 })
 
 function getNavCount(to) {
@@ -188,6 +189,7 @@ function getNavCount(to) {
   if (to === '/admin/reviews')         return pendingCounts.reviews
   if (to === '/admin/notifications')   return unreadCount.value
   if (to === '/admin/tickets')         return pendingCounts.openTickets ?? 0
+  if (to === '/admin/feedback')        return pendingCounts.feedbacks
   return 0
 }
 
@@ -203,6 +205,7 @@ async function loadCounts() {
     pendingCounts.reviews        = d.pending_reviews         ?? 0
     pendingCounts.pendingAvatars = d.pending_avatars          ?? 0
     pendingCounts.openTickets    = d.open_tickets             ?? 0
+    pendingCounts.feedbacks      = d.pending_feedbacks        ?? 0
     unreadCount.value            = notifRes.data.unread       ?? 0
   } catch { /* counts are non-critical */ }
 }
