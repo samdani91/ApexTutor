@@ -15,6 +15,7 @@ const routes = [
     children: [
       { path: 'dashboard',           component: () => import('@/views/tutor/TutorDashboard.vue'),      name: 'tutor-dashboard' },
       { path: 'profile',             component: () => import('@/views/tutor/ProfileBuilder.vue'),       name: 'tutor-profile-builder' },
+      { path: 'applications',        component: () => import('@/views/tutor/TutorApplications.vue'),    name: 'tutor-applications' },
       { path: 'confirmed-tuitions',  component: () => import('@/views/tutor/ConfirmedTuitions.vue'),    name: 'tutor-confirmed-tuitions' },
       { path: 'reviews',             component: () => import('@/views/tutor/TutorReviews.vue'),         name: 'tutor-reviews' },
       { path: 'notifications',       component: () => import('@/views/shared/NotificationsPage.vue'),  name: 'tutor-notifications' },
@@ -30,12 +31,24 @@ const routes = [
     children: [
       { path: 'dashboard',           component: () => import('@/views/guardian/GuardianDashboard.vue'),    name: 'guardian-dashboard' },
       { path: 'profile',             component: () => import('@/views/guardian/GuardianProfilePage.vue'),  name: 'guardian-profile' },
-      { path: 'shortlist',           component: () => import('@/views/guardian/Shortlist.vue'),             name: 'shortlist' },
-      { path: 'confirmed-tuitions',  component: () => import('@/views/guardian/ConfirmedTuitions.vue'),     name: 'guardian-confirmed-tuitions' },
+      { path: 'shortlist',                       component: () => import('@/views/guardian/Shortlist.vue'),              name: 'shortlist' },
+      { path: 'jobs',                           component: () => import('@/views/guardian/GuardianJobs.vue'),         name: 'guardian-jobs' },
+      { path: 'jobs/post',                      component: () => import('@/views/guardian/GuardianJobPost.vue'),      name: 'guardian-job-post' },
+      { path: 'jobs/:publicId/applicants',      component: () => import('@/views/guardian/GuardianJobApplicants.vue'), name: 'guardian-job-applicants' },
+      { path: 'confirmed-tuitions',             component: () => import('@/views/guardian/ConfirmedTuitions.vue'),    name: 'guardian-confirmed-tuitions' },
       { path: 'notifications',       component: () => import('@/views/shared/NotificationsPage.vue'),      name: 'guardian-notifications' },
       { path: 'support',             component: () => import('@/views/shared/MyTickets.vue'),                name: 'guardian-support' },
       { path: 'support/:id',         component: () => import('@/views/shared/TicketDetail.vue'),             name: 'guardian-ticket-detail' },
       { path: 'settings',            component: () => import('@/views/shared/SettingsPage.vue'),            name: 'guardian-settings' },
+    ]
+  },
+  {
+    path: '/jobs',
+    component: () => import('@/layouts/DashboardLayout.vue'),
+    meta: { requiresAuth: true, role: 'tutor' },
+    children: [
+      { path: '',           component: () => import('@/views/tutor/TuitionJobs.vue'),      name: 'tuition-jobs' },
+      { path: ':publicId',  component: () => import('@/views/tutor/TuitionJobDetail.vue'), name: 'tuition-job-detail' },
     ]
   },
   {

@@ -20,6 +20,9 @@ use App\Http\Controllers\Guardian\ConnectionRequestController;
 use App\Http\Controllers\Guardian\GuardianProfileController;
 use App\Http\Controllers\Guardian\GuardianReviewController;
 use App\Http\Controllers\Guardian\ShortlistController;
+use App\Http\Controllers\Guardian\TuitionJobController as GuardianTuitionJobController;
+use App\Http\Controllers\Guardian\TuitionJobApplicantController;
+use App\Http\Controllers\Tutor\TuitionJobController as TutorTuitionJobController;
 use App\Http\Controllers\Public\TutorPublicProfileController;
 use App\Http\Controllers\Public\TutorSearchController;
 use App\Http\Controllers\PlatformFeedbackController;
@@ -104,6 +107,13 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('tutors/{publicId}/reviews', [TutorPublicProfileController::class, 'reviews']);
 });
 
+// Tuition job board — tutor-only, outside the /tutor prefix to keep URLs clean
+Route::middleware(['auth:sanctum', 'active.user', 'verified', 'role:tutor'])->group(function () {
+    Route::get('jobs',                    [TutorTuitionJobController::class, 'index']);
+    Route::get('jobs/{publicId}',         [TutorTuitionJobController::class, 'show']);
+    Route::post('jobs/{publicId}/apply',  [TutorTuitionJobController::class, 'apply'])->middleware('throttle:20,1');
+});
+
 // Tutor routes
 Route::middleware(['auth:sanctum', 'active.user', 'verified', 'role:tutor'])->prefix('tutor')->group(function () {
     Route::get('profile',   [TutorProfileController::class, 'show']);
@@ -126,6 +136,8 @@ Route::middleware(['auth:sanctum', 'active.user', 'verified', 'role:tutor'])->pr
     Route::delete('videos/{id}',   [TeachingVideoController::class, 'destroy']);
     Route::apiResource('travel', TravelAvailabilityController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::get('reviews', [TutorReviewController::class, 'index']);
+    Route::get('applications',               [TutorTuitionJobController::class, 'myApplications']);
+    Route::get('dashboard/job-summary',      [TutorTuitionJobController::class, 'dashboardSummary']);
 });
 
 // Platform feedback — any verified authenticated user
@@ -151,6 +163,20 @@ Route::middleware(['auth:sanctum', 'active.user', 'verified', 'role:guardian,stu
         ->middleware('throttle:10,1');
     Route::get('reviews/eligibility/{tutor_profile_id}', [GuardianReviewController::class, 'eligibility']);
     Route::post('reviews', [GuardianReviewController::class, 'store'])->middleware('throttle:5,1');
+
+    // Tuition job management
+    Route::get('jobs/dashboard-summary',    [GuardianTuitionJobController::class, 'dashboardSummary']);
+    Route::get('jobs',                      [GuardianTuitionJobController::class, 'index']);
+    Route::post('jobs',                     [GuardianTuitionJobController::class, 'store']);
+    Route::get('jobs/{publicId}',           [GuardianTuitionJobController::class, 'show']);
+    Route::put('jobs/{publicId}',           [GuardianTuitionJobController::class, 'update']);
+    Route::patch('jobs/{publicId}/close',   [GuardianTuitionJobController::class, 'close']);
+    Route::patch('jobs/{publicId}/reopen',  [GuardianTuitionJobController::class, 'reopen']);
+    Route::get('jobs/{publicId}/applicants',                                          [TuitionJobApplicantController::class, 'index']);
+    Route::patch('jobs/{publicId}/applicants/{applicationId}/shortlist',              [TuitionJobApplicantController::class, 'shortlist']);
+    Route::patch('jobs/{publicId}/applicants/{applicationId}/appoint',               [TuitionJobApplicantController::class, 'appoint']);
+    Route::patch('jobs/{publicId}/applicants/{applicationId}/confirm',               [TuitionJobApplicantController::class, 'confirm']);
+    Route::patch('jobs/{publicId}/applicants/{applicationId}/remove',                [TuitionJobApplicantController::class, 'remove']);
 });
 
 // Admin routes

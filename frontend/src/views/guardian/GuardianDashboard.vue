@@ -32,6 +32,29 @@
       </div>
     </div>
 
+    <!-- Tuition Jobs widget -->
+    <div class="dashboard-card reveal">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+        <h2 class="font-display font-bold text-navy-900 text-xl">My Tuition Jobs</h2>
+        <RouterLink to="/guardian/jobs" class="text-xs font-semibold font-display text-navy-600 hover:underline shrink-0">Manage All Jobs →</RouterLink>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="metric-card">
+          <p class="font-display font-bold text-2xl text-emerald-600">{{ jobSummary.open }}</p>
+          <p class="text-xs text-paper-500 font-body mt-1">Open</p>
+        </div>
+        <div class="metric-card">
+          <p class="font-display font-bold text-2xl text-paper-500">{{ jobSummary.closed }}</p>
+          <p class="text-xs text-paper-500 font-body mt-1">Closed</p>
+        </div>
+        <div class="metric-card">
+          <p class="font-display font-bold text-2xl text-navy-700">{{ jobSummary.totalApplicants }}</p>
+          <p class="text-xs text-paper-500 font-body mt-1">Applicants</p>
+        </div>
+      </div>
+      <RouterLink to="/guardian/jobs/post" class="btn-primary text-sm py-2 px-5 inline-block">+ Post New Job</RouterLink>
+    </div>
+
     <!-- How it works -->
     <div class="dashboard-card reveal">
       <h2 class="font-display font-bold text-navy-900 text-xl mb-4">How It Works</h2>
@@ -63,17 +86,20 @@
 import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { guardianApi } from '@/api/guardian.js'
+import { guardianJobsApi } from '@/api/jobs.js'
 import PlatformFeedbackWidget from '@/components/common/PlatformFeedbackWidget.vue'
 
-const shortlistCount = ref(0)
-const confirmedCount = ref(0)
-const guardianId     = ref('')
+const shortlistCount  = ref(0)
+const confirmedCount  = ref(0)
+const guardianId      = ref('')
+const jobSummary      = ref({ open: 0, closed: 0, total: 0, totalApplicants: 0 })
 
 onMounted(async () => {
-  const [shortRes, confirmedRes, profileRes] = await Promise.all([
+  const [shortRes, confirmedRes, profileRes, jobRes] = await Promise.all([
     guardianApi.getShortlist().catch(() => ({ data: { data: [] } })),
     guardianApi.getConfirmedTuitions().catch(() => ({ data: { data: [] } })),
     guardianApi.getProfile().catch(() => ({ data: { data: null } })),
+    guardianJobsApi.dashboardSummary().catch(() => ({ data: { data: {} } })),
   ])
 
   const confirmed      = confirmedRes.data.data || []
@@ -83,6 +109,7 @@ onMounted(async () => {
   shortlistCount.value = shortlist.filter(i => !confirmedIds.has(i.tutor_profile_id)).length
   confirmedCount.value = confirmed.length
   guardianId.value     = profileRes.data.data?.guardian_id || ''
+  jobSummary.value     = jobRes.data.data || jobSummary.value
 })
 </script>
 

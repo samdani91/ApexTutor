@@ -144,6 +144,33 @@
       </RouterLink>
     </div>
 
+    <!-- Job Applications widget -->
+    <div class="dashboard-card reveal">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+        <h2 class="font-display font-bold text-navy-900 text-xl">My Job Applications</h2>
+        <RouterLink to="/tutor/applications" class="text-xs font-semibold font-display text-navy-600 hover:underline shrink-0">View All Applications →</RouterLink>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="metric-card">
+          <p class="font-display font-bold text-2xl text-blue-600">{{ jobSummary.applied ?? 0 }}</p>
+          <p class="text-xs text-paper-500 font-body mt-1">Applied</p>
+        </div>
+        <div class="metric-card">
+          <p class="font-display font-bold text-2xl text-gold-600">{{ jobSummary.shortlisted ?? 0 }}</p>
+          <p class="text-xs text-paper-500 font-body mt-1">Shortlisted</p>
+        </div>
+        <div class="metric-card">
+          <p class="font-display font-bold text-2xl text-purple-600">{{ jobSummary.appointed ?? 0 }}</p>
+          <p class="text-xs text-paper-500 font-body mt-1">Appointed</p>
+        </div>
+        <div class="metric-card">
+          <p class="font-display font-bold text-2xl text-emerald-600">{{ jobSummary.connected ?? 0 }}</p>
+          <p class="text-xs text-paper-500 font-body mt-1">Connected</p>
+        </div>
+      </div>
+      <RouterLink to="/jobs" class="mt-4 inline-block text-sm font-semibold font-display text-navy-600 hover:underline">Browse Open Jobs →</RouterLink>
+    </div>
+
     <PlatformFeedbackWidget class="reveal" />
   </div>
 </template>
@@ -152,6 +179,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { tutorApi } from '@/api/tutor.js'
+import { tutorJobsApi } from '@/api/jobs.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { getInitials } from '@/utils/helpers.js'
 import { toast } from 'vue-sonner'
@@ -162,6 +190,7 @@ const auth = useAuthStore()
 const stats           = ref({})
 const loading         = ref(true)
 const uploadingAvatar = ref(false)
+const jobSummary      = ref({ applied: 0, shortlisted: 0, appointed: 0, connected: 0 })
 
 const initials  = computed(() => getInitials(auth.user?.name))
 const avatarUrl = computed(() => auth.user?.avatar_url || null)
@@ -193,8 +222,12 @@ const profileStatusLabel = computed(() => {
 
 onMounted(async () => {
   try {
-    const { data } = await tutorApi.getDashboard()
-    stats.value = data.data
+    const [dashRes, jobRes] = await Promise.all([
+      tutorApi.getDashboard(),
+      tutorJobsApi.dashboardSummary().catch(() => ({ data: { data: {} } })),
+    ])
+    stats.value      = dashRes.data.data
+    jobSummary.value = { ...jobSummary.value, ...(jobRes.data.data || {}) }
   } finally {
     loading.value = false
   }
