@@ -22,7 +22,7 @@ class ConnectionConnectedTutorNotification extends Notification implements Shoul
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("You've been connected with a guardian — TutorKhujo")
+            ->subject("You've been connected with a guardian — Apex Tutor")
             ->view('emails.connection-connected-tutor', [
                 'name'         => $notifiable->name,
                 'guardianName' => $this->guardianName,

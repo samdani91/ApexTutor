@@ -23,7 +23,7 @@ class ReviewRejectedNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("Your review was not approved — TutorKhujo")
+            ->subject("Your review was not approved — Apex Tutor")
             ->view('emails.review-rejected', [
                 'name'           => $notifiable->name,
                 'tutorName'      => $this->tutorName,

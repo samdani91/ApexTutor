@@ -10,7 +10,7 @@
   <p style="margin:0 0 16px;font-size:15px;color:#0F2E5C;font-weight:700;">Hello {{ $name }},</p>
   <p style="margin:0 0 20px;font-size:14px;color:#4A4332;line-height:1.7;">
     Your review for <strong style="color:#0F2E5C;">{{ $tutorName }}</strong> has been
-    <strong style="color:#059669;">approved</strong> by our moderation team and is now publicly visible on TutorKhujo.
+    <strong style="color:#059669;">approved</strong> by our moderation team and is now publicly visible on Apex Tutor.
   </p>
 
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
@@ -28,6 +28,6 @@
   </table>
 
   <p style="margin:0;font-size:14px;color:#4A4332;line-height:1.7;">
-    Your honest feedback helps other guardians make informed decisions. Thank you for helping the TutorKhujo community.
+    Your honest feedback helps other guardians make informed decisions. Thank you for helping the Apex Tutor community.
   </p>
 @endsection

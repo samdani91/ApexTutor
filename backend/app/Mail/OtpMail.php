@@ -19,10 +19,10 @@ class OtpMail extends Mailable
     public function envelope(): Envelope
     {
         $subject = match ($this->purpose) {
-            'email_verification' => 'Verify your email — TutorKhujo',
-            'password_reset'     => 'Reset your password — TutorKhujo',
-            'password_change'    => 'Password change request — TutorKhujo',
-            default              => 'Your verification code — TutorKhujo',
+            'email_verification' => 'Verify your email — Apex Tutor',
+            'password_reset'     => 'Reset your password — Apex Tutor',
+            'password_change'    => 'Password change request — Apex Tutor',
+            default              => 'Your verification code — Apex Tutor',
         };
         return new Envelope(subject: $subject);
     }

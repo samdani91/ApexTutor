@@ -29,7 +29,7 @@
       </label>
       <textarea v-model="quote" rows="4" maxlength="500"
         class="input text-sm resize-none"
-        placeholder="How has TutorKhujo helped you? Share your honest experience…" />
+        placeholder="How has Apex Tutor helped you? Share your honest experience…" />
       <div class="flex items-center justify-between mt-1.5">
         <p class="text-xs text-paper-400 font-body">{{ quote.length }}/500</p>
         <p v-if="existing" class="text-xs text-paper-400 font-body">Editing will reset to pending review</p>

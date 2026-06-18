@@ -8,13 +8,13 @@
   'icon'        => $isNid ? '&#128196;' : '&#9998;',
   'headline'    => 'Guardian Profile Updated',
   'subheadline' => $guardianName . ' has updated their ' . $typeLabel,
-  'preheader'   => $guardianName . ' updated their ' . $typeLabel . ' on TutorKhujo.',
+  'preheader'   => $guardianName . ' updated their ' . $typeLabel . ' on Apex Tutor.',
 ])
 
 @section('content')
 <p style="margin:0 0 16px;font-size:15px;color:#0F2E5C;font-weight:700;">Hello {{ $adminName }},</p>
 <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.7;">
-  <strong style="color:#0F2E5C;">{{ $guardianName }}</strong> has updated their {{ $typeLabel }} on TutorKhujo.
+  <strong style="color:#0F2E5C;">{{ $guardianName }}</strong> has updated their {{ $typeLabel }} on Apex Tutor.
 </p>
 @if($isNid)
 <p style="margin:0 0 20px;font-size:14px;color:#374151;line-height:1.7;">

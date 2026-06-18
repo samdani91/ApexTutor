@@ -1,7 +1,7 @@
 @php
   $accentColor = $accentColor ?? '#0F2E5C';
   $icon = $icon ?? 'i';
-  $headline = $headline ?? 'TutorKhujo Update';
+  $headline = $headline ?? 'Apex Tutor Update';
   $subheadline = $subheadline ?? null;
   $preheader = $preheader ?? $headline;
 @endphp
@@ -30,10 +30,10 @@
                     <table cellpadding="0" cellspacing="0" role="presentation">
                       <tr>
                         <td style="width:42px;height:42px;background:#F4B942;border-radius:10px;text-align:center;vertical-align:middle;">
-                          <span style="font-size:15px;line-height:42px;font-weight:800;color:#051736;letter-spacing:0.2px;">TK</span>
+                          <span style="font-size:15px;line-height:42px;font-weight:800;color:#051736;letter-spacing:0.2px;">AT</span>
                         </td>
                         <td style="padding-left:12px;vertical-align:middle;">
-                          <p style="margin:0;font-size:21px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;">TutorKhujo</p>
+                          <p style="margin:0;font-size:21px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;">Apex Tutor</p>
                           <p style="margin:3px 0 0;font-size:12px;color:#D6DEEC;">Verified tuition connections</p>
                         </td>
                       </tr>
@@ -73,7 +73,7 @@
           <tr>
             <td style="background:#FBF9F3;border-top:1px solid #ECE6D5;padding:18px 28px;">
               <p style="margin:0 0 4px;font-size:12px;color:#8F8467;line-height:1.5;">
-                &copy; {{ date('Y') }} TutorKhujo. This is an automated notification. Please do not reply.
+                &copy; {{ date('Y') }} Apex Tutor. This is an automated notification. Please do not reply.
               </p>
               <p style="margin:0;font-size:12px;color:#B8AC91;line-height:1.5;">
                 Built for Bangladesh tuition search.

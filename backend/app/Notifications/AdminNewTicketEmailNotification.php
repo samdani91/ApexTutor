@@ -21,7 +21,7 @@ class AdminNewTicketEmailNotification extends Notification implements ShouldQueu
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("New support ticket [{$this->ticket->ticket_number}] — TutorKhujo")
+            ->subject("New support ticket [{$this->ticket->ticket_number}] — Apex Tutor")
             ->view('emails.admin-new-ticket', [
                 'adminName'     => $notifiable->name,
                 'ticket'        => $this->ticket,

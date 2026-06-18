@@ -26,7 +26,7 @@ class AdminPendingVideoNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("{$this->tutorName} uploaded a teaching video for review — TutorKhujo")
+            ->subject("{$this->tutorName} uploaded a teaching video for review — Apex Tutor")
             ->view('emails.admin-pending-video', [
                 'adminName'  => $notifiable->name,
                 'tutorName'  => $this->tutorName,

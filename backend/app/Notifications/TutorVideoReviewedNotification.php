@@ -26,8 +26,8 @@ class TutorVideoReviewedNotification extends Notification implements ShouldQueue
     {
         return (new MailMessage)
             ->subject($this->action === 'approved'
-                ? "Your teaching video has been approved — TutorKhujo"
-                : "Your teaching video was not approved — TutorKhujo"
+                ? "Your teaching video has been approved — Apex Tutor"
+                : "Your teaching video was not approved — Apex Tutor"
             )
             ->view('emails.tutor-video-reviewed', [
                 'name'       => $notifiable->name,

@@ -24,7 +24,7 @@ class TicketStatusUpdatedEmailNotification extends Notification implements Shoul
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("Your ticket [{$this->ticket->ticket_number}] status updated — TutorKhujo")
+            ->subject("Your ticket [{$this->ticket->ticket_number}] status updated — Apex Tutor")
             ->view('emails.ticket-status-updated', [
                 'name'      => $notifiable->name,
                 'ticket'    => $this->ticket,

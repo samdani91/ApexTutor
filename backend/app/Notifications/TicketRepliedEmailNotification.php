@@ -25,7 +25,7 @@ class TicketRepliedEmailNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("New reply on your ticket [{$this->ticket->ticket_number}] — TutorKhujo")
+            ->subject("New reply on your ticket [{$this->ticket->ticket_number}] — Apex Tutor")
             ->view('emails.ticket-replied', [
                 'name'        => $notifiable->name,
                 'ticket'      => $this->ticket,

@@ -26,7 +26,7 @@ class AdminNewFeedbackNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("{$this->userName} submitted platform feedback — TutorKhujo")
+            ->subject("{$this->userName} submitted platform feedback — Apex Tutor")
             ->view('emails.admin-new-feedback', [
                 'name'         => $notifiable->name,
                 'userName'     => $this->userName,

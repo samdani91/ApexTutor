@@ -25,7 +25,7 @@ class AdminGuardianProfileUpdatedNotification extends Notification implements Sh
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("Guardian profile updated — TutorKhujo")
+            ->subject("Guardian profile updated — Apex Tutor")
             ->view('emails.admin-guardian-profile-updated', [
                 'adminName'    => $notifiable->name,
                 'guardianName' => $this->guardianName,

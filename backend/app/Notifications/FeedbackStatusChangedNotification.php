@@ -22,8 +22,8 @@ class FeedbackStatusChangedNotification extends Notification implements ShouldQu
     public function toMail(object $notifiable): MailMessage
     {
         $subject = $this->status === 'approved'
-            ? 'Your feedback is now on the landing page — TutorKhujo'
-            : 'Update on your platform feedback — TutorKhujo';
+            ? 'Your feedback is now on the landing page — Apex Tutor'
+            : 'Update on your platform feedback — Apex Tutor';
 
         return (new MailMessage)
             ->subject($subject)

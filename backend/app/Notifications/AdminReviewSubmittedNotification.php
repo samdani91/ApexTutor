@@ -25,7 +25,7 @@ class AdminReviewSubmittedNotification extends Notification implements ShouldQue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("{$this->guardianName} submitted a review — TutorKhujo")
+            ->subject("{$this->guardianName} submitted a review — Apex Tutor")
             ->view('emails.admin-review-submitted', [
                 'name'         => $notifiable->name,
                 'guardianName' => $this->guardianName,

@@ -20,7 +20,7 @@
           </span>
           <span>
             <span class="block font-display font-bold text-white group-hover:text-gold-200 transition-colors text-base leading-tight">
-              TutorKhujo
+              Apex Tutor
             </span>
             <span class="block text-[10px] font-body text-navy-300 uppercase tracking-widest leading-none mt-0.5 capitalize">
               {{ auth.user?.role }}
@@ -141,7 +141,7 @@
           </svg>
         </button>
         <RouterLink to="/" class="font-display font-bold text-white hover:text-gold-200 transition-colors">
-          TutorKhujo
+          Apex Tutor
         </RouterLink>
         <span class="text-white/25 text-sm">·</span>
         <span class="font-display font-semibold text-sm text-navy-100 truncate">{{ currentLabel }}</span>
@@ -201,7 +201,6 @@ const navItems = computed(() => {
   if (auth.isTutor) return [
     { to: '/tutor/dashboard',           label: 'Dashboard',          icon: 'home'      },
     { to: '/tutor/profile',             label: 'My Profile',         icon: 'user'      },
-    { to: '/jobs',                      label: 'Tuition Jobs',       icon: 'briefcase' },
     { to: '/tutor/applications',        label: 'My Applications',    icon: 'clipboard' },
     { to: '/tutor/confirmed-tuitions',  label: 'Confirmed Tuitions', icon: 'check'     },
     { to: '/tutor/reviews',             label: 'My Reviews',         icon: 'star'      },

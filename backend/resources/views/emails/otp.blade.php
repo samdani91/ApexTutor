@@ -16,18 +16,18 @@
   'icon'        => $icon,
   'headline'    => $headline,
   'subheadline' => $subheadline,
-  'preheader'   => 'Your TutorKhujo verification code is ' . $code,
+  'preheader'   => 'Your Apex Tutor verification code is ' . $code,
 ])
 
 @section('content')
   <p style="margin:0 0 18px;font-size:15px;color:#0F2E5C;font-weight:700;">Hello,</p>
   @if($purpose === 'email_verification')
     <p style="margin:0 0 22px;font-size:14px;color:#4A4332;line-height:1.7;">
-      Thanks for joining TutorKhujo. Enter the code below to verify your email and activate your account.
+      Thanks for joining Apex Tutor. Enter the code below to verify your email and activate your account.
     </p>
   @elseif($purpose === 'password_reset')
     <p style="margin:0 0 22px;font-size:14px;color:#4A4332;line-height:1.7;">
-      We received a request to reset the password for your TutorKhujo account. Enter the code below to proceed.
+      We received a request to reset the password for your Apex Tutor account. Enter the code below to proceed.
     </p>
   @else
     <p style="margin:0 0 22px;font-size:14px;color:#4A4332;line-height:1.7;">

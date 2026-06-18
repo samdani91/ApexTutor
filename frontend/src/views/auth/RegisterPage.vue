@@ -36,7 +36,7 @@
           </div>
         </div>
       </div>
-      <p class="relative z-10 text-navy-500 text-xs font-body">© 2026 TutorKhujo</p>
+      <p class="relative z-10 text-navy-500 text-xs font-body">© 2026 Apex Tutor</p>
     </div>
 
     <!-- ── Right form panel ── -->
@@ -285,7 +285,7 @@ async function handleVerify() {
   try {
     const { data } = await authApi.verifyEmail({ email: rawEmail.value, code: otpCode.value })
     auth.setAuth(data.data.user, data.data.token)
-    toast.success('Email verified! Welcome to TutorKhujo.')
+    toast.success('Email verified! Welcome to Apex Tutor.')
     if (auth.isTutor) router.push('/tutor/profile')
     else router.push('/guardian/dashboard')
   } catch (e) {

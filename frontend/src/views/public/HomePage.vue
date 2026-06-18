@@ -203,7 +203,7 @@
 
       <TestimonialsSection
         v-if="guardianTestimonials.length"
-        title="What guardians say about TutorKhujo"
+        title="What guardians say about Apex Tutor"
         subtitle="Hire a tutor today and start learning with confidence."
         cta-label="Hire a Tutor"
         cta-to="/search"
@@ -242,7 +242,7 @@
 
       <TestimonialsSection
         v-if="tutorTestimonials.length"
-        title="What tutors say about TutorKhujo"
+        title="What tutors say about Apex Tutor"
         subtitle="Build a verified profile and connect with suitable guardians."
         cta-label="Become a Tutor"
         cta-to="/register"

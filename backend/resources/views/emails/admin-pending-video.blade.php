@@ -3,7 +3,7 @@
   'icon' => '&#9654;',
   'headline' => 'New Teaching Video Uploaded',
   'subheadline' => 'Pending your review before going live',
-  'preheader' => '{{ $tutorName }} has uploaded a teaching video that needs your review on TutorKhujo.',
+  'preheader' => '{{ $tutorName }} has uploaded a teaching video that needs your review on Apex Tutor.',
 ])
 
 @section('content')

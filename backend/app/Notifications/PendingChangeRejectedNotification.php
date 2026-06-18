@@ -36,7 +36,7 @@ class PendingChangeRejectedNotification extends Notification implements ShouldQu
         );
 
         return (new MailMessage)
-            ->subject('Your profile changes were not approved — TutorKhujo')
+            ->subject('Your profile changes were not approved — Apex Tutor')
             ->view('emails.pending-rejected', [
                 'name'      => $notifiable->name,
                 'note'      => $this->note,

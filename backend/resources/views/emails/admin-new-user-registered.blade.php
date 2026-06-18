@@ -2,14 +2,14 @@
     'accentColor' => '#0f2e5c',
     'icon'        => '👤',
     'headline'    => 'New ' . $roleLabel . ' Registered',
-    'subheadline' => 'A new user has verified their email and joined TutorKhujo',
+    'subheadline' => 'A new user has verified their email and joined Apex Tutor',
     'preheader'   => "{$userName} joined as a {$roleLabel}",
 ])
 
 @section('content')
 <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#374151;">Hi <strong>{{ $name }}</strong>,</p>
 <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#374151;">
-  A new user has just verified their email and created an account on TutorKhujo.
+  A new user has just verified their email and created an account on Apex Tutor.
 </p>
 <div style="background:#f0f4ff;border:1px solid #c7d2fe;border-radius:8px;padding:16px;margin:0 0 16px;">
   <table width="100%" cellpadding="0" cellspacing="0">
@@ -30,5 +30,5 @@
     </tr>
   </table>
 </div>
-<p style="margin:0;font-size:14px;color:#9ca3af;">— The TutorKhujo System</p>
+<p style="margin:0;font-size:14px;color:#9ca3af;">— The Apex Tutor System</p>
 @endsection

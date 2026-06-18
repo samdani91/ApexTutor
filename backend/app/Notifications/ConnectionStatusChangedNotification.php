@@ -11,11 +11,11 @@ class ConnectionStatusChangedNotification extends Notification implements Should
     use Queueable;
 
     private static array $subjects = [
-        'admin_reviewing'  => 'We\'re reviewing your connection request — TutorKhujo',
-        'tutor_contacted'  => 'We\'ve contacted the tutor on your behalf — TutorKhujo',
-        'confirmed'        => 'Your tuition has been confirmed — TutorKhujo',
-        'declined'         => 'Connection request update — TutorKhujo',
-        'closed'           => 'Your connection has been closed — TutorKhujo',
+        'admin_reviewing'  => 'We\'re reviewing your connection request — Apex Tutor',
+        'tutor_contacted'  => 'We\'ve contacted the tutor on your behalf — Apex Tutor',
+        'confirmed'        => 'Your tuition has been confirmed — Apex Tutor',
+        'declined'         => 'Connection request update — Apex Tutor',
+        'closed'           => 'Your connection has been closed — Apex Tutor',
     ];
 
     public function __construct(
@@ -31,7 +31,7 @@ class ConnectionStatusChangedNotification extends Notification implements Should
 
     public function toMail(object $notifiable): MailMessage
     {
-        $subject = self::$subjects[$this->status] ?? 'Connection update — TutorKhujo';
+        $subject = self::$subjects[$this->status] ?? 'Connection update — Apex Tutor';
 
         return (new MailMessage)
             ->subject($subject)

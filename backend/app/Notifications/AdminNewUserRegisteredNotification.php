@@ -32,7 +32,7 @@ class AdminNewUserRegisteredNotification extends Notification implements ShouldQ
         };
 
         return (new MailMessage)
-            ->subject("New {$roleLabel} registered — TutorKhujo")
+            ->subject("New {$roleLabel} registered — Apex Tutor")
             ->view('emails.admin-new-user-registered', [
                 'name'      => $notifiable->name,
                 'userName'  => $this->userName,

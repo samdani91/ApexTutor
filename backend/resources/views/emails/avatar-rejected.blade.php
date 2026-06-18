@@ -3,7 +3,7 @@
   'icon' => '&#128247;',
   'headline' => 'Photo Not Approved',
   'subheadline' => 'Please upload a new profile photo',
-  'preheader' => 'Your TutorKhujo profile photo was not approved.',
+  'preheader' => 'Your Apex Tutor profile photo was not approved.',
 ])
 
 @section('content')
@@ -24,6 +24,6 @@
   @endif
 
   <p style="margin:0;padding-top:18px;border-top:1px solid #ECE6D5;font-size:13px;color:#6B6248;line-height:1.6;">
-    Log in to your TutorKhujo dashboard to upload a new photo. If you believe this decision is incorrect, please contact support.
+    Log in to your Apex Tutor dashboard to upload a new photo. If you believe this decision is incorrect, please contact support.
   </p>
 @endsection

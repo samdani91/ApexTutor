@@ -18,7 +18,7 @@ class PendingChangeApprovedNotification extends Notification implements ShouldQu
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Your profile changes have been approved — TutorKhujo')
+            ->subject('Your profile changes have been approved — Apex Tutor')
             ->view('emails.pending-approved', [
                 'name' => $notifiable->name,
             ]);

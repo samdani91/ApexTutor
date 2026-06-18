@@ -38,7 +38,7 @@
           </li>
         </ul>
       </div>
-      <p class="relative z-10 text-navy-500 text-xs font-body">© 2026 TutorKhujo</p>
+      <p class="relative z-10 text-navy-500 text-xs font-body">© 2026 Apex Tutor</p>
     </div>
 
     <!-- Right form panel -->

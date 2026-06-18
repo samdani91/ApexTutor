@@ -22,7 +22,7 @@ class AvatarRejectedNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Your profile photo was not approved — TutorKhujo')
+            ->subject('Your profile photo was not approved — Apex Tutor')
             ->view('emails.avatar-rejected', [
                 'name' => $notifiable->name,
                 'note' => $this->note,

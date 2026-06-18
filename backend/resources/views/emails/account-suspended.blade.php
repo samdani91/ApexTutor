@@ -3,13 +3,13 @@
   'icon' => '&#9888;',
   'headline' => 'Account Suspended',
   'subheadline' => 'Your access has been temporarily restricted',
-  'preheader' => 'Your TutorKhujo account has been suspended.',
+  'preheader' => 'Your Apex Tutor account has been suspended.',
 ])
 
 @section('content')
   <p style="margin:0 0 16px;font-size:15px;color:#0F2E5C;font-weight:700;">Hello {{ $name }},</p>
   <p style="margin:0 0 20px;font-size:14px;color:#4A4332;line-height:1.7;">
-    Your TutorKhujo account has been <strong style="color:#DC2626;">suspended</strong> by our administration team.
+    Your Apex Tutor account has been <strong style="color:#DC2626;">suspended</strong> by our administration team.
     You will not be able to log in until the suspension is lifted.
   </p>
 

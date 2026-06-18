@@ -3,14 +3,14 @@
   'icon' => '&#10003;',
   'headline' => 'Profile Verified',
   'subheadline' => "You're now a verified tutor",
-  'preheader' => 'Your TutorKhujo profile has been verified.',
+  'preheader' => 'Your Apex Tutor profile has been verified.',
 ])
 
 @section('content')
   <p style="margin:0 0 16px;font-size:15px;color:#0F2E5C;font-weight:700;">Hello {{ $name }},</p>
   <p style="margin:0 0 20px;font-size:14px;color:#4A4332;line-height:1.7;">
     Congratulations. Your tutor profile has been <strong style="color:#059669;">reviewed and verified</strong>
-    by our admin team. Your profile is now live and visible to guardians searching for tutors on TutorKhujo.
+    by our admin team. Your profile is now live and visible to guardians searching for tutors on Apex Tutor.
   </p>
 
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
@@ -27,6 +27,6 @@
   </p>
 
   <p style="margin:0;padding-top:18px;border-top:1px solid #ECE6D5;font-size:13px;color:#6B6248;line-height:1.6;">
-    Log in to your TutorKhujo dashboard to view your live profile.
+    Log in to your Apex Tutor dashboard to view your live profile.
   </p>
 @endsection

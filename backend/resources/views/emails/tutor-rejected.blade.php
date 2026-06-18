@@ -3,7 +3,7 @@
   'icon' => '&#10005;',
   'headline' => 'Verification Not Approved',
   'subheadline' => 'Please review the feedback below',
-  'preheader' => 'Your TutorKhujo profile verification was not approved.',
+  'preheader' => 'Your Apex Tutor profile verification was not approved.',
 ])
 
 @section('content')
@@ -26,6 +26,6 @@
   </p>
 
   <p style="margin:0;padding-top:18px;border-top:1px solid #ECE6D5;font-size:13px;color:#6B6248;line-height:1.6;">
-    Log in to your TutorKhujo dashboard to update your profile and resubmit.
+    Log in to your Apex Tutor dashboard to update your profile and resubmit.
   </p>
 @endsection

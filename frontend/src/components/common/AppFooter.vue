@@ -12,7 +12,7 @@
               TK
             </span>
             <span>
-              <span class="block font-display text-xl font-bold leading-tight text-white">TutorKhujo</span>
+              <span class="block font-display text-xl font-bold leading-tight text-white">Apex Tutor</span>
               <span class="block font-body text-xs text-navy-300 mt-0.5">Verified tuition connections</span>
             </span>
           </RouterLink>
@@ -58,7 +58,7 @@
 
       <!-- Bottom bar -->
       <div class="mt-7 border-t border-white/10 pt-5 font-body text-xs text-navy-400">
-        <span>© {{ currentYear }} TutorKhujo. All rights reserved.</span>
+        <span>© {{ currentYear }} Apex Tutor. All rights reserved.</span>
       </div>
     </div>
   </footer>

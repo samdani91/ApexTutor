@@ -3,13 +3,13 @@
   'icon' => '&hearts;',
   'headline' => "You've Been Shortlisted",
   'subheadline' => 'A guardian is interested in you',
-  'preheader' => "{$guardianName} shortlisted you on TutorKhujo.",
+  'preheader' => "{$guardianName} shortlisted you on Apex Tutor.",
 ])
 
 @section('content')
   <p style="margin:0 0 16px;font-size:15px;color:#0F2E5C;font-weight:700;">Hello {{ $name }},</p>
   <p style="margin:0 0 20px;font-size:14px;color:#4A4332;line-height:1.7;">
-    Exciting news. <strong style="color:#0F2E5C;">{{ $guardianName }}</strong> has added you to their shortlist on TutorKhujo.
+    Exciting news. <strong style="color:#0F2E5C;">{{ $guardianName }}</strong> has added you to their shortlist on Apex Tutor.
     This means they are considering you as a tutor for their student.
   </p>
 

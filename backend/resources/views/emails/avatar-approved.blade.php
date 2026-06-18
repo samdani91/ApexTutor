@@ -3,7 +3,7 @@
   'icon' => '&#128247;',
   'headline' => 'Photo Approved',
   'subheadline' => 'Your profile picture is now live',
-  'preheader' => 'Your TutorKhujo profile photo has been approved.',
+  'preheader' => 'Your Apex Tutor profile photo has been approved.',
 ])
 
 @section('content')
@@ -13,6 +13,6 @@
     by our admin team. Your new photo is now visible across the platform.
   </p>
   <p style="margin:0;padding-top:18px;border-top:1px solid #ECE6D5;font-size:13px;color:#6B6248;line-height:1.6;">
-    Log in to your TutorKhujo dashboard to view your updated profile.
+    Log in to your Apex Tutor dashboard to view your updated profile.
   </p>
 @endsection

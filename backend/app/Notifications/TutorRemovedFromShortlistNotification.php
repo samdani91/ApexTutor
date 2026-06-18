@@ -23,7 +23,7 @@ class TutorRemovedFromShortlistNotification extends Notification implements Shou
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("{$this->guardianName} removed you from their shortlist — TutorKhujo")
+            ->subject("{$this->guardianName} removed you from their shortlist — Apex Tutor")
             ->view('emails.tutor-removed-from-shortlist', [
                 'name'         => $notifiable->name,
                 'guardianName' => $this->guardianName,

@@ -18,7 +18,7 @@ class AccountReactivatedNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Your account has been reactivated — TutorKhujo')
+            ->subject('Your account has been reactivated — Apex Tutor')
             ->view('emails.account-reactivated', [
                 'name' => $notifiable->name,
             ]);

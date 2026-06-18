@@ -22,7 +22,7 @@ class ConnectionConfirmedTutorNotification extends Notification implements Shoul
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("Your tuition has been confirmed — TutorKhujo")
+            ->subject("Your tuition has been confirmed — Apex Tutor")
             ->view('emails.connection-confirmed-tutor', [
                 'name'         => $notifiable->name,
                 'guardianName' => $this->guardianName,

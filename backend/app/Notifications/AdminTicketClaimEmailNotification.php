@@ -39,6 +39,6 @@ class AdminTicketClaimEmailNotification extends Notification implements ShouldQu
     private function subject(): string
     {
         $verb = $this->action === 'claimed' ? 'Claimed' : 'Unclaimed';
-        return "Ticket [{$this->ticket->ticket_number}] {$verb} — TutorKhujo";
+        return "Ticket [{$this->ticket->ticket_number}] {$verb} — Apex Tutor";
     }
 }

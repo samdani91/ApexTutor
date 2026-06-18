@@ -3,13 +3,13 @@
   'icon' => '&#10003;',
   'headline' => 'Account Reactivated',
   'subheadline' => 'Your account is active again',
-  'preheader' => 'Your TutorKhujo account has been reactivated.',
+  'preheader' => 'Your Apex Tutor account has been reactivated.',
 ])
 
 @section('content')
   <p style="margin:0 0 16px;font-size:15px;color:#0F2E5C;font-weight:700;">Hello {{ $name }},</p>
   <p style="margin:0 0 20px;font-size:14px;color:#4A4332;line-height:1.7;">
-    Good news — your TutorKhujo account has been <strong style="color:#059669;">reactivated</strong>
+    Good news — your Apex Tutor account has been <strong style="color:#059669;">reactivated</strong>
     by our administration team. You can now log in and use all platform features again.
   </p>
 
@@ -23,6 +23,6 @@
   </table>
 
   <p style="margin:0;padding-top:18px;border-top:1px solid #ECE6D5;font-size:13px;color:#6B6248;line-height:1.6;">
-    Log in to your TutorKhujo dashboard to continue where you left off.
+    Log in to your Apex Tutor dashboard to continue where you left off.
   </p>
 @endsection

@@ -18,7 +18,7 @@ class TutorVerificationApprovedNotification extends Notification implements Shou
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Your profile has been verified — TutorKhujo')
+            ->subject('Your profile has been verified — Apex Tutor')
             ->view('emails.tutor-verified', [
                 'name' => $notifiable->name,
             ]);

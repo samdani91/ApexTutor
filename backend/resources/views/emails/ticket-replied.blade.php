@@ -15,5 +15,5 @@
   <p style="margin:0 0 4px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">{{ $replierName }} wrote:</p>
   <p style="margin:0;font-size:14px;color:#374151;line-height:1.6;">{{ $replyBody }}</p>
 </div>
-<p style="margin:0;font-size:14px;color:#9ca3af;">— The TutorKhujo Support Team</p>
+<p style="margin:0;font-size:14px;color:#9ca3af;">— The Apex Tutor Support Team</p>
 @endsection

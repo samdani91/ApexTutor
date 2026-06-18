@@ -25,7 +25,7 @@ class AdminPendingProfileChangeNotification extends Notification implements Shou
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("{$this->tutorName} submitted profile changes for review — TutorKhujo")
+            ->subject("{$this->tutorName} submitted profile changes for review — Apex Tutor")
             ->view('emails.admin-pending-change', [
                 'adminName' => $notifiable->name,
                 'tutorName' => $this->tutorName,

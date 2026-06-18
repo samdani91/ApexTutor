@@ -8,7 +8,7 @@
   'headline'    => $isApproved ? 'Video Approved!' : 'Video Not Approved',
   'subheadline' => $isApproved ? 'Your teaching video is now live' : 'Action required on your teaching video',
   'preheader'   => $isApproved
-    ? 'Your teaching video has been approved and is now visible on your TutorKhujo profile.'
+    ? 'Your teaching video has been approved and is now visible on your Apex Tutor profile.'
     : 'Your teaching video was not approved. Please review the feedback.',
 ])
 
@@ -40,7 +40,7 @@
       </table>
     @endif
     <p style="margin:0 0 20px;font-size:14px;color:#4A4332;line-height:1.7;">
-      You can remove this video and upload a new one from your TutorKhujo dashboard.
+      You can remove this video and upload a new one from your Apex Tutor dashboard.
     </p>
   @endif
 

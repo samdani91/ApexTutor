@@ -24,7 +24,7 @@ class ConnectionRequestedNotification extends Notification implements ShouldQueu
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("{$this->guardianName} requested a connection — TutorKhujo")
+            ->subject("{$this->guardianName} requested a connection — Apex Tutor")
             ->view('emails.connection-requested', [
                 'name'            => $notifiable->name,
                 'guardianName'    => $this->guardianName,

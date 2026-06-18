@@ -10,7 +10,7 @@
   $bodies = [
     'admin_reviewing' => "We received your connection request with <strong style=\"color:#0F2E5C;\">{$tutorName}</strong> and our team is currently reviewing it. We will be in touch shortly.",
     'tutor_contacted' => "Great news. We reached out to <strong style=\"color:#0F2E5C;\">{$tutorName}</strong> on your behalf. We will update you once we hear back.",
-    'confirmed' => "Your tuition with <strong style=\"color:#0F2E5C;\">{$tutorName}</strong> has been confirmed. You can find this tutor in your <strong>Confirmed Tuitions</strong> section on TutorKhujo.",
+    'confirmed' => "Your tuition with <strong style=\"color:#0F2E5C;\">{$tutorName}</strong> has been confirmed. You can find this tutor in your <strong>Confirmed Tuitions</strong> section on Apex Tutor.",
     'declined' => "Unfortunately, your connection request with <strong style=\"color:#0F2E5C;\">{$tutorName}</strong> could not be fulfilled at this time.",
     'closed' => "Your connection with <strong style=\"color:#0F2E5C;\">{$tutorName}</strong> has been closed.",
   ];
@@ -22,7 +22,7 @@
   'icon' => $c['icon'],
   'headline' => $c['headline'],
   'subheadline' => $c['sub'],
-  'preheader' => $c['headline'] . ' on TutorKhujo.',
+  'preheader' => $c['headline'] . ' on Apex Tutor.',
 ])
 
 @section('content')
@@ -41,6 +41,6 @@
   @endif
 
   <p style="margin:0;padding-top:18px;border-top:1px solid #ECE6D5;font-size:13px;color:#6B6248;line-height:1.6;">
-    Log in to your TutorKhujo dashboard to view your connection details.
+    Log in to your Apex Tutor dashboard to view your connection details.
   </p>
 @endsection

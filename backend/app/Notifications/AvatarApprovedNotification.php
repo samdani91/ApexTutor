@@ -18,7 +18,7 @@ class AvatarApprovedNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Your profile photo has been approved — TutorKhujo')
+            ->subject('Your profile photo has been approved — Apex Tutor')
             ->view('emails.avatar-approved', [
                 'name' => $notifiable->name,
             ]);

@@ -3,13 +3,13 @@
     'icon'        => '🔗',
     'headline'    => 'New Connection Request',
     'subheadline' => 'A guardian wants to connect with you',
-    'preheader'   => "{$guardianName} sent you a connection request on TutorKhujo",
+    'preheader'   => "{$guardianName} sent you a connection request on Apex Tutor",
 ])
 
 @section('content')
 <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#374151;">Hi <strong>{{ $name }}</strong>,</p>
 <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#374151;">
-  <strong style="color:#1a6b4a;">{{ $guardianName }}</strong> has sent you a connection request on TutorKhujo.
+  <strong style="color:#1a6b4a;">{{ $guardianName }}</strong> has sent you a connection request on Apex Tutor.
   Our team will review the request and be in touch shortly.
 </p>
 @if($guardianMessage)
@@ -21,5 +21,5 @@
 <p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#6b7280;">
   Make sure your profile is complete and up to date so the guardian can learn more about you.
 </p>
-<p style="margin:0;font-size:14px;color:#9ca3af;">— The TutorKhujo Team</p>
+<p style="margin:0;font-size:14px;color:#9ca3af;">— The Apex Tutor Team</p>
 @endsection

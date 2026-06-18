@@ -20,7 +20,7 @@ class AccountSuspendedNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Your account has been suspended — TutorKhujo')
+            ->subject('Your account has been suspended — Apex Tutor')
             ->view('emails.account-suspended', [
                 'name'   => $notifiable->name,
                 'reason' => $this->reason,

@@ -3,7 +3,7 @@
   'icon' => '&#9998;',
   'headline' => 'Profile Changes Submitted',
   'subheadline' => 'A tutor is waiting for your review',
-  'preheader' => '{{ $tutorName }} has submitted profile changes that need your review on TutorKhujo.',
+  'preheader' => '{{ $tutorName }} has submitted profile changes that need your review on Apex Tutor.',
 ])
 
 @section('content')

@@ -9,7 +9,7 @@
 @section('content')
   <p style="margin:0 0 16px;font-size:15px;color:#0F2E5C;font-weight:700;">Hello {{ $name }},</p>
   <p style="margin:0 0 20px;font-size:14px;color:#4A4332;line-height:1.7;">
-    A guardian has submitted a connection request through TutorKhujo.
+    A guardian has submitted a connection request through Apex Tutor.
   </p>
 
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">

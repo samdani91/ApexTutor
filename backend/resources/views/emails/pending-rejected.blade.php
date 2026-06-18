@@ -3,7 +3,7 @@
   'icon' => '&#10005;',
   'headline' => 'Changes Not Approved',
   'subheadline' => 'Action required on your profile',
-  'preheader' => 'Your TutorKhujo profile changes were not approved.',
+  'preheader' => 'Your Apex Tutor profile changes were not approved.',
 ])
 
 @section('content')
@@ -49,6 +49,6 @@
   @endif
 
   <p style="margin:0;padding-top:18px;border-top:1px solid #ECE6D5;font-size:13px;color:#6B6248;line-height:1.6;">
-    Log in to your TutorKhujo dashboard to update your profile and resubmit for review. If you believe this decision is incorrect, please contact support.
+    Log in to your Apex Tutor dashboard to update your profile and resubmit for review. If you believe this decision is incorrect, please contact support.
   </p>
 @endsection

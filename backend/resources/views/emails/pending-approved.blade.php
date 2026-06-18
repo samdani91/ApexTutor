@@ -3,7 +3,7 @@
   'icon' => '&#10003;',
   'headline' => 'Changes Approved',
   'subheadline' => 'Your profile updates are now live',
-  'preheader' => 'Your TutorKhujo profile changes have been approved.',
+  'preheader' => 'Your Apex Tutor profile changes have been approved.',
 ])
 
 @section('content')
@@ -17,6 +17,6 @@
   </p>
 
   <p style="margin:0;padding-top:18px;border-top:1px solid #ECE6D5;font-size:13px;color:#6B6248;line-height:1.6;">
-    You can view your live profile by logging in to your TutorKhujo dashboard.
+    You can view your live profile by logging in to your Apex Tutor dashboard.
   </p>
 @endsection

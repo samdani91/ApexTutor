@@ -34,5 +34,5 @@
     </tr>
   </table>
 </div>
-<p style="margin:0;font-size:14px;color:#9ca3af;">— The TutorKhujo Support Team</p>
+<p style="margin:0;font-size:14px;color:#9ca3af;">— The Apex Tutor Support Team</p>
 @endsection

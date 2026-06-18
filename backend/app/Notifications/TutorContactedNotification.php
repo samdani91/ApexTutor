@@ -22,7 +22,7 @@ class TutorContactedNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("You have been contacted for a tuition — TutorKhujo")
+            ->subject("You have been contacted for a tuition — Apex Tutor")
             ->view('emails.tutor-contacted', [
                 'name'         => $notifiable->name,
                 'guardianName' => $this->guardianName,

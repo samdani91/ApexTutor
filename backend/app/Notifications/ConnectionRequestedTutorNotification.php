@@ -24,7 +24,7 @@ class ConnectionRequestedTutorNotification extends Notification implements Shoul
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("{$this->guardianName} wants to connect with you — TutorKhujo")
+            ->subject("{$this->guardianName} wants to connect with you — Apex Tutor")
             ->view('emails.connection-requested-tutor', [
                 'name'            => $notifiable->name,
                 'guardianName'    => $this->guardianName,

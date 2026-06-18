@@ -34,5 +34,5 @@
   <p style="margin:0;font-size:14px;color:#374151;line-height:1.7;font-style:italic;">"{{ $quote }}"</p>
 </div>
 <p style="margin:0;font-size:14px;color:#9ca3af;">Log in to the admin panel to approve or reject this feedback.</p>
-<p style="margin:12px 0 0;font-size:14px;color:#9ca3af;">— The TutorKhujo System</p>
+<p style="margin:12px 0 0;font-size:14px;color:#9ca3af;">— The Apex Tutor System</p>
 @endsection

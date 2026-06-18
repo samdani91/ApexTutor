@@ -19,7 +19,7 @@ class TutorProfileEditedByAdminNotification extends Notification implements Shou
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Your tutor profile has been updated — TutorKhujo')
+            ->subject('Your tutor profile has been updated — Apex Tutor')
             ->view('emails.tutor-profile-edited-admin', [
                 'name' => $notifiable->name,
             ]);

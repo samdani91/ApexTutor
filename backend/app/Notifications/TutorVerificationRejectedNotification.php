@@ -22,7 +22,7 @@ class TutorVerificationRejectedNotification extends Notification implements Shou
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Profile verification update — TutorKhujo')
+            ->subject('Profile verification update — Apex Tutor')
             ->view('emails.tutor-rejected', [
                 'name'   => $notifiable->name,
                 'reason' => $this->reason,

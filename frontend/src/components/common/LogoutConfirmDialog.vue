@@ -13,7 +13,7 @@
               </svg>
             </div>
             <h3 class="font-display font-bold text-white text-xl leading-tight">Log Out?</h3>
-            <p class="text-red-200 text-xs font-body mt-1 tracking-wide">TutorKhujo</p>
+            <p class="text-red-200 text-xs font-body mt-1 tracking-wide">Apex Tutor</p>
           </div>
           <!-- Body -->
           <div class="px-6 py-5">

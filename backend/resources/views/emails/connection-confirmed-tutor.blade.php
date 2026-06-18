@@ -27,6 +27,6 @@
   </p>
 
   <p style="margin:0;padding-top:18px;border-top:1px solid #ECE6D5;font-size:13px;color:#6B6248;line-height:1.6;">
-    Log in to your TutorKhujo dashboard to view this confirmed tuition.
+    Log in to your Apex Tutor dashboard to view this confirmed tuition.
   </p>
 @endsection

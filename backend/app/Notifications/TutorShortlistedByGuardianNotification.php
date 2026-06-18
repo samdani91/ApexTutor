@@ -23,7 +23,7 @@ class TutorShortlistedByGuardianNotification extends Notification implements Sho
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("{$this->guardianName} shortlisted you — TutorKhujo")
+            ->subject("{$this->guardianName} shortlisted you — Apex Tutor")
             ->view('emails.tutor-shortlisted', [
                 'name'         => $notifiable->name,
                 'guardianName' => $this->guardianName,
