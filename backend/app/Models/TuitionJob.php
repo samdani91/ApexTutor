@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class TuitionJob extends Model
 {
     protected $fillable = [
-        'public_id', 'guardian_profile_id', 'title', 'tuition_type',
+        'public_id', 'guardian_profile_id', 'title', 'tuition_type', 'medium', 'tutoring_style',
         'district_id', 'area_id', 'address_details', 'class_level',
         'student_gender', 'num_students', 'tutor_gender_pref', 'offered_salary',
         'hire_date', 'tutoring_time', 'tutoring_days_per_week',
@@ -41,21 +41,14 @@ class TuitionJob extends Model
     public function subjects(): BelongsToMany { return $this->belongsToMany(Subject::class, 'tuition_job_subjects'); }
     public function applications(): HasMany { return $this->hasMany(TuitionJobApplication::class); }
 
-    public static function buildTitle(string $classLevel, array $subjectNames, string $tuitionType): string
+    public static function buildTitle(string $classLevel, array $subjectNames, string $tuitionType, ?int $daysPerWeek = null): string
     {
-        $classLabel = self::classLabel($classLevel);
-        $typeWord   = match ($tuitionType) {
-            'home'           => 'Home',
-            'online'         => 'Online',
-            'group'          => 'Group',
-            'home_and_online'=> 'Home/Online',
-            default          => 'Private',
-        };
-        $subjectPart = '';
-        if (!empty($subjectNames)) {
-            $subjectPart = implode(' & ', array_slice($subjectNames, 0, 2)) . ' ';
-        }
-        return "Need {$typeWord} {$subjectPart}Tutor For {$classLabel} Student";
+        $classLabel  = self::classLabel($classLevel);
+        $subjectPart = !empty($subjectNames)
+            ? implode(' & ', array_slice($subjectNames, 0, 2)) . ' '
+            : '';
+        $daysPart = $daysPerWeek ? " - {$daysPerWeek} Days/Week" : '';
+        return "Need {$subjectPart}Tutor For {$classLabel} Student{$daysPart}";
     }
 
     public static function classLabel(string $level): string

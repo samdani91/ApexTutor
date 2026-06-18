@@ -9,7 +9,7 @@ class AdminNotificationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $adminTypes = ['tutor_shortlisted','connection_requested','pending_profile_change','pending_video','review_submitted','new_support_ticket','ticket_claim_update'];
+        $adminTypes = ['tutor_shortlisted','connection_requested','pending_profile_change','pending_video','review_submitted','new_support_ticket','ticket_claim_update','new_tuition_job'];
         $request->validate([
             'type' => 'nullable|in:' . implode(',', $adminTypes),
             'sort' => 'nullable|in:newest,oldest',

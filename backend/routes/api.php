@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\AdminGuardianController;
 use App\Http\Controllers\Admin\AdminPlatformFeedbackController;
 use App\Http\Controllers\Admin\AdminReviewController;
 use App\Http\Controllers\Admin\AdminTutorController;
+use App\Http\Controllers\Admin\AdminTuitionJobController;
 use App\Http\Controllers\Admin\AdminVerificationController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\OtpController;
@@ -105,13 +106,16 @@ Route::middleware('throttle:60,1')->group(function () {
     });
     Route::get('tutors/{publicId}',         [TutorPublicProfileController::class, 'show']);
     Route::get('tutors/{publicId}/reviews', [TutorPublicProfileController::class, 'reviews']);
+    // Public job listing — no auth required
+    Route::get('jobs', [TutorTuitionJobController::class, 'index'])->middleware('auth.optional');
 });
 
-// Tuition job board — tutor-only, outside the /tutor prefix to keep URLs clean
+// Job detail requires login (any role); apply requires tutor role
+Route::middleware(['auth:sanctum', 'active.user', 'verified'])->group(function () {
+    Route::get('jobs/{publicId}', [TutorTuitionJobController::class, 'show']);
+});
 Route::middleware(['auth:sanctum', 'active.user', 'verified', 'role:tutor'])->group(function () {
-    Route::get('jobs',                    [TutorTuitionJobController::class, 'index']);
-    Route::get('jobs/{publicId}',         [TutorTuitionJobController::class, 'show']);
-    Route::post('jobs/{publicId}/apply',  [TutorTuitionJobController::class, 'apply'])->middleware('throttle:20,1');
+    Route::post('jobs/{publicId}/apply', [TutorTuitionJobController::class, 'apply'])->middleware('throttle:20,1');
 });
 
 // Tutor routes
@@ -262,6 +266,11 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:super_admin', 'log.admin
     Route::get('notifications',             [AdminNotificationController::class, 'index']);
     Route::put('notifications/read-all',    [AdminNotificationController::class, 'markAllRead']);
     Route::put('notifications/{id}/read',   [AdminNotificationController::class, 'markRead']);
+
+    Route::get('tuition-jobs',                       [AdminTuitionJobController::class, 'index']);
+    Route::get('tuition-jobs/{publicId}',            [AdminTuitionJobController::class, 'show']);
+    Route::put('tuition-jobs/{publicId}/close',      [AdminTuitionJobController::class, 'close']);
+    Route::put('tuition-jobs/{publicId}/reopen',     [AdminTuitionJobController::class, 'reopen']);
 
     Route::get('tickets',                    [AdminTicketController::class, 'index']);
     Route::get('tickets/counts',             [AdminTicketController::class, 'counts']);

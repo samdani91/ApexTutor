@@ -39,12 +39,14 @@ class TuitionJobController extends Controller
         $guardian = $request->user()->guardianProfile;
 
         $subjects = Subject::whereIn('id', $data['subject_ids'])->pluck('name')->all();
-        $title    = TuitionJob::buildTitle($data['class_level'], $subjects, $data['tuition_type']);
+        $title    = TuitionJob::buildTitle($data['class_level'], $subjects, $data['tuition_type'], $data['tutoring_days_per_week'] ?? null);
 
         $job = TuitionJob::create([
             'guardian_profile_id'    => $guardian->id,
             'title'                  => $title,
             'tuition_type'           => $data['tuition_type'],
+            'medium'                 => $data['medium'] ?? null,
+            'tutoring_style'         => $data['tutoring_style'] ?? null,
             'district_id'            => $data['district_id'],
             'area_id'                => $data['area_id'] ?? null,
             'address_details'        => $data['address_details'] ?? null,
@@ -61,6 +63,15 @@ class TuitionJobController extends Controller
         ]);
 
         $job->subjects()->sync($data['subject_ids']);
+
+        $admins = \App\Models\User::where('role', 'super_admin')->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new \App\Notifications\AdminTuitionJobPostedNotification(
+                $request->user()->name,
+                $job->title,
+                $job->public_id,
+            ));
+        }
 
         return response()->json(['success' => true, 'data' => $job, 'message' => 'Job posted successfully.'], 201);
     }
@@ -87,7 +98,7 @@ class TuitionJobController extends Controller
 
         $data     = $request->validated();
         $subjects = Subject::whereIn('id', $data['subject_ids'])->pluck('name')->all();
-        $title    = TuitionJob::buildTitle($data['class_level'], $subjects, $data['tuition_type']);
+        $title    = TuitionJob::buildTitle($data['class_level'], $subjects, $data['tuition_type'], $data['tutoring_days_per_week'] ?? null);
 
         $job->update(array_merge($data, ['title' => $title]));
         $job->subjects()->sync($data['subject_ids']);

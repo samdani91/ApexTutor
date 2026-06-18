@@ -11,20 +11,21 @@ class TuitionJobController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $tutorProfile = $request->user()->tutorProfile;
+        $tutorProfile = $request->user()?->tutorProfile;
 
         $query = TuitionJob::where('status', 'open')
             ->with(['district:id,name', 'area:id,name', 'subjects:id,name'])
             ->withExists([
-                'applications as already_applied' => fn($q) => $q->where('tutor_profile_id', $tutorProfile->id),
+                'applications as already_applied' => fn($q) => $q->where('tutor_profile_id', $tutorProfile?->id ?? 0),
             ])
             ->latest();
 
         if ($request->filled('district_id')) {
             $query->where('district_id', (int) $request->district_id);
         }
-        if ($request->filled('area_id')) {
-            $query->where('area_id', (int) $request->area_id);
+        if ($request->filled('area_ids')) {
+            $ids = array_map('intval', (array) $request->area_ids);
+            $query->whereIn('area_id', $ids);
         }
         if ($request->filled('class_level')) {
             $query->where('class_level', $request->class_level);
@@ -34,6 +35,9 @@ class TuitionJobController extends Controller
         }
         if ($request->filled('tuition_type')) {
             $query->where('tuition_type', $request->tuition_type);
+        }
+        if ($request->filled('medium')) {
+            $query->where('medium', $request->medium);
         }
         if ($request->filled('tutor_gender_pref')) {
             $query->where('tutor_gender_pref', $request->tutor_gender_pref);
@@ -57,15 +61,18 @@ class TuitionJobController extends Controller
 
     public function show(Request $request, string $publicId): JsonResponse
     {
-        $tutorProfile = $request->user()->tutorProfile;
+        $tutorProfile = $request->user()?->tutorProfile;
 
         $job = TuitionJob::where('public_id', $publicId)
+            ->where('status', 'open')
             ->with(['district:id,name', 'area:id,name', 'subjects:id,name'])
             ->firstOrFail();
 
-        $myApplication = TuitionJobApplication::where('tuition_job_id', $job->id)
-            ->where('tutor_profile_id', $tutorProfile->id)
-            ->first(['id', 'status', 'applied_at']);
+        $myApplication = $tutorProfile
+            ? TuitionJobApplication::where('tuition_job_id', $job->id)
+                ->where('tutor_profile_id', $tutorProfile->id)
+                ->first(['id', 'status', 'applied_at'])
+            : null;
 
         return response()->json([
             'success' => true,
@@ -100,6 +107,7 @@ class TuitionJobController extends Controller
     {
         $tutorProfile = $request->user()->tutorProfile;
         $status       = $request->query('status');
+        $jobStatus    = $request->query('job_status');
 
         $query = TuitionJobApplication::where('tutor_profile_id', $tutorProfile->id)
             ->with([
@@ -111,6 +119,9 @@ class TuitionJobController extends Controller
 
         if ($status) {
             $query->where('status', $status);
+        }
+        if ($jobStatus) {
+            $query->whereHas('tuitionJob', fn($q) => $q->where('status', $jobStatus));
         }
 
         return response()->json(['success' => true, 'data' => $query->get()]);
