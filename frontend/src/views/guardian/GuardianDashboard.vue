@@ -36,7 +36,10 @@
     <div class="dashboard-card reveal">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
         <h2 class="font-display font-bold text-navy-900 text-xl">My Tuition Jobs</h2>
-        <RouterLink to="/guardian/jobs" class="text-xs font-semibold font-display text-navy-600 hover:underline shrink-0">Manage All Jobs →</RouterLink>
+        <RouterLink to="/guardian/jobs"
+          class="shrink-0 inline-block text-xs font-semibold font-display bg-navy-700 text-white px-3 py-1.5 rounded-sm hover:bg-navy-800 transition-colors">
+          Manage All Jobs
+        </RouterLink>
       </div>
       <div class="grid grid-cols-3 gap-3 mb-4">
         <div class="metric-card">

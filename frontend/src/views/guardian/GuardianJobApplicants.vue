@@ -1,7 +1,13 @@
 <template>
   <div class="space-y-5">
     <div>
-      <RouterLink to="/guardian/jobs" class="text-xs font-semibold font-display text-navy-600 hover:underline">← Back to My Jobs</RouterLink>
+      <RouterLink to="/guardian/jobs"
+        class="inline-flex items-center gap-1.5 rounded-sm border border-paper-300 bg-white px-3.5 py-2 text-sm font-semibold font-display text-navy-700 shadow-sm hover:bg-paper-100 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/>
+        </svg>
+        My Jobs
+      </RouterLink>
       <div v-if="job" class="mt-3">
         <div class="flex flex-wrap items-center gap-2 mb-1">
           <span class="text-xs font-semibold font-display px-2 py-0.5 rounded-pill border"

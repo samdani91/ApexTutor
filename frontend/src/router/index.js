@@ -42,15 +42,8 @@ const routes = [
       { path: 'settings',            component: () => import('@/views/shared/SettingsPage.vue'),            name: 'guardian-settings' },
     ]
   },
-  {
-    path: '/jobs',
-    component: () => import('@/layouts/DashboardLayout.vue'),
-    meta: { requiresAuth: true, role: 'tutor' },
-    children: [
-      { path: '',           component: () => import('@/views/tutor/TuitionJobs.vue'),      name: 'tuition-jobs' },
-      { path: ':publicId',  component: () => import('@/views/tutor/TuitionJobDetail.vue'), name: 'tuition-job-detail' },
-    ]
-  },
+  { path: '/jobs',           component: () => import('@/views/tutor/TuitionJobs.vue'),      name: 'tuition-jobs' },
+  { path: '/jobs/:publicId', component: () => import('@/views/tutor/TuitionJobDetail.vue'), name: 'tuition-job-detail', meta: { requiresAuth: true } },
   {
     path: '/admin',
     component: () => import('@/layouts/AdminLayout.vue'),
@@ -74,6 +67,7 @@ const routes = [
       { path: 'notifications', component: () => import('@/views/admin/AdminNotifications.vue'), name: 'admin-notifications' },
       { path: 'tickets',    component: () => import('@/views/admin/AdminTickets.vue'),       name: 'admin-tickets' },
       { path: 'tickets/:id', component: () => import('@/views/admin/AdminTicketDetail.vue'), name: 'admin-ticket-detail' },
+      { path: 'tuition-jobs', component: () => import('@/views/admin/AdminTuitionJobs.vue'), name: 'admin-tuition-jobs' },
       { path: 'settings', component: () => import('@/views/admin/AdminSettings.vue'), name: 'admin-settings' },
     ]
   },

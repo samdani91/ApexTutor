@@ -20,5 +20,5 @@ export const tutorJobsApi = {
   list:              (params)  => http.get('/jobs', { params }),
   show:              (publicId)=> http.get(`/jobs/${publicId}`),
   apply:             (publicId)=> http.post(`/jobs/${publicId}/apply`),
-  myApplications:    (status)  => http.get('/tutor/applications', { params: status ? { status } : {} }),
+  myApplications:    (params)  => http.get('/tutor/applications', { params }),
 }

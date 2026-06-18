@@ -85,4 +85,9 @@ export const adminApi = {
   getNotifications: (params = {}) => http.get('/admin/notifications', { params }),
   markNotificationRead: (id) => http.put(`/admin/notifications/${id}/read`),
   markAllNotificationsRead: () => http.put('/admin/notifications/read-all'),
+
+  // Tuition Jobs
+  getTuitionJobs: (params = {}) => http.get('/admin/tuition-jobs', { params }),
+  closeTuitionJob: (publicId) => http.put(`/admin/tuition-jobs/${publicId}/close`),
+  reopenTuitionJob: (publicId) => http.put(`/admin/tuition-jobs/${publicId}/reopen`),
 }
