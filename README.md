@@ -1,4 +1,4 @@
-# TutorKhujo
+# Apex Tutor
 
 > A modern tuition-finding platform built for Bangladesh — connecting guardians and students with verified, qualified tutors.
 
@@ -6,7 +6,7 @@
 
 ## Overview
 
-TutorKhujo simplifies the process of finding a private tutor. Guardians can search by subject, class level, location, medium, and budget. Tutors build detailed profiles that get verified by admins before going live. The platform handles shortlisting, connection requests, and feedback — all in one place.
+Apex Tutor simplifies the process of finding a private tutor. Guardians can search by subject, class level, location, medium, and budget. Tutors build detailed profiles that get verified by admins before going live. The platform handles shortlisting, connection requests, and feedback — all in one place.
 
 ---
 
