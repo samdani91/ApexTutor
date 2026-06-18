@@ -1,6 +1,6 @@
 <template>
   <RouterLink :to="`/tutors/${tutor.public_id}`"
-    class="group relative block h-full cursor-pointer rounded-md border border-paper-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-gold-200 hover:shadow-lg md:p-5">
+    class="group relative block h-full cursor-pointer rounded-md border border-paper-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-navy-200 hover:shadow-lg md:p-5">
     <img v-if="topUniversityLogo" :src="topUniversityLogo" alt=""
       class="absolute top-3 right-3 h-14 w-14 rounded object-contain bg-white" />
     <div class="flex h-full flex-col gap-4">
