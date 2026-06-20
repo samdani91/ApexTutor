@@ -27,7 +27,7 @@ class BulkSmsBdService
                 'type'     => 'text',
                 'number'   => $number,
                 'senderid' => $this->senderId,
-                'message'  => $message,
+                'message'  => $this->appendFooter($message),
             ]);
             $success = $this->isApiSuccess($response->body());
             Log::info('BulkSmsBd send', ['number' => $number, 'success' => $success, 'response' => $response->body()]);
@@ -49,7 +49,7 @@ class BulkSmsBdService
                 'type'     => 'text',
                 'number'   => $joined,
                 'senderid' => $this->senderId,
-                'message'  => $message,
+                'message'  => $this->appendFooter($message),
             ]);
             $success = $this->isApiSuccess($response->body());
             Log::info('BulkSmsBd sendMany', ['count' => count($formatted), 'success' => $success]);
@@ -68,7 +68,7 @@ class BulkSmsBdService
     {
         $messages = array_map(fn($item) => [
             'to'      => $this->formatNumber((string) $item['number']),
-            'message' => (string) $item['message'],
+            'message' => $this->appendFooter((string) $item['message']),
         ], $payload);
 
         try {
@@ -110,6 +110,11 @@ class BulkSmsBdService
             Log::error('BulkSmsBd getBalance failed', ['error' => $e->getMessage()]);
             return ['success' => false, 'response' => $e->getMessage()];
         }
+    }
+
+    private function appendFooter(string $message): string
+    {
+        return $message . "\n\nRegards,\nApex Tutor Team";
     }
 
     // BulkSMSBD always returns HTTP 200; actual success is response_code === 202
