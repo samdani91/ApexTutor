@@ -6,6 +6,7 @@ use App\Models\TutorDocument;
 use App\Models\TutorProfile;
 use App\Observers\TutorDocumentObserver;
 use App\Observers\TutorProfileObserver;
+use App\Services\BulkSmsBdService;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -16,7 +17,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(BulkSmsBdService::class);
     }
 
     /**

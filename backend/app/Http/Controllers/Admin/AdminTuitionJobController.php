@@ -8,6 +8,7 @@ use App\Models\TuitionJob;
 use App\Models\TuitionJobApplication;
 use App\Notifications\TuitionJobApplicationStatusNotification;
 use App\Notifications\TuitionJobGuardianNotification;
+use App\Services\BulkSmsBdService;
 use App\Traits\LogsAdminActivity;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -113,6 +114,7 @@ class AdminTuitionJobController extends Controller
 
         $this->notifyTutor($app, 'appointed');
         $this->notifyGuardian($app->tuitionJob, 'appointed', $app->tutorProfile->user->name ?? 'A tutor');
+        $this->smsTutor($app, 'appointed');
 
         $this->logActivity($request, 'tuition_job_applicant_appointed', 'TuitionJobApplication', $app->id,
             "Appointed tutor '{$app->tutorProfile->user->name}' for demo class on job '{$app->tuitionJob->title}' ({$app->tuitionJob->public_id})"
@@ -159,6 +161,7 @@ class AdminTuitionJobController extends Controller
 
         $this->notifyTutor($app, 'connected', $job);
         $this->notifyGuardian($job, 'confirmed', $app->tutorProfile->user->name ?? 'A tutor');
+        $this->smsTutor($app, 'confirmed', $job);
 
         $this->logActivity($request, 'tuition_job_applicant_confirmed', 'TuitionJobApplication', $app->id,
             "Confirmed tutor '{$app->tutorProfile->user->name}' for job '{$job->title}' ({$job->public_id}). Job closed."
@@ -279,6 +282,46 @@ class AdminTuitionJobController extends Controller
                 'error'          => $e->getMessage(),
                 'application_id' => $app->id,
                 'status'         => $status,
+            ]);
+        }
+    }
+
+    private function smsTutor(TuitionJobApplication $app, string $event, ?TuitionJob $job = null): void
+    {
+        try {
+            $tutorPhone = $app->tutorProfile?->user?->phone;
+            if (!$tutorPhone) return;
+
+            $job ??= $app->tuitionJob;
+            if (!$job) return;
+
+            if ($event === 'appointed') {
+                $job->loadMissing(['guardianProfile.user', 'area:id,name', 'district:id,name']);
+
+                $guardianName  = $job->guardianProfile?->user?->name ?? 'Guardian';
+                $guardianPhone = $job->guardianProfile?->user?->phone;
+                $phonePart     = $guardianPhone ? " ({$guardianPhone})" : '';
+
+                $addressParts = array_filter([
+                    $job->address_details,
+                    $job->area?->name,
+                    $job->district?->name,
+                ]);
+                $addressPart = $addressParts ? ', ' . implode(', ', $addressParts) : '';
+
+                $message = "You've got selected by {$guardianName}{$phonePart} for Job ID {$job->public_id}{$addressPart}. Contact him/her within 30 minutes.";
+            } elseif ($event === 'confirmed') {
+                $message = "Congratulations! Your hiring has been confirmed by the guardian/student for Job ID: {$job->public_id}.";
+            } else {
+                return;
+            }
+
+            app(BulkSmsBdService::class)->send($tutorPhone, $message);
+        } catch (\Exception $e) {
+            Log::error('TuitionJob tutor SMS failed', [
+                'error'          => $e->getMessage(),
+                'application_id' => $app->id,
+                'event'          => $event,
             ]);
         }
     }
