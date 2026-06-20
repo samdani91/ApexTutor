@@ -11,6 +11,7 @@ use App\Services\BulkSmsBdService;
 use App\Traits\LogsAdminActivity;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class AdminTuitionJobController extends Controller
@@ -133,18 +134,21 @@ class AdminTuitionJobController extends Controller
         abort_if($job->status === 'closed', 422, 'This job is already closed.');
         abort_if($app->status !== 'appointed', 422, 'Only appointed applicants can be confirmed.');
 
-        $app->update(['status' => 'connected']);
-        $job->update(['status' => 'closed']);
+        $othersIds = DB::transaction(function () use ($job, $app) {
+            $app->update(['status' => 'connected']);
+            $job->update(['status' => 'closed']);
 
-        // Auto-mark remaining applicants as not selected
-        $othersIds = TuitionJobApplication::where('tuition_job_id', $job->id)
-            ->where('id', '!=', $app->id)
-            ->whereNotIn('status', ['connected'])
-            ->pluck('id');
+            $othersIds = TuitionJobApplication::where('tuition_job_id', $job->id)
+                ->where('id', '!=', $app->id)
+                ->whereNotIn('status', ['connected'])
+                ->pluck('id');
 
-        TuitionJobApplication::whereIn('id', $othersIds)->update(['status' => 'not_selected']);
+            TuitionJobApplication::whereIn('id', $othersIds)->update(['status' => 'not_selected']);
 
-        // Notify the other applicants
+            return $othersIds;
+        });
+
+        // Notifications and SMS run after the transaction commits
         TuitionJobApplication::whereIn('id', $othersIds)
             ->with('tutorProfile.user')
             ->get()

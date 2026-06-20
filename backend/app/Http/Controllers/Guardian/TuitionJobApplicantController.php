@@ -56,13 +56,14 @@ class TuitionJobApplicantController extends Controller
         abort_if($job->status === 'closed', 422, 'This job is already closed.');
         abort_if($app->status !== 'appointed', 422, 'Only appointed applicants can be confirmed.');
 
-        $app->update(['status' => 'connected']);
-        $job->update(['status' => 'closed']);
-
-        TuitionJobApplication::where('tuition_job_id', $job->id)
-            ->where('id', '!=', $app->id)
-            ->whereNotIn('status', ['connected'])
-            ->update(['status' => 'not_selected']);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($job, $app) {
+            $app->update(['status' => 'connected']);
+            $job->update(['status' => 'closed']);
+            TuitionJobApplication::where('tuition_job_id', $job->id)
+                ->where('id', '!=', $app->id)
+                ->whereNotIn('status', ['connected'])
+                ->update(['status' => 'not_selected']);
+        });
 
         return response()->json(['success' => true, 'message' => 'Tutor confirmed.']);
     }
