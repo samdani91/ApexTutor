@@ -151,33 +151,90 @@
         </div>
       </section>
 
-      <section class="section-pad guardian-flow-section bg-white">
+      <section class="section-pad bg-white">
         <div class="content-wrap">
           <div class="mx-auto mb-12 max-w-2xl text-center">
             <p class="font-display text-xs font-bold uppercase tracking-widest text-gold-600">For guardians</p>
-            <h2 class="section-title mt-2 font-display text-3xl font-bold text-navy-900 md:text-4xl">How does it work for guardians?</h2>
-            <p class="mt-3 font-body text-paper-600">Move from search to shortlist with clear tutor details at every step.</p>
+            <h2 class="section-title mt-2 font-display text-3xl font-bold text-navy-900 md:text-4xl">Two ways to hire a tutor</h2>
+            <p class="mt-3 font-body text-paper-600">Search and connect directly, or post a tuition job and let verified tutors apply to you.</p>
           </div>
 
-          <div class="guardian-flow-grid">
-            <article
-              v-for="(step, index) in guardianSteps"
-              :key="step.title"
-              class="guardian-flow-step scroll-reveal"
-              :style="{ transitionDelay: `${index * 120}ms` }"
-            >
-              <div class="guardian-flow-number">{{ step.num }}</div>
-              <div class="guardian-flow-icon" :class="step.iconBg">
-                <component :is="step.icon" class="h-8 w-8" :class="step.iconColor" />
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-stretch lg:gap-0">
+
+            <!-- Option 1: Find a Tutor -->
+            <div class="scroll-reveal flex flex-1 flex-col rounded-xl border border-sky-100 bg-sky-50/50 p-6 sm:p-7">
+              <div class="mb-5 flex items-center gap-3">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-600">
+                  <component :is="IconSearch" class="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <p class="font-display text-[10px] font-bold uppercase tracking-widest text-sky-600">Option 1</p>
+                  <h3 class="font-display text-lg font-bold leading-tight text-navy-900">Find a Tutor Yourself</h3>
+                </div>
               </div>
-              <h3 class="mt-5 font-display text-xl font-bold text-navy-900">{{ step.title }}</h3>
-              <p class="mt-3 font-body text-sm leading-relaxed text-paper-600">{{ step.desc }}</p>
-            </article>
-          </div>
+              <div class="flex flex-1 flex-col gap-2.5">
+                <div v-for="step in guardianFindSteps" :key="step.title"
+                  class="flex items-start gap-3 rounded-lg border border-sky-100 bg-white px-4 py-3.5 shadow-xs">
+                  <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" :class="step.iconBg">
+                    <component :is="step.icon" class="h-4 w-4" :class="step.iconColor" />
+                  </div>
+                  <div class="min-w-0 flex-1 pt-0.5">
+                    <p class="font-display text-sm font-bold text-navy-900">{{ step.title }}</p>
+                    <p class="mt-0.5 font-body text-xs leading-relaxed text-paper-500">{{ step.desc }}</p>
+                  </div>
+                  <span class="shrink-0 font-display text-2xl font-black text-sky-100 leading-none">{{ step.num }}</span>
+                </div>
+              </div>
+              <RouterLink to="/search"
+                class="mt-5 inline-flex items-center justify-center gap-1.5 rounded-sm bg-sky-700 px-6 py-2.5 text-sm font-bold font-display text-white transition-colors hover:bg-sky-800">
+                Find a Tutor
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
+                </svg>
+              </RouterLink>
+            </div>
 
-          <RouterLink to="/search" class="btn-primary mx-auto mt-10 flex w-fit rounded-sm px-7 py-3 text-sm font-bold">
-            Start Searching
-          </RouterLink>
+            <!-- OR Divider -->
+            <div class="flex items-center gap-3 self-stretch lg:flex-col lg:px-5">
+              <div class="h-px flex-1 bg-paper-200 lg:h-auto lg:w-px"></div>
+              <span class="shrink-0 rounded-full border border-paper-200 bg-white px-3 py-1 font-display text-xs font-bold text-paper-400 shadow-xs">OR</span>
+              <div class="h-px flex-1 bg-paper-200 lg:h-auto lg:w-px"></div>
+            </div>
+
+            <!-- Option 2: Post a Job -->
+            <div class="scroll-reveal flex flex-1 flex-col rounded-xl border border-gold-200 bg-gold-50/50 p-6 sm:p-7" style="transition-delay:120ms">
+              <div class="mb-5 flex items-center gap-3">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gold-500">
+                  <component :is="IconDocument" class="h-5 w-5 text-navy-900" />
+                </div>
+                <div>
+                  <p class="font-display text-[10px] font-bold uppercase tracking-widest text-gold-600">Option 2</p>
+                  <h3 class="font-display text-lg font-bold leading-tight text-navy-900">Post a Tuition Job</h3>
+                </div>
+              </div>
+              <div class="flex flex-1 flex-col gap-2.5">
+                <div v-for="step in guardianJobSteps" :key="step.title"
+                  class="flex items-start gap-3 rounded-lg border border-gold-100 bg-white px-4 py-3.5 shadow-xs">
+                  <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" :class="step.iconBg">
+                    <component :is="step.icon" class="h-4 w-4" :class="step.iconColor" />
+                  </div>
+                  <div class="min-w-0 flex-1 pt-0.5">
+                    <p class="font-display text-sm font-bold text-navy-900">{{ step.title }}</p>
+                    <p class="mt-0.5 font-body text-xs leading-relaxed text-paper-500">{{ step.desc }}</p>
+                  </div>
+                  <span class="shrink-0 font-display text-2xl font-black text-gold-100 leading-none">{{ step.num }}</span>
+                </div>
+              </div>
+              <RouterLink to="/register"
+                class="mt-5 inline-flex items-center justify-center gap-1.5 rounded-sm bg-gold-500 px-6 py-2.5 text-sm font-bold font-display text-navy-900 transition-colors hover:bg-gold-600">
+                Post a Tuition Job
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
+                </svg>
+              </RouterLink>
+            </div>
+
+          </div>
         </div>
       </section>
 
@@ -341,10 +398,16 @@ const tuitionTypes = [
   { icon: IconPerson, title: 'One-to-One Tutoring', desc: 'Dedicated individual attention for rapid and steady progress.',                 query: { tutoring_styles: 'one_to_one'     }, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-700', labelColor: 'text-emerald-600' },
 ]
 
-const guardianSteps = [
-  { num: 1, icon: IconSearch, title: 'Search Tutors', desc: 'Filter by class, subject, location, budget and teaching method.', iconBg: 'bg-sky-50', iconColor: 'text-sky-700' },
-  { num: 2, icon: IconList, title: 'Compare Profiles', desc: 'Review education, salary range, preferred locations and profile status.', iconBg: 'bg-gold-50', iconColor: 'text-gold-700' },
-  { num: 3, icon: IconCheck, title: 'Shortlist and Connect', desc: 'Save suitable tutors and continue with admin-assisted confirmation.', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-700' },
+const guardianFindSteps = [
+  { num: 1, icon: IconSearch, title: 'Search Tutors',       desc: 'Filter by class, subject, location, budget and teaching method.',     iconBg: 'bg-sky-50', iconColor: 'text-sky-700' },
+  { num: 2, icon: IconList,   title: 'Compare Profiles',    desc: 'Review education, salary range, preferred locations and tutor status.', iconBg: 'bg-sky-50', iconColor: 'text-sky-700' },
+  { num: 3, icon: IconCheck,  title: 'Shortlist & Connect', desc: 'Save suitable tutors and request an admin-assisted connection.',        iconBg: 'bg-sky-50', iconColor: 'text-sky-700' },
+]
+
+const guardianJobSteps = [
+  { num: 1, icon: IconDocument, title: 'Post a Tuition Job',   desc: 'Describe your requirements — class, subjects, location and budget.',    iconBg: 'bg-gold-50', iconColor: 'text-gold-700' },
+  { num: 2, icon: IconUsers,    title: 'Receive Applications', desc: 'Verified tutors browse open jobs and apply directly to yours.',         iconBg: 'bg-gold-50', iconColor: 'text-gold-700' },
+  { num: 3, icon: IconCheck,    title: 'Review & Confirm',     desc: 'Shortlist applicants, appoint for a demo, then confirm the right tutor.', iconBg: 'bg-gold-50', iconColor: 'text-gold-700' },
 ]
 
 const tutorSteps = [
