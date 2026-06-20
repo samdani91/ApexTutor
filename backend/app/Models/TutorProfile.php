@@ -35,6 +35,14 @@ class TutorProfile extends Model
         });
     }
 
+    protected $hidden = [
+        'user_id',         // internal FK — public_id is the public identifier
+        'verified_by',     // admin user ID
+        'pending_changes', // admin moderation blob
+        'pending_note',    // admin notes
+        'rejection_reason', // admin rejection message
+    ];
+
     protected $casts = [
         'is_verified'     => 'boolean',
         'verified_at'     => 'datetime',

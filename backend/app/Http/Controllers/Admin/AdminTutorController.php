@@ -63,6 +63,8 @@ class AdminTutorController extends Controller
             }
         }
 
+        $tutor->makeVisible(['user_id', 'verified_by', 'pending_changes', 'pending_note', 'rejection_reason']);
+
         return response()->json(['success' => true, 'data' => $tutor]);
     }
 

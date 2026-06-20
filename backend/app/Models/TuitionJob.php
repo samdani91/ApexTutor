@@ -16,6 +16,10 @@ class TuitionJob extends Model
         'student_institute', 'extra_requirements', 'status',
     ];
 
+    protected $hidden = [
+        'guardian_profile_id', // internal FK — not needed by public/tutor responses
+    ];
+
     protected $casts = [
         'hire_date'              => 'date',
         'num_students'           => 'integer',

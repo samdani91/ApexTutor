@@ -81,10 +81,10 @@ class TuitionJobController extends Controller
                 ->first(['id', 'status', 'applied_at'])
             : null;
 
-        return response()->json([
-            'success' => true,
-            'data'    => array_merge($job->toArray(), ['my_application' => $myApplication]),
-        ]);
+        $data = $job->toArray();
+        $data['my_application'] = $myApplication;
+
+        return response()->json(['success' => true, 'data' => $data]);
     }
 
     public function apply(Request $request, string $publicId): JsonResponse
