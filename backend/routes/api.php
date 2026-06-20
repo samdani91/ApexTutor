@@ -267,10 +267,16 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:super_admin', 'log.admin
     Route::put('notifications/read-all',    [AdminNotificationController::class, 'markAllRead']);
     Route::put('notifications/{id}/read',   [AdminNotificationController::class, 'markRead']);
 
-    Route::get('tuition-jobs',                       [AdminTuitionJobController::class, 'index']);
-    Route::get('tuition-jobs/{publicId}',            [AdminTuitionJobController::class, 'show']);
-    Route::put('tuition-jobs/{publicId}/close',      [AdminTuitionJobController::class, 'close']);
-    Route::put('tuition-jobs/{publicId}/reopen',     [AdminTuitionJobController::class, 'reopen']);
+    Route::get('tuition-jobs',                                                          [AdminTuitionJobController::class, 'index']);
+    Route::get('tuition-jobs/{publicId}',                                               [AdminTuitionJobController::class, 'show']);
+    Route::put('tuition-jobs/{publicId}/close',                                         [AdminTuitionJobController::class, 'close']);
+    Route::put('tuition-jobs/{publicId}/reopen',                                        [AdminTuitionJobController::class, 'reopen']);
+    Route::get('tuition-jobs/{publicId}/applications',                                  [AdminTuitionJobController::class, 'applications']);
+    Route::patch('tuition-jobs/{publicId}/applications/{applicationId}/shortlist',      [AdminTuitionJobController::class, 'shortlist']);
+    Route::patch('tuition-jobs/{publicId}/applications/{applicationId}/appoint',        [AdminTuitionJobController::class, 'appoint']);
+    Route::patch('tuition-jobs/{publicId}/applications/{applicationId}/confirm',        [AdminTuitionJobController::class, 'confirm']);
+    Route::patch('tuition-jobs/{publicId}/applications/{applicationId}/remove',         [AdminTuitionJobController::class, 'remove']);
+    Route::patch('tuition-jobs/{publicId}/applications/{applicationId}/status',          [AdminTuitionJobController::class, 'changeStatus']);
 
     Route::get('tickets',                    [AdminTicketController::class, 'index']);
     Route::get('tickets/counts',             [AdminTicketController::class, 'counts']);

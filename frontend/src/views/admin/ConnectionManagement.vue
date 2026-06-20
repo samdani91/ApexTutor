@@ -265,7 +265,7 @@ async function saveNotes(id) {
 function statusBadgeClass(status) {
   if (status === 'confirmed')  return 'bg-emerald-50 text-emerald-700'
   if (status === 'declined')   return 'bg-red-50 text-red-700'
-  if (status === 'closed')     return 'bg-paper-100 text-paper-600'
+  if (status === 'closed')     return 'bg-red-50 text-red-600'
   if (status === 'pending')    return 'bg-amber-50 text-amber-700'
   return 'bg-blue-50 text-blue-700'
 }

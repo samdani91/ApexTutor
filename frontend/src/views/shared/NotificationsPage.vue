@@ -281,6 +281,43 @@
               </RouterLink>
             </template>
 
+            <!-- Tuition job application status -->
+            <template v-else-if="n.data.type === 'tuition_job_application_status'">
+              <p class="text-sm font-body leading-relaxed" :class="n.read_at ? 'text-navy-800' : 'font-semibold text-navy-900'">
+                {{ n.data.message }}
+              </p>
+              <div class="mt-2 inline-flex flex-wrap items-center gap-1.5 text-xs font-body rounded-md px-2.5 py-1.5 border"
+                :class="n.data.status === 'not_selected'
+                  ? 'bg-red-50 border-red-100 text-red-700'
+                  : 'bg-paper-50 border-paper-200 text-paper-600'">
+                <span class="font-semibold" :class="n.data.status === 'not_selected' ? 'text-red-800' : 'text-navy-700'">
+                  {{ n.data.job_title }}
+                </span>
+                <span class="opacity-50">·</span>
+                <span>#{{ n.data.job_public_id }}</span>
+              </div>
+            </template>
+
+            <!-- Tuition job guardian update (appointed / confirmed) -->
+            <template v-else-if="n.data.type === 'tuition_job_guardian_update'">
+              <p class="text-sm font-body leading-relaxed" :class="n.read_at ? 'text-navy-800' : 'font-semibold text-navy-900'">
+                {{ n.data.message }}
+              </p>
+              <div class="mt-2 inline-flex flex-wrap items-center gap-1.5 text-xs font-body rounded-md px-2.5 py-1.5 border"
+                :class="n.data.event === 'confirmed'
+                  ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
+                  : 'bg-purple-50 border-purple-100 text-purple-700'">
+                <span class="font-semibold" :class="n.data.event === 'confirmed' ? 'text-emerald-800' : 'text-purple-800'">
+                  {{ n.data.job_title }}
+                </span>
+                <span class="opacity-50">·</span>
+                <span>#{{ n.data.job_public_id }}</span>
+              </div>
+              <p v-if="n.data.tutor_name" class="mt-1.5 text-xs text-paper-500 font-body">
+                Tutor: <span class="font-semibold text-navy-700">{{ n.data.tutor_name }}</span>
+              </p>
+            </template>
+
             <!-- Fallback -->
             <template v-else>
               <p class="text-sm font-body text-navy-800 leading-relaxed" :class="n.read_at ? '' : 'font-semibold'">
@@ -364,17 +401,19 @@ const tutorTypes = [
   { value: 'profile_edited_by_admin',      label: 'Profile Edit' },
   { value: 'tutor_verified',               label: 'Verified' },
   { value: 'tutor_verification_rejected',  label: 'Verify Rejected' },
-  { value: 'ticket_status_updated',        label: 'Ticket Update' },
-  { value: 'ticket_replied',               label: 'Ticket Reply' },
+  { value: 'ticket_status_updated',              label: 'Ticket Update' },
+  { value: 'ticket_replied',                     label: 'Ticket Reply' },
+  { value: 'tuition_job_application_status',     label: 'Job Application' },
 ]
 
 const guardianTypes = [
-  { value: '',                          label: 'All' },
-  { value: 'connection_status_changed', label: 'Connection' },
-  { value: 'review_approved',           label: 'Review Approved' },
-  { value: 'review_rejected',           label: 'Review Rejected' },
-  { value: 'ticket_status_updated',     label: 'Ticket Update' },
-  { value: 'ticket_replied',            label: 'Ticket Reply' },
+  { value: '',                            label: 'All' },
+  { value: 'connection_status_changed',   label: 'Connection' },
+  { value: 'tuition_job_guardian_update', label: 'Job Update' },
+  { value: 'review_approved',             label: 'Review Approved' },
+  { value: 'review_rejected',             label: 'Review Rejected' },
+  { value: 'ticket_status_updated',       label: 'Ticket Update' },
+  { value: 'ticket_replied',              label: 'Ticket Reply' },
 ]
 
 const typeOpts = computed(() => auth.isTutor ? tutorTypes : guardianTypes)
@@ -471,6 +510,18 @@ function notifMeta(type, data = null) {
     return { label: 'Ticket Update', pill: 'bg-blue-50 text-blue-700', icon: 'bg-blue-50 text-blue-600 ring-blue-100' }
   if (type === 'ticket_replied')
     return { label: 'Ticket Reply', pill: 'bg-blue-50 text-blue-700', icon: 'bg-blue-50 text-blue-600 ring-blue-100' }
+  if (type === 'tuition_job_application_status') {
+    const s = data?.status
+    if (s === 'shortlisted')  return { label: 'Shortlisted',  pill: 'bg-gold-50 text-gold-700',     icon: 'bg-gold-50 text-gold-700 ring-gold-100' }
+    if (s === 'appointed')    return { label: 'Appointed',    pill: 'bg-purple-50 text-purple-700', icon: 'bg-purple-50 text-purple-600 ring-purple-100' }
+    if (s === 'connected')    return { label: 'Confirmed',    pill: 'bg-emerald-50 text-emerald-700', icon: 'bg-emerald-50 text-emerald-600 ring-emerald-100' }
+    if (s === 'not_selected') return { label: 'Not Selected', pill: 'bg-paper-100 text-paper-600',  icon: 'bg-paper-50 text-paper-500 ring-paper-200' }
+  }
+  if (type === 'tuition_job_guardian_update') {
+    const e = data?.event
+    if (e === 'confirmed') return { label: 'Tutor Confirmed', pill: 'bg-emerald-50 text-emerald-700', icon: 'bg-emerald-50 text-emerald-600 ring-emerald-100' }
+    return { label: 'Demo Appointed', pill: 'bg-purple-50 text-purple-700', icon: 'bg-purple-50 text-purple-600 ring-purple-100' }
+  }
   return { label: 'Notification', pill: 'bg-navy-50 text-navy-700', icon: 'bg-navy-50 text-navy-600 ring-navy-100' }
 }
 
@@ -480,6 +531,8 @@ function typePill(type, data = null)  { return notifMeta(type, data).pill }
 function isConfirmedNotification(n)  {
   return n?.data?.type === 'tuition_confirmed'
     || (n?.data?.type === 'connection_status_changed' && n?.data?.status === 'confirmed')
+    || (n?.data?.type === 'tuition_job_application_status' && n?.data?.status === 'connected')
+    || (n?.data?.type === 'tuition_job_guardian_update' && n?.data?.event === 'confirmed')
 }
 
 function timeAgo(iso) {

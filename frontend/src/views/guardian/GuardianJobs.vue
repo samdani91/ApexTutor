@@ -33,13 +33,13 @@
 
     <div v-else class="space-y-3">
       <div v-for="job in jobs" :key="job.id"
-        class="card flex flex-col gap-4 sm:flex-row sm:items-start">
+        class="card grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
 
         <!-- Job info -->
         <div class="flex-1 min-w-0">
           <div class="flex flex-wrap items-center gap-2 mb-1">
             <span class="text-xs font-semibold font-display px-2 py-0.5 rounded-pill border"
-              :class="job.status === 'open' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-paper-100 text-paper-500 border-paper-200'">
+              :class="job.status === 'open' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-600 border-red-200'">
               {{ job.status === 'open' ? 'Open' : 'Closed' }}
             </span>
             <span class="text-xs font-body text-paper-400">Job ID: #{{ job.public_id }}</span>
@@ -56,40 +56,28 @@
           </div>
         </div>
 
-        <!-- Applicant counts -->
-        <div class="flex flex-wrap gap-3 text-center shrink-0">
-          <div class="min-w-[52px]">
-            <p class="font-display font-bold text-lg text-navy-800">{{ job.applications_count ?? 0 }}</p>
-            <p class="text-[10px] text-paper-400 font-body uppercase tracking-wide">Total</p>
+        <div class="rounded-md border border-paper-200 bg-paper-50/70 p-3">
+          <!-- Applicant count -->
+          <div class="job-count-chip border-navy-200 bg-white text-navy-700">
+            <p class="font-display font-bold text-3xl leading-none">{{ job.applications_count ?? 0 }}</p>
+            <p class="mt-1 text-[11px] font-semibold font-display uppercase tracking-wide">Total Applicants</p>
           </div>
-          <div v-if="job.applied_count" class="min-w-[52px]">
-            <p class="font-display font-bold text-lg text-blue-600">{{ job.applied_count }}</p>
-            <p class="text-[10px] text-paper-400 font-body uppercase tracking-wide">Applied</p>
-          </div>
-          <div v-if="job.shortlisted_count" class="min-w-[52px]">
-            <p class="font-display font-bold text-lg text-gold-600">{{ job.shortlisted_count }}</p>
-            <p class="text-[10px] text-paper-400 font-body uppercase tracking-wide">Shortlisted</p>
-          </div>
-          <div v-if="job.appointed_count" class="min-w-[52px]">
-            <p class="font-display font-bold text-lg text-purple-600">{{ job.appointed_count }}</p>
-            <p class="text-[10px] text-paper-400 font-body uppercase tracking-wide">Appointed</p>
-          </div>
-        </div>
 
-        <!-- Actions -->
-        <div class="flex flex-wrap gap-2 shrink-0">
-          <RouterLink :to="`/guardian/jobs/${job.public_id}/applicants`"
-            class="rounded-sm bg-navy-700 px-3 py-1.5 text-xs font-semibold font-display text-white hover:bg-navy-800 transition-colors">
-            View Applicants
-          </RouterLink>
-          <button v-if="job.status === 'open'" @click="closeTarget = job"
-            class="rounded-sm border border-paper-300 px-3 py-1.5 text-xs font-semibold font-display text-paper-600 hover:bg-paper-100 transition-colors">
-            Close Job
-          </button>
-          <button v-else @click="doReopen(job)"
-            class="rounded-sm border border-emerald-300 px-3 py-1.5 text-xs font-semibold font-display text-emerald-700 hover:bg-emerald-50 transition-colors">
-            Reopen
-          </button>
+          <!-- Actions -->
+          <div class="mt-3 flex flex-col gap-2">
+            <RouterLink :to="`/guardian/jobs/${job.public_id}/applicants`"
+              class="inline-flex min-h-[40px] items-center justify-center rounded-md bg-navy-700 px-3 py-2 text-xs font-semibold font-display text-white hover:bg-navy-800 transition-colors">
+              View Applicants
+            </RouterLink>
+            <button v-if="job.status === 'open'" @click="closeTarget = job"
+              class="inline-flex min-h-[40px] items-center justify-center rounded-md bg-red-600 px-3 py-2 text-xs font-semibold font-display text-white hover:bg-red-700 transition-colors">
+              Close Job
+            </button>
+            <button v-else @click="doReopen(job)"
+              class="inline-flex min-h-[40px] items-center justify-center rounded-md border border-emerald-300 bg-white px-3 py-2 text-xs font-semibold font-display text-emerald-700 hover:bg-emerald-50 transition-colors">
+              Reopen
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -167,3 +155,9 @@ function formatDate(iso) {
 
 onMounted(load)
 </script>
+
+<style scoped>
+.job-count-chip {
+  @apply rounded-md border px-3 py-2.5 text-center shadow-xs;
+}
+</style>

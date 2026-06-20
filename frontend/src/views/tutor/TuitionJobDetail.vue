@@ -19,7 +19,7 @@
         <div class="bg-gradient-to-br from-white via-navy-50/60 to-gold-50/60 p-5 md:p-7">
           <div class="mb-4 flex flex-wrap items-center gap-2">
             <span class="text-xs font-semibold font-display px-2.5 py-1 rounded-pill border"
-            :class="job.status === 'open' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-paper-100 text-paper-500 border-paper-200'">
+            :class="job.status === 'open' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-600 border-red-200'">
               {{ job.status === 'open' ? 'Open' : 'Closed' }}
             </span>
             <span class="text-xs font-semibold text-paper-500 font-body">Job ID: #{{ job.public_id }}</span>
@@ -107,11 +107,22 @@
               Directions
             </a>
 
-            <div v-if="job.my_application" class="flex items-center gap-2 rounded-md bg-emerald-50 border border-emerald-200 px-4 py-3">
-              <svg class="w-5 h-5 shrink-0 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <div v-if="job.my_application"
+              class="flex items-center gap-2 rounded-md px-4 py-3 border"
+              :class="appStatusIsNegative(job.my_application.status)
+                ? 'bg-red-50 border-red-200'
+                : 'bg-emerald-50 border-emerald-200'">
+              <!-- not selected: X icon -->
+              <svg v-if="appStatusIsNegative(job.my_application.status)"
+                class="w-5 h-5 shrink-0 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <!-- positive: checkmark icon -->
+              <svg v-else class="w-5 h-5 shrink-0 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
-              <span class="text-sm font-semibold font-display text-emerald-700">
+              <span class="text-sm font-semibold font-display"
+                :class="appStatusIsNegative(job.my_application.status) ? 'text-red-700' : 'text-emerald-700'">
                 Application {{ statusLabel(job.my_application.status) }}
               </span>
             </div>
@@ -272,7 +283,11 @@ const detailRows = computed(() => {
 })
 
 function statusLabel(s) {
-  return { applied:'Submitted', shortlisted:'Shortlisted', appointed:'Appointed for Demo', connected:'Confirmed', removed:'Removed' }[s] ?? s
+  return { applied:'Submitted', shortlisted:'Shortlisted', appointed:'Appointed for Demo', connected:'Confirmed', not_selected:'Not Selected' }[s] ?? s
+}
+
+function appStatusIsNegative(s) {
+  return s === 'not_selected'
 }
 
 function formatDate(iso) {

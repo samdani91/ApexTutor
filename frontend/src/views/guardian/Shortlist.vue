@@ -247,13 +247,13 @@ function connectionLabel(status) {
 
 function connectionBadgeClass(status) {
   if (status === 'declined') return 'bg-red-50 text-red-700 border-red-200'
-  if (status === 'closed')   return 'bg-paper-100 text-paper-600 border-paper-200'
+  if (status === 'closed')   return 'bg-red-50 text-red-600 border-red-200'
   return 'bg-blue-50 text-blue-700 border-blue-200'
 }
 
 function connectionDotClass(status) {
   if (status === 'declined') return 'bg-red-500'
-  if (status === 'closed')   return 'bg-paper-400'
+  if (status === 'closed')   return 'bg-red-400'
   return 'bg-blue-500'
 }
 </script>

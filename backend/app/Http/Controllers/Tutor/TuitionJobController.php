@@ -18,6 +18,12 @@ class TuitionJobController extends Controller
             ->withExists([
                 'applications as already_applied' => fn($q) => $q->where('tutor_profile_id', $tutorProfile?->id ?? 0),
             ])
+            ->when($tutorProfile, fn($q) =>
+                $q->whereDoesntHave('applications', fn($aq) =>
+                    $aq->where('tutor_profile_id', $tutorProfile->id)
+                       ->where('status', 'not_selected')
+                )
+            )
             ->latest();
 
         if ($request->filled('district_id')) {

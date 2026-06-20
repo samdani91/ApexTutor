@@ -87,7 +87,14 @@ export const adminApi = {
   markAllNotificationsRead: () => http.put('/admin/notifications/read-all'),
 
   // Tuition Jobs
-  getTuitionJobs: (params = {}) => http.get('/admin/tuition-jobs', { params }),
-  closeTuitionJob: (publicId) => http.put(`/admin/tuition-jobs/${publicId}/close`),
-  reopenTuitionJob: (publicId) => http.put(`/admin/tuition-jobs/${publicId}/reopen`),
+  getTuitionJobs:             (params = {})                   => http.get(`/admin/tuition-jobs`, { params }),
+  getTuitionJob:              (publicId)                       => http.get(`/admin/tuition-jobs/${publicId}`),
+  closeTuitionJob:            (publicId)                       => http.put(`/admin/tuition-jobs/${publicId}/close`),
+  reopenTuitionJob:           (publicId)                       => http.put(`/admin/tuition-jobs/${publicId}/reopen`),
+  getTuitionJobApplications:  (publicId, params = {})          => http.get(`/admin/tuition-jobs/${publicId}/applications`, { params }),
+  shortlistApplicant:         (publicId, appId)                => http.patch(`/admin/tuition-jobs/${publicId}/applications/${appId}/shortlist`),
+  appointApplicant:           (publicId, appId)                => http.patch(`/admin/tuition-jobs/${publicId}/applications/${appId}/appoint`),
+  confirmApplicant:           (publicId, appId)                => http.patch(`/admin/tuition-jobs/${publicId}/applications/${appId}/confirm`),
+  removeApplicant:            (publicId, appId)                => http.patch(`/admin/tuition-jobs/${publicId}/applications/${appId}/remove`),
+  changeApplicantStatus:      (publicId, appId, status)        => http.patch(`/admin/tuition-jobs/${publicId}/applications/${appId}/status`, { status }),
 }

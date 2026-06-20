@@ -5,27 +5,48 @@
       <p class="mt-1 text-sm font-body text-paper-500">Track the status of all your tuition job applications.</p>
     </div>
 
-    <!-- Application status tabs -->
-    <div class="flex gap-1 border-b border-paper-200 overflow-x-auto">
-      <button v-for="tab in tabs" :key="tab.value" @click="switchTab(tab.value)"
-        class="px-4 py-2.5 text-sm font-semibold font-display rounded-t-lg transition-colors whitespace-nowrap"
-        :class="activeTab === tab.value
-          ? 'bg-white border border-b-white border-paper-200 -mb-px text-navy-900'
-          : 'text-paper-500 hover:text-navy-700'">
-        {{ tab.label }}
-      </button>
+    <!-- Application status filter -->
+    <!-- Mobile: two dropdowns side by side -->
+    <div class="flex gap-3 sm:hidden">
+      <div class="flex-1">
+        <p class="text-xs font-semibold font-display text-paper-500 uppercase tracking-wide mb-1">Status</p>
+        <DropSelect
+          :model-value="activeTab"
+          :options="tabs"
+          @update:modelValue="switchTab"
+        />
+      </div>
+      <div class="flex-1">
+        <p class="text-xs font-semibold font-display text-paper-500 uppercase tracking-wide mb-1">Job</p>
+        <DropSelect
+          :model-value="activeJobStatus"
+          :options="jobStatusFilters"
+          @update:modelValue="switchJobStatus"
+        />
+      </div>
     </div>
 
-    <!-- Job status filter -->
-    <div class="flex items-center gap-2 flex-wrap">
-      <span class="text-xs font-semibold font-display text-paper-500 uppercase tracking-wide">Job:</span>
-      <button v-for="f in jobStatusFilters" :key="f.value" @click="switchJobStatus(f.value)"
-        class="px-3 py-1 text-xs font-semibold font-display rounded-pill border transition-colors"
-        :class="activeJobStatus === f.value
-          ? 'bg-navy-700 text-white border-navy-700'
-          : 'bg-white text-navy-600 border-paper-300 hover:bg-navy-50'">
-        {{ f.label }}
-      </button>
+    <!-- Desktop: tabs + pill filters -->
+    <div class="hidden sm:block space-y-3">
+      <div class="flex gap-1 border-b border-paper-200">
+        <button v-for="tab in tabs" :key="tab.value" @click="switchTab(tab.value)"
+          class="px-4 py-2.5 text-sm font-semibold font-display rounded-t-lg transition-colors whitespace-nowrap"
+          :class="activeTab === tab.value
+            ? 'bg-white border border-b-white border-paper-200 -mb-px text-navy-900'
+            : 'text-paper-500 hover:text-navy-700'">
+          {{ tab.label }}
+        </button>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-xs font-semibold font-display text-paper-500 uppercase tracking-wide">Job:</span>
+        <button v-for="f in jobStatusFilters" :key="f.value" @click="switchJobStatus(f.value)"
+          class="px-3 py-1 text-xs font-semibold font-display rounded-pill border transition-colors"
+          :class="activeJobStatus === f.value
+            ? 'bg-navy-700 text-white border-navy-700'
+            : 'bg-white text-navy-600 border-paper-300 hover:bg-navy-50'">
+          {{ f.label }}
+        </button>
+      </div>
     </div>
 
     <div v-if="loading" class="card py-16 text-center text-paper-400 font-body text-sm">Loading…</div>
@@ -64,7 +85,7 @@
           <span class="text-xs font-semibold font-display px-2 py-0.5 rounded-pill border"
             :class="app.tuition_job?.status === 'open'
               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-              : 'bg-paper-100 text-paper-500 border-paper-200'">
+              : 'bg-red-50 text-red-600 border-red-200'">
             Job {{ app.tuition_job?.status === 'open' ? 'Open' : 'Closed' }}
           </span>
           <!-- Application status -->
@@ -82,6 +103,7 @@
 import { ref, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { tutorJobsApi } from '@/api/jobs.js'
+import DropSelect from '@/components/search/DropSelect.vue'
 
 const tabs = [
   { value: 'all',         label: 'All'          },
@@ -89,7 +111,7 @@ const tabs = [
   { value: 'shortlisted', label: 'Shortlisted'  },
   { value: 'appointed',   label: 'Appointed'    },
   { value: 'connected',   label: 'Confirmed'    },
-  { value: 'removed',     label: 'Not Selected' },
+  { value: 'not_selected', label: 'Not Selected' },
 ]
 
 const jobStatusFilters = [
@@ -128,10 +150,10 @@ function switchJobStatus(val) {
 
 function appStatusClass(s) {
   if (s === 'applied')     return 'bg-blue-50 text-blue-700 border-blue-200'
-  if (s === 'shortlisted') return 'bg-gold-50 text-gold-700 border-gold-200'
-  if (s === 'appointed')   return 'bg-purple-50 text-purple-700 border-purple-200'
+  if (s === 'shortlisted') return 'bg-navy-50 text-navy-700 border-navy-200'
+  if (s === 'appointed')   return 'bg-gold-50 text-gold-700 border-gold-200'
   if (s === 'connected')   return 'bg-emerald-50 text-emerald-700 border-emerald-200'
-  if (s === 'removed')     return 'bg-red-50 text-red-600 border-red-200'
+  if (s === 'not_selected') return 'bg-red-50 text-red-600 border-red-200'
   return 'bg-paper-100 text-paper-500 border-paper-200'
 }
 
@@ -141,7 +163,7 @@ function appStatusLabel(s) {
     shortlisted: 'Shortlisted',
     appointed:   'Appointed',
     connected:   'Confirmed',
-    removed:     'Not Selected',
+    not_selected: 'Not Selected',
   }[s] ?? s
 }
 

@@ -358,7 +358,7 @@ function statusBadgeClass(s) {
     connected:       'bg-emerald-50 text-emerald-700 border-emerald-200',
     confirmed:       'bg-emerald-50 text-emerald-700 border-emerald-200',
     declined:        'bg-red-50 text-red-600 border-red-200',
-    closed:          'bg-paper-100 text-paper-600 border-paper-200',
+    closed:          'bg-red-50 text-red-600 border-red-200',
   }
   return m[s] ?? 'bg-paper-100 text-paper-600 border-paper-200'
 }
@@ -371,7 +371,7 @@ function statusBarClass(s) {
     connected:       'bg-emerald-500',
     confirmed:       'bg-emerald-500',
     declined:        'bg-red-400',
-    closed:          'bg-paper-300',
+    closed:          'bg-red-400',
   }
   return m[s] ?? 'bg-paper-300'
 }

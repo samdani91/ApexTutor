@@ -41,18 +41,18 @@
           Manage All Jobs
         </RouterLink>
       </div>
-      <div class="grid grid-cols-3 gap-3 mb-4">
-        <div class="metric-card">
+      <div class="grid grid-cols-1 gap-3 mb-4 sm:grid-cols-3">
+        <div class="job-summary-chip border-emerald-200 bg-emerald-50">
           <p class="font-display font-bold text-2xl text-emerald-600">{{ jobSummary.open }}</p>
-          <p class="text-xs text-paper-500 font-body mt-1">Open</p>
+          <p class="text-xs text-emerald-700 font-semibold font-body mt-1">Open</p>
         </div>
-        <div class="metric-card">
-          <p class="font-display font-bold text-2xl text-paper-500">{{ jobSummary.closed }}</p>
-          <p class="text-xs text-paper-500 font-body mt-1">Closed</p>
+        <div class="job-summary-chip border-red-200 bg-red-50">
+          <p class="font-display font-bold text-2xl text-red-600">{{ jobSummary.closed }}</p>
+          <p class="text-xs text-red-700 font-semibold font-body mt-1">Closed</p>
         </div>
-        <div class="metric-card">
+        <div class="job-summary-chip border-blue-200 bg-blue-50">
           <p class="font-display font-bold text-2xl text-navy-700">{{ jobSummary.totalApplicants }}</p>
-          <p class="text-xs text-paper-500 font-body mt-1">Applicants</p>
+          <p class="text-xs text-blue-700 font-semibold font-body mt-1">Applicants</p>
         </div>
       </div>
       <RouterLink to="/guardian/jobs/post" class="btn-primary text-sm py-2 px-5 inline-block">+ Post New Job</RouterLink>
@@ -123,6 +123,10 @@ onMounted(async () => {
 
 .metric-card {
   @apply rounded-md border border-paper-200 bg-white p-5 text-center shadow-sm;
+}
+
+.job-summary-chip {
+  @apply rounded-md border p-5 text-center shadow-sm;
 }
 
 .reveal {

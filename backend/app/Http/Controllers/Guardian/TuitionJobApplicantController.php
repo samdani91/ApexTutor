@@ -60,6 +60,11 @@ class TuitionJobApplicantController extends Controller
         $app->update(['status' => 'connected']);
         $job->update(['status' => 'closed']);
 
+        TuitionJobApplication::where('tuition_job_id', $job->id)
+            ->where('id', '!=', $app->id)
+            ->whereNotIn('status', ['connected'])
+            ->update(['status' => 'not_selected']);
+
         $guardian = $request->user()->guardianProfile;
 
         ConnectionRequest::create([
@@ -75,8 +80,8 @@ class TuitionJobApplicantController extends Controller
     {
         $app = $this->ownedApplication($request, $publicId, $applicationId);
         abort_if($app->status === 'connected', 422, 'Cannot remove a confirmed tutor.');
-        $app->update(['status' => 'removed']);
-        return response()->json(['success' => true, 'message' => 'Applicant removed.']);
+        $app->update(['status' => 'not_selected']);
+        return response()->json(['success' => true, 'message' => 'Applicant not selected.']);
     }
 
     private function ownedJob(Request $request, string $publicId): TuitionJob
