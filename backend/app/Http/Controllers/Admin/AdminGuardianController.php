@@ -54,7 +54,7 @@ class AdminGuardianController extends Controller
     {
         $guardian = GuardianProfile::with('user')->where('guardian_id', $guardianId)->firstOrFail();
 
-        $request->validate([
+        $validated = $request->validate([
             'user.name'    => 'sometimes|string|max:100',
             'user.email'   => 'sometimes|email|unique:users,email,' . $guardian->user_id,
             'user.phone'   => 'nullable|string|max:20',
@@ -66,11 +66,11 @@ class AdminGuardianController extends Controller
             'profile.account_type'           => 'nullable|in:guardian,student',
         ]);
 
-        DB::transaction(function () use ($request, $guardian) {
-            if ($userData = $request->input('user')) {
+        DB::transaction(function () use ($validated, $guardian) {
+            if ($userData = $validated['user'] ?? null) {
                 $guardian->user->update(array_filter($userData, fn($v) => $v !== null));
             }
-            if ($profileData = $request->input('profile')) {
+            if ($profileData = $validated['profile'] ?? null) {
                 $filtered = array_filter($profileData, fn($v) => $v !== null);
                 if (!empty($filtered)) $guardian->update($filtered);
             }

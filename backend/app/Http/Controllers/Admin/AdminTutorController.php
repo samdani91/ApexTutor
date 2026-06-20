@@ -72,7 +72,7 @@ class AdminTutorController extends Controller
     {
         $tutor = TutorProfile::with(['user','tuitionPreference','personalInfo','emergencyContact'])->where('tutor_id', $tutorId)->firstOrFail();
 
-        $request->validate([
+        $validated = $request->validate([
             'user.name'    => 'sometimes|string|max:100',
             'user.email'   => 'sometimes|email|unique:users,email,' . $tutor->user_id,
             'user.phone'   => 'nullable|string|max:20',
@@ -122,12 +122,12 @@ class AdminTutorController extends Controller
         // any pending changes — the avatar is no longer in a reviewable state.
         $pendingAvatarPath = $tutor->pending_changes['avatar']['path'] ?? null;
 
-        DB::transaction(function () use ($request, $tutor) {
-            if ($userData = $request->input('user')) {
+        DB::transaction(function () use ($validated, $tutor) {
+            if ($userData = $validated['user'] ?? null) {
                 $tutor->user->update(array_filter($userData, fn($v, $k) => $v !== null || in_array($k, ['phone', 'address']), ARRAY_FILTER_USE_BOTH));
             }
 
-            if ($profileData = $request->input('profile')) {
+            if ($profileData = $validated['profile'] ?? null) {
                 $update = array_filter($profileData, fn($v) => $v !== null);
                 $update['pending_changes'] = null;
                 $update['pending_note']    = null;
@@ -143,7 +143,7 @@ class AdminTutorController extends Controller
                 $tutor->user->save();
             }
 
-            if ($prefData = $request->input('preference')) {
+            if ($prefData = $validated['preference'] ?? null) {
                 $prefData = array_filter($prefData, fn($v) => $v !== null);
                 if (!empty($prefData)) {
                     $tutor->tuitionPreference
@@ -152,7 +152,7 @@ class AdminTutorController extends Controller
                 }
             }
 
-            if ($piData = $request->input('personal_info')) {
+            if ($piData = $validated['personal_info'] ?? null) {
                 $piData = array_filter($piData, fn($v) => $v !== null);
                 if (!empty($piData)) {
                     $tutor->personalInfo
@@ -161,7 +161,7 @@ class AdminTutorController extends Controller
                 }
             }
 
-            if ($ecData = $request->input('emergency_contact')) {
+            if ($ecData = $validated['emergency_contact'] ?? null) {
                 $ecData = array_filter($ecData, fn($v) => $v !== null);
                 if (!empty($ecData)) {
                     $tutor->emergencyContact
