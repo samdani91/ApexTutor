@@ -30,7 +30,7 @@ class TuitionJobController extends Controller
             $query->where('status', $status);
         }
 
-        return response()->json(['success' => true, 'data' => $query->limit(500)->get()]);
+        return response()->json(['success' => true, 'data' => $query->get()]);
     }
 
     public function store(StoreTuitionJobRequest $request): JsonResponse

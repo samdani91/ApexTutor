@@ -21,7 +21,6 @@ class ConnectionRequestController extends Controller
                 'tutorProfile.user:id,name,avatar',
             ])
             ->latest()
-            ->limit(500)
             ->get();
         return response()->json(['success' => true, 'data' => $connections]);
     }
