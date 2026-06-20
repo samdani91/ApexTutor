@@ -7,6 +7,8 @@ use App\Models\ConnectionRequest;
 use App\Models\District;
 use App\Models\PlatformFeedback;
 use App\Models\Subject;
+use App\Models\TuitionJob;
+use App\Models\TuitionJobApplication;
 use App\Models\TutorProfile;
 use App\Models\University;
 use Illuminate\Http\JsonResponse;
@@ -24,10 +26,12 @@ class TutorSearchController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'verified_tutors'  => TutorProfile::where('status', 'active')->where('is_verified', true)->count(),
-                'districts'        => District::count(),
-                'student_matches'  => ConnectionRequest::where('status', 'confirmed')->count(),
-                'avg_rating'       => $avgRating ? round((float) $avgRating, 1) : null,
+                'verified_tutors'   => TutorProfile::where('status', 'active')->where('is_verified', true)->count(),
+                'districts'         => District::count(),
+                'student_matches'   => ConnectionRequest::where('status', 'confirmed')->count(),
+                'avg_rating'        => $avgRating ? round((float) $avgRating, 1) : null,
+                'open_tuition_jobs' => TuitionJob::where('status', 'open')->count(),
+                'confirmed_via_jobs'=> TuitionJobApplication::where('status', 'connected')->count(),
             ],
         ]);
     }

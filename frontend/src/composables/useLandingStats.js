@@ -7,6 +7,8 @@ export function useLandingStats() {
     districts: 0,
     students: 0,
     rating: 0,
+    openJobs: 0,
+    confirmedViaJobs: 0,
   })
 
   const heroTutorCount = computed(() => `${Math.round(statTargets.tutors).toLocaleString()}+`)
@@ -32,9 +34,11 @@ export function useLandingStats() {
   async function loadLandingStats() {
     try {
       const { data } = await searchApi.landingStats()
-      statTargets.tutors    = Number(data.data?.verified_tutors  ?? statTargets.tutors)
-      statTargets.districts = Number(data.data?.districts        ?? statTargets.districts)
-      statTargets.students  = Number(data.data?.student_matches  ?? statTargets.students)
+      statTargets.tutors           = Number(data.data?.verified_tutors   ?? statTargets.tutors)
+      statTargets.districts        = Number(data.data?.districts         ?? statTargets.districts)
+      statTargets.students         = Number(data.data?.student_matches   ?? statTargets.students)
+      statTargets.openJobs         = Number(data.data?.open_tuition_jobs ?? statTargets.openJobs)
+      statTargets.confirmedViaJobs = Number(data.data?.confirmed_via_jobs ?? statTargets.confirmedViaJobs)
       if (data.data?.avg_rating != null) statTargets.rating = Number(data.data.avg_rating)
       return true
     } catch {

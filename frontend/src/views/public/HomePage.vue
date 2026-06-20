@@ -2,7 +2,7 @@
   <DefaultLayout>
     <main class="landing-page bg-white text-navy-900">
       <section class="hero-screen relative bg-white">
-        <div class="content-wrap grid min-h-[calc(100svh-4rem)] items-center gap-10 pb-40 pt-3 md:grid-cols-2 md:pb-44 md:pt-4">
+        <div class="content-wrap grid min-h-[calc(100svh-4rem)] items-center gap-10 pb-40 pt-3 md:grid-cols-2 md:pb-[26rem] md:pt-4 lg:pb-52">
           <div>
             <h1 class="hero-title font-display text-4xl font-bold leading-tight text-navy-900 sm:text-5xl md:text-6xl">
               <template v-for="(wordObj, wi) in heroWordGroups" :key="wi">
@@ -80,12 +80,12 @@
 
         <div ref="statsRef" class="hero-stats absolute inset-x-0 bottom-6 z-10 px-4 md:px-6">
         <div class="content-wrap rounded-lg bg-navy-700 p-6 shadow-xl md:p-8">
-          <div class="grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-0">
+          <div class="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-6 lg:gap-0">
             <div
               v-for="(stat, index) in statsCards"
               :key="stat.label"
               class="text-center"
-              :class="index < statsCards.length - 1 ? 'md:border-r md:border-white/20' : ''"
+              :class="index < statsCards.length - 1 ? 'lg:border-r lg:border-white/20' : ''"
             >
               <component :is="stat.icon" class="mx-auto mb-2 h-10 w-10 text-white/80" />
               <div class="font-display text-3xl font-bold text-white md:text-4xl">
@@ -309,6 +309,8 @@ const IconList = iconComponent('M8.25 6.75h12M8.25 12h12M8.25 17.25h12M3.75 6.75
 const IconCheck = iconComponent('M9 12.75 11.25 15 15.75 9M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z')
 const IconDocument = iconComponent('M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5A3.375 3.375 0 0 0 10.125 2.25H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z')
 const IconBadge = iconComponent('M9 12.75 11.25 15 15.75 9M12 2.25l2.1 2.1 2.97-.42.42 2.97 2.1 2.1-2.1 2.1-.42 2.97-2.97-.42L12 15.75l-2.1-2.1-2.97.42-.42-2.97-2.1-2.1 2.1-2.1.42-2.97 2.97.42L12 2.25Z')
+const IconBriefcase = iconComponent('M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 0 0 .75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 0 0-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0 1 12 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 0 1-.673-.38m0 0A2.18 2.18 0 0 1 3 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 0 1 3.413-.387m7.5 0V5.25A2.25 2.25 0 0 0 13.5 3h-3a2.25 2.25 0 0 0-2.25 2.25v.894m7.5 0a48.667 48.667 0 0 0-7.5 0M12 12.75h.008v.008H12v-.008Z')
+const IconClipboardCheck = iconComponent('M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0 1 18 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3 1.5 1.5 3-3.75')
 
 const quickChips = [
   { label: 'Class 9', query: { class_level: 'class_9' } },
@@ -320,14 +322,16 @@ const quickChips = [
   { label: 'Online', query: { place_of_tutoring: 'online' } },
 ]
 
-const counterValues = reactive({ tutors: 0, districts: 0, students: 0, rating: 0 })
+const counterValues = reactive({ tutors: 0, districts: 0, students: 0, rating: 0, openJobs: 0, confirmedViaJobs: 0 })
 const { statTargets, loadLandingStats: fetchLandingStats } = useLandingStats()
 
 const statsCards = computed(() => [
-  { icon: IconUsers, display: Math.round(counterValues.tutors).toLocaleString(),    suffix: '+',  label: 'Verified Tutors' },
-  { icon: IconBook,  display: Math.round(counterValues.students).toLocaleString(),  suffix: '+',  label: 'Tuition Matches' },
-  { icon: IconMap,   display: Math.round(counterValues.districts).toLocaleString(), suffix: '',   label: 'Districts Covered' },
-  { icon: IconStar,  display: counterValues.rating.toFixed(1),                      suffix: '/5', label: 'Average Rating' },
+  { icon: IconUsers,          display: Math.round(counterValues.tutors).toLocaleString(),           suffix: '+',  label: 'Verified Tutors' },
+  { icon: IconBriefcase,      display: Math.round(counterValues.openJobs).toLocaleString(),         suffix: '',   label: 'Open Tuition Jobs' },
+  { icon: IconBook,           display: Math.round(counterValues.students).toLocaleString(),         suffix: '+',  label: 'Tuition Matches' },
+  { icon: IconClipboardCheck, display: Math.round(counterValues.confirmedViaJobs).toLocaleString(), suffix: '+',  label: 'Confirmed via Job Post' },
+  { icon: IconMap,            display: Math.round(counterValues.districts).toLocaleString(),        suffix: '',   label: 'Districts Covered' },
+  { icon: IconStar,           display: counterValues.rating.toFixed(1),                             suffix: '/5', label: 'Average Rating' },
 ])
 
 const tuitionTypes = [
@@ -512,10 +516,12 @@ onBeforeUnmount(() => {
 function startCounters() {
   if (countersStarted.value) return
   countersStarted.value = true
-  animateCounter('tutors', statTargets.tutors, 900)
-  animateCounter('districts', statTargets.districts, 760)
-  animateCounter('students', statTargets.students, 1050)
-  animateCounter('rating', statTargets.rating, 1200)
+  animateCounter('tutors',           statTargets.tutors,           900)
+  animateCounter('openJobs',         statTargets.openJobs,         800)
+  animateCounter('districts',        statTargets.districts,        760)
+  animateCounter('students',         statTargets.students,         1050)
+  animateCounter('confirmedViaJobs', statTargets.confirmedViaJobs, 950)
+  animateCounter('rating',           statTargets.rating,           1200)
 }
 
 function animateCounter(key, target, duration) {
@@ -534,10 +540,12 @@ function animateCounter(key, target, duration) {
 async function loadLandingStats() {
   const loaded = await fetchLandingStats()
   if (loaded && countersStarted.value) {
-    animateCounter('tutors', statTargets.tutors, 500)
-    animateCounter('districts', statTargets.districts, 500)
-    animateCounter('students', statTargets.students, 500)
-    animateCounter('rating', statTargets.rating, 500)
+    animateCounter('tutors',           statTargets.tutors,           500)
+    animateCounter('openJobs',         statTargets.openJobs,         500)
+    animateCounter('districts',        statTargets.districts,        500)
+    animateCounter('students',         statTargets.students,         500)
+    animateCounter('confirmedViaJobs', statTargets.confirmedViaJobs, 500)
+    animateCounter('rating',           statTargets.rating,           500)
   }
 }
 
