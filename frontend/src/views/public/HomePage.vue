@@ -80,7 +80,7 @@
 
         <div ref="statsRef" class="hero-stats absolute inset-x-0 bottom-6 z-10 px-4 md:px-6">
         <div class="content-wrap rounded-lg bg-navy-700 p-6 shadow-xl md:p-8">
-          <div class="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-6 lg:gap-0">
+          <div class="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-5 lg:gap-0">
             <div
               v-for="(stat, index) in statsCards"
               :key="stat.label"
@@ -322,16 +322,15 @@ const quickChips = [
   { label: 'Online', query: { place_of_tutoring: 'online' } },
 ]
 
-const counterValues = reactive({ tutors: 0, districts: 0, students: 0, rating: 0, openJobs: 0, confirmedViaJobs: 0 })
+const counterValues = reactive({ tutors: 0, districts: 0, confirmedTotal: 0, rating: 0, openJobs: 0 })
 const { statTargets, loadLandingStats: fetchLandingStats } = useLandingStats()
 
 const statsCards = computed(() => [
-  { icon: IconUsers,          display: Math.round(counterValues.tutors).toLocaleString(),           suffix: '+',  label: 'Verified Tutors' },
-  { icon: IconBriefcase,      display: Math.round(counterValues.openJobs).toLocaleString(),         suffix: '',   label: 'Open Tuition Jobs' },
-  { icon: IconBook,           display: Math.round(counterValues.students).toLocaleString(),         suffix: '+',  label: 'Tuition Matches' },
-  { icon: IconClipboardCheck, display: Math.round(counterValues.confirmedViaJobs).toLocaleString(), suffix: '+',  label: 'Confirmed via Job Post' },
-  { icon: IconMap,            display: Math.round(counterValues.districts).toLocaleString(),        suffix: '',   label: 'Districts Covered' },
-  { icon: IconStar,           display: counterValues.rating.toFixed(1),                             suffix: '/5', label: 'Average Rating' },
+  { icon: IconUsers,      display: Math.round(counterValues.tutors).toLocaleString(),          suffix: '+',  label: 'Verified Tutors' },
+  { icon: IconBriefcase,  display: Math.round(counterValues.openJobs).toLocaleString(),        suffix: '',   label: 'Open Tuition Jobs' },
+  { icon: IconBook,       display: Math.round(counterValues.confirmedTotal).toLocaleString(),  suffix: '+',  label: 'Confirmed Tuitions' },
+  { icon: IconMap,        display: Math.round(counterValues.districts).toLocaleString(),       suffix: '',   label: 'Districts Covered' },
+  { icon: IconStar,       display: counterValues.rating.toFixed(1),                            suffix: '/5', label: 'Average Rating' },
 ])
 
 const tuitionTypes = [
@@ -516,12 +515,11 @@ onBeforeUnmount(() => {
 function startCounters() {
   if (countersStarted.value) return
   countersStarted.value = true
-  animateCounter('tutors',           statTargets.tutors,           900)
-  animateCounter('openJobs',         statTargets.openJobs,         800)
-  animateCounter('districts',        statTargets.districts,        760)
-  animateCounter('students',         statTargets.students,         1050)
-  animateCounter('confirmedViaJobs', statTargets.confirmedViaJobs, 950)
-  animateCounter('rating',           statTargets.rating,           1200)
+  animateCounter('tutors',         statTargets.tutors,         900)
+  animateCounter('openJobs',       statTargets.openJobs,       800)
+  animateCounter('confirmedTotal', statTargets.confirmedTotal, 1050)
+  animateCounter('districts',      statTargets.districts,      760)
+  animateCounter('rating',         statTargets.rating,         1200)
 }
 
 function animateCounter(key, target, duration) {
@@ -540,12 +538,11 @@ function animateCounter(key, target, duration) {
 async function loadLandingStats() {
   const loaded = await fetchLandingStats()
   if (loaded && countersStarted.value) {
-    animateCounter('tutors',           statTargets.tutors,           500)
-    animateCounter('openJobs',         statTargets.openJobs,         500)
-    animateCounter('districts',        statTargets.districts,        500)
-    animateCounter('students',         statTargets.students,         500)
-    animateCounter('confirmedViaJobs', statTargets.confirmedViaJobs, 500)
-    animateCounter('rating',           statTargets.rating,           500)
+    animateCounter('tutors',         statTargets.tutors,         500)
+    animateCounter('openJobs',       statTargets.openJobs,       500)
+    animateCounter('confirmedTotal', statTargets.confirmedTotal, 500)
+    animateCounter('districts',      statTargets.districts,      500)
+    animateCounter('rating',         statTargets.rating,         500)
   }
 }
 
