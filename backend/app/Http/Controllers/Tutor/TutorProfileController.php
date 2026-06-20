@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Area;
 use App\Models\District;
 use App\Models\Subject;
+use App\Models\TuitionJobApplication;
 use App\Services\PendingProfileChangeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -57,7 +58,7 @@ class TutorProfileController extends Controller
             ->withCount([
                 'connectionRequests',
                 'reviews',
-                'connectionRequests as confirmed_tuitions_count' => fn($q) => $q->where('status', 'confirmed'),
+                'connectionRequests as confirmed_via_connections' => fn($q) => $q->where('status', 'confirmed'),
             ])
             ->first();
 
@@ -79,6 +80,10 @@ class TutorProfileController extends Controller
             ]]);
         }
 
+        $confirmedViaJobs = TuitionJobApplication::where('tutor_profile_id', $profile->id)
+            ->where('status', 'connected')
+            ->count();
+
         $pendingChanges = $this->resolvePendingChanges($profile->pending_changes);
 
         return response()->json(['success' => true, 'data' => [
@@ -87,7 +92,7 @@ class TutorProfileController extends Controller
             'is_verified'               => $profile->is_verified,
             'verification_status'       => $profile->verification_status,
             'connection_requests_count' => $profile->connection_requests_count,
-            'confirmed_tuitions_count'  => $profile->confirmed_tuitions_count,
+            'confirmed_tuitions_count'  => ($profile->confirmed_via_connections ?? 0) + $confirmedViaJobs,
             'reviews_count'             => $profile->reviews_count,
             'profile_views'             => $profile->profile_view_count,
             'rating'                    => $profile->rating,
@@ -106,21 +111,55 @@ class TutorProfileController extends Controller
         ]]);
     }
 
-    public function confirmedTuitions(Request $request): \Illuminate\Http\JsonResponse
+    public function confirmedTuitions(Request $request): JsonResponse
     {
         $profile = $request->user()->tutorProfile;
         if (!$profile) {
             return response()->json(['success' => true, 'data' => []]);
         }
 
-        $tuitions = $profile->connectionRequests()
+        $guardianWith = [
+            'guardianProfile:id,user_id,guardian_id',
+            'guardianProfile.user:id,name,avatar,phone',
+        ];
+
+        // Flow 1: guardian found tutor themselves → ConnectionRequest confirmed by admin
+        $fromConnections = $profile->connectionRequests()
             ->where('status', 'confirmed')
-            ->with([
-                'guardianProfile:id,user_id,guardian_id',
-                'guardianProfile.user:id,name,avatar,phone',
-            ])
+            ->with($guardianWith)
             ->latest('confirmed_at')
-            ->get();
+            ->get()
+            ->map(fn($c) => [
+                'id'               => 'cr_' . $c->id,
+                'source'           => 'connection',
+                'guardian_profile' => $c->guardianProfile,
+                'guardian_message' => $c->guardian_message,
+                'confirmed_at'     => $c->confirmed_at,
+            ]);
+
+        // Flow 2: guardian posted a job → admin confirmed this tutor's application
+        $fromJobs = TuitionJobApplication::where('tutor_profile_id', $profile->id)
+            ->where('status', 'connected')
+            ->with([
+                'tuitionJob:id,public_id,title,guardian_profile_id',
+                'tuitionJob.guardianProfile:id,user_id,guardian_id',
+                'tuitionJob.guardianProfile.user:id,name,avatar,phone',
+            ])
+            ->latest('updated_at')
+            ->get()
+            ->map(fn($a) => [
+                'id'               => 'ja_' . $a->id,
+                'source'           => 'job',
+                'guardian_profile' => $a->tuitionJob?->guardianProfile,
+                'guardian_message' => null,
+                'confirmed_at'     => $a->updated_at,
+                'job_title'        => $a->tuitionJob?->title,
+                'job_public_id'    => $a->tuitionJob?->public_id,
+            ]);
+
+        $tuitions = $fromConnections->concat($fromJobs)
+            ->sortByDesc('confirmed_at')
+            ->values();
 
         return response()->json(['success' => true, 'data' => $tuitions]);
     }

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\ConnectionRequest;
 use App\Models\TuitionJob;
 use App\Models\TuitionJobApplication;
 use App\Notifications\TuitionJobApplicationStatusNotification;
@@ -152,12 +151,6 @@ class AdminTuitionJobController extends Controller
             ->each(function ($other) use ($job) {
                 $this->notifyTutor($other, 'not_selected', $job);
             });
-
-        ConnectionRequest::create([
-            'guardian_profile_id' => $job->guardian_profile_id,
-            'tutor_profile_id'    => $app->tutor_profile_id,
-            'status'              => 'pending',
-        ]);
 
         $this->notifyTutor($app, 'connected', $job);
         $this->notifyGuardian($job, 'confirmed', $app->tutorProfile->user->name ?? 'A tutor');

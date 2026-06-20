@@ -45,6 +45,10 @@
                   <span class="rounded-pill border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-display text-[11px] font-semibold text-emerald-700">
                     Confirmed
                   </span>
+                  <span v-if="tuition.source === 'job'"
+                    class="rounded-pill border border-blue-200 bg-blue-50 px-2 py-0.5 font-display text-[11px] font-semibold text-blue-700">
+                    Via Job #{{ tuition.job_public_id }}
+                  </span>
                 </div>
                 <div class="mt-2 flex items-center gap-0.5">
                   <span v-for="i in 5" :key="i" class="text-sm leading-none"

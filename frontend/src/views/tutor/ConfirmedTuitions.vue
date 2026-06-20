@@ -12,7 +12,7 @@
       </div>
       <p class="font-display font-semibold text-navy-700 text-lg mb-2">No confirmed tuitions yet</p>
       <p class="text-paper-500 text-sm font-body">
-        When a guardian's connection request is confirmed by admin, it will appear here.
+        Confirmed tuitions — whether from a guardian's connection request or a job post you applied to — will appear here.
       </p>
     </div>
 
@@ -44,6 +44,10 @@
                 </span>
                 <span class="rounded-pill border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-display text-[11px] font-semibold text-emerald-700">
                   Confirmed tuition
+                </span>
+                <span v-if="tuition.source === 'job'"
+                  class="rounded-pill border border-blue-200 bg-blue-50 px-2 py-0.5 font-display text-[11px] font-semibold text-blue-700">
+                  Via Job #{{ tuition.job_public_id }}
                 </span>
               </div>
             </div>
