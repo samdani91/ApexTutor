@@ -70,6 +70,9 @@ class LogAdminActivity
         'AdminTicketController@reply'                  => ['reply_ticket',         'support_ticket', 'Replied to ticket #:id'],
         'AdminTicketController@claim'                  => ['claim_ticket',         'support_ticket', 'Claimed ticket #:id'],
         'AdminTicketController@unclaim'                => ['unclaim_ticket',       'support_ticket', 'Unclaimed ticket #:id'],
+
+        'AdminSmsController@send'      => ['send_sms',       'user', 'Sent SMS to user #:id'],
+        'AdminSmsController@broadcast' => ['broadcast_sms',  'user', 'Sent broadcast SMS to :id users'],
     ];
 
     public function handle(Request $request, Closure $next): Response
@@ -169,6 +172,8 @@ class LogAdminActivity
             'AdminVerificationController@reject'     => $base . ($request->filled('rejection_reason') ? ': ' . $request->input('rejection_reason') : ''),
             'AdminPendingChangesController@reject'   => $base . ($request->filled('note') ? ': ' . $request->input('note') : ''),
             'AdminReviewController@reject'           => $base . ($request->filled('moderation_note') ? ': ' . $request->input('moderation_note') : ''),
+            'AdminSmsController@send'                => $base . ' — ' . mb_substr($request->input('message', ''), 0, 60),
+            'AdminSmsController@broadcast'           => $base . ' — ' . mb_substr($request->input('message', ''), 0, 60),
             default                                  => $base,
         };
     }

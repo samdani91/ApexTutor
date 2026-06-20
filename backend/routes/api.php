@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\AdminGuardianController;
 use App\Http\Controllers\Admin\AdminPlatformFeedbackController;
 use App\Http\Controllers\Admin\AdminReviewController;
 use App\Http\Controllers\Admin\AdminTutorController;
+use App\Http\Controllers\Admin\AdminSmsController;
 use App\Http\Controllers\Admin\AdminTuitionJobController;
 use App\Http\Controllers\Admin\AdminVerificationController;
 use App\Http\Controllers\Auth\AuthController;
@@ -285,4 +286,9 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:super_admin', 'log.admin
     Route::post('tickets/{id}/claim',        [AdminTicketController::class, 'claim']);
     Route::post('tickets/{id}/unclaim',      [AdminTicketController::class, 'unclaim']);
     Route::post('tickets/{id}/reply',        [AdminTicketController::class, 'reply']);
+
+    Route::get('sms/search-users',    [AdminSmsController::class, 'searchUsers']);
+    Route::get('sms/broadcast-preview', [AdminSmsController::class, 'broadcastPreview']);
+    Route::post('sms/send',           [AdminSmsController::class, 'send']);
+    Route::post('sms/broadcast',      [AdminSmsController::class, 'broadcast']);
 });

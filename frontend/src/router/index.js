@@ -70,6 +70,7 @@ const routes = [
       { path: 'tuition-jobs', component: () => import('@/views/admin/AdminTuitionJobs.vue'), name: 'admin-tuition-jobs' },
       { path: 'tuition-jobs/:publicId', component: () => import('@/views/admin/AdminTuitionJobDetail.vue'), name: 'admin-tuition-job-detail' },
       { path: 'settings', component: () => import('@/views/admin/AdminSettings.vue'), name: 'admin-settings' },
+      { path: 'send-sms', component: () => import('@/views/admin/AdminSendSms.vue'), name: 'admin-send-sms' },
     ]
   },
   { path: '/:pathMatch(.*)*', redirect: '/' }

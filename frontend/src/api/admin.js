@@ -97,4 +97,10 @@ export const adminApi = {
   confirmApplicant:           (publicId, appId)                => http.patch(`/admin/tuition-jobs/${publicId}/applications/${appId}/confirm`),
   removeApplicant:            (publicId, appId)                => http.patch(`/admin/tuition-jobs/${publicId}/applications/${appId}/remove`),
   changeApplicantStatus:      (publicId, appId, status)        => http.patch(`/admin/tuition-jobs/${publicId}/applications/${appId}/status`, { status }),
+
+  // SMS
+  searchUsersForSms:  (q = '') => http.get('/admin/sms/search-users', { params: { q } }),
+  getBroadcastPreview: ()      => http.get('/admin/sms/broadcast-preview'),
+  sendSms:            (data)   => http.post('/admin/sms/send', data),
+  broadcastSms:       (data)   => http.post('/admin/sms/broadcast', data),
 }
