@@ -27,7 +27,7 @@ class TuitionJobApplicantController extends Controller
             $query->where('status', $status);
         }
 
-        return response()->json(['success' => true, 'data' => $query->get()]);
+        return response()->json(['success' => true, 'data' => $query->limit(300)->get()]);
     }
 
     public function shortlist(Request $request, string $publicId, int $applicationId): JsonResponse

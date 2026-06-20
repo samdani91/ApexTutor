@@ -60,7 +60,7 @@ class TuitionJobController extends Controller
                 ->orWhere('extra_requirements', 'like', $term));
         }
 
-        $jobs = $query->paginate($request->integer('per_page', 12));
+        $jobs = $query->paginate(min($request->integer('per_page', 12), 50));
 
         return response()->json(['success' => true, 'data' => $jobs]);
     }
@@ -130,7 +130,7 @@ class TuitionJobController extends Controller
             $query->whereHas('tuitionJob', fn($q) => $q->where('status', $jobStatus));
         }
 
-        return response()->json(['success' => true, 'data' => $query->get()]);
+        return response()->json(['success' => true, 'data' => $query->limit(500)->get()]);
     }
 
     public function dashboardSummary(Request $request): JsonResponse
