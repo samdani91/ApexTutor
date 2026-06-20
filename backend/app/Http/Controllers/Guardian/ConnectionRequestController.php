@@ -33,6 +33,13 @@ class ConnectionRequestController extends Controller
         ]);
         $guardianProfile = $request->user()->guardianProfile;
 
+        $active = $guardianProfile->connectionRequests()
+            ->where('tutor_profile_id', $data['tutor_profile_id'])
+            ->whereNotIn('status', ['declined', 'closed'])
+            ->exists();
+
+        abort_if($active, 422, 'You already have an active connection request with this tutor.');
+
         $connection = $guardianProfile->connectionRequests()->create($data);
 
         try {

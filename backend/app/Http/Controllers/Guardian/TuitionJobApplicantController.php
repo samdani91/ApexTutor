@@ -2,7 +2,6 @@
 namespace App\Http\Controllers\Guardian;
 
 use App\Http\Controllers\Controller;
-use App\Models\ConnectionRequest;
 use App\Models\TuitionJob;
 use App\Models\TuitionJobApplication;
 use Illuminate\Http\JsonResponse;
@@ -65,15 +64,7 @@ class TuitionJobApplicantController extends Controller
             ->whereNotIn('status', ['connected'])
             ->update(['status' => 'not_selected']);
 
-        $guardian = $request->user()->guardianProfile;
-
-        ConnectionRequest::create([
-            'guardian_profile_id' => $guardian->id,
-            'tutor_profile_id'    => $app->tutor_profile_id,
-            'status'              => 'pending',
-        ]);
-
-        return response()->json(['success' => true, 'message' => 'Tutor confirmed. Connection request sent to admin.']);
+        return response()->json(['success' => true, 'message' => 'Tutor confirmed.']);
     }
 
     public function remove(Request $request, string $publicId, int $applicationId): JsonResponse
