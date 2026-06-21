@@ -1,6 +1,6 @@
 <template>
   <DefaultLayout>
-    <main class="public-grid-page relative isolate overflow-hidden bg-paper-50">
+    <main class="public-grid-page relative isolate overflow-x-clip bg-paper-50">
       <div class="pointer-events-none absolute inset-0 -z-10 public-grid"></div>
       <div class="mx-auto max-w-[84rem] px-4 py-6 md:py-10">
 
