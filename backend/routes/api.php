@@ -288,6 +288,7 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:super_admin', 'log.admin
     Route::post('tickets/{id}/reply',        [AdminTicketController::class, 'reply']);
 
     Route::get('sms/search-users',    [AdminSmsController::class, 'searchUsers']);
+    Route::get('sms/universities',    [AdminSmsController::class, 'getUniversities']);
     Route::get('sms/broadcast-preview', [AdminSmsController::class, 'broadcastPreview']);
     Route::post('sms/send',           [AdminSmsController::class, 'send']);
     Route::post('sms/broadcast',      [AdminSmsController::class, 'broadcast']);

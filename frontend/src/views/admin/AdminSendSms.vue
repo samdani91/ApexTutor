@@ -188,59 +188,105 @@
         <div>
           <p class="font-display text-sm font-bold text-amber-800">Broadcast SMS — Use with care</p>
           <p class="mt-0.5 font-body text-sm text-amber-700">
-            This will send your message to <strong>every user</strong> on the platform who has a phone number registered. Each SMS costs credits. Use this only for important system-wide announcements (e.g. maintenance, outages).
+            Each SMS costs credits. Use this only for important announcements (e.g. maintenance, new features, policy updates).
           </p>
         </div>
       </div>
 
-      <!-- Recipient count card -->
+      <!-- Step 1: Target selector -->
       <div class="card">
-        <p class="kicker">Recipients</p>
-        <div v-if="broadcastLoading" class="flex items-center gap-3 py-2">
-          <div class="h-5 w-5 animate-spin rounded-full border-2 border-navy-200 border-t-navy-700"></div>
-          <span class="font-body text-sm text-paper-500">Counting recipients…</span>
+        <step-label :n="1" :done="broadcastReady">Choose who to send to</step-label>
+
+        <!-- 4-option grid -->
+        <div class="mt-1 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <button v-for="opt in TARGET_OPTS" :key="opt.value"
+            @click="setBroadcastTarget(opt.value)"
+            class="flex flex-col items-center gap-1.5 rounded-lg border-2 px-3 py-3 font-display text-xs font-bold transition-all"
+            :class="broadcastTarget === opt.value
+              ? 'border-navy-700 bg-navy-50 text-navy-800 shadow-sm'
+              : 'border-paper-200 bg-white text-paper-500 hover:border-paper-300 hover:text-navy-700'"
+          >
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" :d="opt.icon"/>
+            </svg>
+            {{ opt.label }}
+          </button>
         </div>
-        <div v-else class="flex flex-wrap items-center gap-4">
-          <div>
-            <p class="font-display text-3xl font-bold text-navy-900">{{ broadcastCount.toLocaleString() }}</p>
-            <p class="font-body text-sm text-paper-500">users with registered phone numbers</p>
+
+        <!-- University picker -->
+        <Transition name="slide-up">
+          <div v-if="broadcastTarget === 'university'" class="mt-4">
+            <label class="mb-1.5 block font-display text-xs font-bold text-navy-700">Select University</label>
+            <div v-if="universitiesLoading" class="flex items-center gap-2 text-paper-500 font-body text-sm">
+              <div class="h-4 w-4 animate-spin rounded-full border-2 border-navy-200 border-t-navy-700"></div>
+              Loading universities…
+            </div>
+            <select v-else
+              v-model="selectedUniversityId"
+              @change="fetchBroadcastPreview"
+              class="w-full rounded-lg border border-paper-200 bg-white px-3.5 py-2.5 font-body text-sm text-navy-900 outline-none transition focus:border-navy-500 focus:ring-2 focus:ring-navy-100"
+            >
+              <option :value="null">— Select a university —</option>
+              <option v-for="u in universities" :key="u.id" :value="u.id">{{ u.name }}</option>
+            </select>
+            <p v-if="broadcastTarget === 'university' && !selectedUniversityId" class="mt-1.5 font-body text-xs text-amber-600">
+              Please select a university to see the recipient count.
+            </p>
           </div>
-          <div v-if="broadcastCount === 0" class="rounded-md bg-red-50 px-3 py-2 font-body text-sm text-red-600">
-            No users have phone numbers — nothing to send.
+        </Transition>
+
+        <!-- Recipient count -->
+        <div class="mt-5 rounded-lg border border-paper-100 bg-paper-50 px-4 py-3">
+          <div v-if="broadcastLoading" class="flex items-center gap-3">
+            <div class="h-5 w-5 animate-spin rounded-full border-2 border-navy-200 border-t-navy-700"></div>
+            <span class="font-body text-sm text-paper-500">Counting recipients…</span>
           </div>
-          <div v-else class="rounded-md bg-navy-50 px-3 py-2 font-body text-sm text-navy-700">
-            Approximately <strong>{{ broadcastCount }}</strong> SMS messages will be charged.
+          <div v-else-if="broadcastTarget === 'university' && !selectedUniversityId" class="font-body text-sm text-paper-400 italic">
+            Select a university above to see the recipient count.
+          </div>
+          <div v-else class="flex flex-wrap items-center gap-4">
+            <div>
+              <p class="font-display text-3xl font-bold text-navy-900">{{ broadcastCount.toLocaleString() }}</p>
+              <p class="font-body text-sm text-paper-500">{{ targetDescription }} with registered phone numbers</p>
+            </div>
+            <div v-if="broadcastCount === 0" class="rounded-md bg-red-50 px-3 py-2 font-body text-sm text-red-600">
+              No phone numbers found — nothing to send.
+            </div>
+            <div v-else class="rounded-md bg-navy-50 px-3 py-2 font-body text-sm text-navy-700">
+              ~<strong>{{ broadcastCount }}</strong> SMS credits will be used.
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Message -->
-      <div class="card">
-        <step-label :n="1" :done="message.trim().length > 0">Write your broadcast message</step-label>
-        <p class="mb-3 font-body text-xs text-paper-500">Keep it short and clear. Good examples: "Platform maintenance on Friday 10 PM–12 AM." or "New feature launched — check the app!"</p>
-        <message-box v-model="message" />
+      <!-- Step 2: Message -->
+      <div class="card" :class="{ 'opacity-50': !broadcastReady }">
+        <step-label :n="2" :done="broadcastReady && message.trim().length > 0">Write your broadcast message</step-label>
+        <p class="mb-3 font-body text-xs text-paper-500">Keep it short and clear. Example: "Platform maintenance on Friday 10 PM–12 AM."</p>
+        <message-box v-model="message" :disabled="!broadcastReady" />
         <char-counter :message="message" />
       </div>
 
-      <!-- Send -->
-      <div class="card" :class="{ 'opacity-50': !message.trim() || broadcastCount === 0 }">
-        <step-label :n="2" :done="false">Review &amp; broadcast</step-label>
+      <!-- Step 3: Send -->
+      <div class="card" :class="{ 'opacity-50': !broadcastReady || !message.trim() }">
+        <step-label :n="3" :done="false">Review &amp; broadcast</step-label>
 
-        <message-preview v-if="message.trim()" :message="message" :footer="SMS_FOOTER" class="mb-4">
+        <message-preview v-if="broadcastReady && message.trim()" :message="message" :footer="SMS_FOOTER" class="mb-4">
           <p class="font-body text-sm text-paper-600">
-            This message will be sent to <strong class="text-navy-900">{{ broadcastCount.toLocaleString() }} users</strong>.
+            Sending to <strong class="text-navy-900">{{ broadcastCount.toLocaleString() }}</strong>
+            <span class="text-navy-900"> {{ targetDescription }}</span>.
           </p>
         </message-preview>
 
         <button
           @click="openBroadcastModal"
-          :disabled="!message.trim() || broadcastCount === 0"
+          :disabled="!broadcastReady || !message.trim()"
           class="send-btn w-full bg-amber-600 hover:bg-amber-700"
         >
           <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"/>
           </svg>
-          Broadcast to {{ broadcastCount.toLocaleString() }} users
+          Broadcast to {{ broadcastCount.toLocaleString() }} {{ targetDescription }}
         </button>
       </div>
 
@@ -334,7 +380,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"/>
                 </svg>
                 <div>
-                  <p class="font-display text-xl font-bold text-navy-900">{{ broadcastCount.toLocaleString() }} users</p>
+                  <p class="font-display text-xl font-bold text-navy-900">{{ broadcastCount.toLocaleString() }} {{ targetDescription }}</p>
                   <p class="font-body text-xs text-paper-500">will receive this SMS</p>
                 </div>
               </div>
@@ -370,7 +416,7 @@
                 class="modal-confirm-btn bg-amber-600 hover:bg-amber-700 disabled:bg-amber-300"
               >
                 <span v-if="sending" class="spinner"></span>
-                {{ sending ? 'Sending…' : `Broadcast to ${broadcastCount.toLocaleString()} users` }}
+                {{ sending ? 'Sending…' : `Broadcast to ${broadcastCount.toLocaleString()} ${targetDescription}` }}
               </button>
             </div>
           </div>
@@ -474,6 +520,31 @@ const MessagePreview = defineComponent({
   },
 })
 
+// ─── broadcast target options ─────────────────────────────────────────────────
+
+const TARGET_OPTS = [
+  {
+    value: 'all',
+    label: 'All Users',
+    icon:  'M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z',
+  },
+  {
+    value: 'tutors',
+    label: 'All Tutors',
+    icon:  'M4.26 10.147a60.436 60.436 0 0 0-.491 6.347A48.627 48.627 0 0 1 12 20.904a48.627 48.627 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.57 50.57 0 0 0-2.658-.813A59.905 59.905 0 0 1 12 3.493a59.902 59.902 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5',
+  },
+  {
+    value: 'guardians',
+    label: 'All Guardians',
+    icon:  'M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z',
+  },
+  {
+    value: 'university',
+    label: 'By University',
+    icon:  'M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z',
+  },
+]
+
 // ─── mode ─────────────────────────────────────────────────────────────────────
 
 const mode = ref('single')
@@ -481,7 +552,10 @@ const mode = ref('single')
 function switchMode(m) {
   mode.value = m
   message.value = ''
-  if (m === 'broadcast') fetchBroadcastPreview()
+  if (m === 'broadcast') {
+    fetchBroadcastPreview()
+    loadUniversities()
+  }
 }
 
 // ─── single user ──────────────────────────────────────────────────────────────
@@ -542,14 +616,64 @@ function clearSelection() { selectedUser.value = null; clearSearch() }
 
 // ─── broadcast ────────────────────────────────────────────────────────────────
 
-const broadcastCount      = ref(0)
-const broadcastLoading    = ref(false)
-const broadcastConfirmText = ref('')
+const broadcastTarget       = ref('all')
+const broadcastCount        = ref(0)
+const broadcastLoading      = ref(false)
+const broadcastConfirmText  = ref('')
+
+// University picker
+const universities      = ref([])
+const universitiesLoading = ref(false)
+const selectedUniversityId = ref(null)
+
+const targetDescription = computed(() => {
+  switch (broadcastTarget.value) {
+    case 'tutors':     return 'tutors'
+    case 'guardians':  return 'guardians & students'
+    case 'university': {
+      const u = universities.value.find(u => u.id === selectedUniversityId.value)
+      return u ? `tutors from ${u.name}` : 'tutors from selected university'
+    }
+    default: return 'users'
+  }
+})
+
+const broadcastReady = computed(() => {
+  if (broadcastTarget.value === 'university' && !selectedUniversityId.value) return false
+  return broadcastCount.value > 0
+})
+
+async function loadUniversities() {
+  if (universities.value.length) return
+  universitiesLoading.value = true
+  try {
+    const { data } = await adminApi.getSmsUniversities()
+    universities.value = data.data || []
+  } finally {
+    universitiesLoading.value = false
+  }
+}
+
+function setBroadcastTarget(value) {
+  broadcastTarget.value = value
+  if (value !== 'university') {
+    selectedUniversityId.value = null
+    fetchBroadcastPreview()
+  } else {
+    broadcastCount.value = 0
+  }
+}
 
 async function fetchBroadcastPreview() {
+  if (broadcastTarget.value === 'university' && !selectedUniversityId.value) {
+    broadcastCount.value = 0
+    return
+  }
   broadcastLoading.value = true
   try {
-    const { data } = await adminApi.getBroadcastPreview()
+    const params = { target: broadcastTarget.value }
+    if (broadcastTarget.value === 'university') params.university_id = selectedUniversityId.value
+    const { data } = await adminApi.getBroadcastPreview(params)
     broadcastCount.value = data.data?.recipients ?? 0
   } finally {
     broadcastLoading.value = false
@@ -566,7 +690,7 @@ const feedbackMsg       = ref('')
 const feedbackOk        = ref(true)
 
 function openSingleModal()    { if (selectedUser.value && message.value.trim()) showSingleModal.value = true }
-function openBroadcastModal() { if (message.value.trim() && broadcastCount.value) { broadcastConfirmText.value = ''; showBroadcastModal.value = true } }
+function openBroadcastModal() { if (broadcastReady.value && message.value.trim()) { broadcastConfirmText.value = ''; showBroadcastModal.value = true } }
 
 async function confirmSingleSend() {
   sending.value = true
@@ -588,7 +712,12 @@ async function confirmBroadcast() {
   if (broadcastConfirmText.value.trim().toUpperCase() !== 'SEND') return
   sending.value = true
   try {
-    const { data } = await adminApi.broadcastSms({ message: message.value.trim() })
+    const payload = {
+      message:       message.value.trim(),
+      target:        broadcastTarget.value,
+      university_id: broadcastTarget.value === 'university' ? selectedUniversityId.value : undefined,
+    }
+    const { data } = await adminApi.broadcastSms(payload)
     showBroadcastModal.value = false
     broadcastConfirmText.value = ''
     showFeedback(true, data.message || 'Broadcast SMS sent.')

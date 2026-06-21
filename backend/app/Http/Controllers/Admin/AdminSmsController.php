@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\GuardianProfile;
 use App\Models\TutorProfile;
+use App\Models\University;
 use App\Models\User;
 use App\Services\BulkSmsBdService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class AdminSmsController extends Controller
@@ -23,10 +25,10 @@ class AdminSmsController extends Controller
             ->leftJoin('guardian_profiles', 'guardian_profiles.user_id', '=', 'users.id')
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($inner) use ($q) {
-                    $inner->where('users.name',                   'like', "%{$q}%")
-                          ->orWhere('users.phone',                'like', "%{$q}%")
-                          ->orWhere('users.email',                'like', "%{$q}%")
-                          ->orWhere('tutor_profiles.tutor_id',    'like', "%{$q}%")
+                    $inner->where('users.name',                      'like', "%{$q}%")
+                          ->orWhere('users.phone',                   'like', "%{$q}%")
+                          ->orWhere('users.email',                   'like', "%{$q}%")
+                          ->orWhere('tutor_profiles.tutor_id',       'like', "%{$q}%")
                           ->orWhere('guardian_profiles.guardian_id', 'like', "%{$q}%");
                 });
             })
@@ -54,13 +56,26 @@ class AdminSmsController extends Controller
         return response()->json(['success' => true, 'data' => $users]);
     }
 
-    /** Returns how many users have phone numbers (for broadcast preview). */
-    public function broadcastPreview(): JsonResponse
+    /** Universities list for the university-target picker. */
+    public function getUniversities(): JsonResponse
     {
-        $count = User::whereIn('role', ['tutor', 'guardian', 'student'])
-            ->whereNotNull('phone')
-            ->where('phone', '!=', '')
-            ->count();
+        $universities = University::orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn($u) => ['id' => $u->id, 'name' => $u->name]);
+
+        return response()->json(['success' => true, 'data' => $universities]);
+    }
+
+    /**
+     * Returns how many users match the given broadcast target.
+     * ?target=all|tutors|guardians|university  &university_id=<id>
+     */
+    public function broadcastPreview(Request $request): JsonResponse
+    {
+        $target       = $request->get('target', 'all');
+        $universityId = $request->integer('university_id') ?: null;
+
+        $count = $this->recipientQuery($target, $universityId)->count();
 
         return response()->json(['success' => true, 'data' => ['recipients' => $count]]);
     }
@@ -95,7 +110,6 @@ class AdminSmsController extends Controller
             ], 502);
         }
 
-        // data.id lets LogAdminActivity resolve the target_id as the recipient user
         return response()->json([
             'success' => true,
             'data'    => ['id' => $user->id],
@@ -106,19 +120,25 @@ class AdminSmsController extends Controller
     public function broadcast(Request $request, BulkSmsBdService $sms): JsonResponse
     {
         $data = $request->validate([
-            'message' => 'required|string|min:3|max:1000',
+            'message'       => 'required|string|min:3|max:1000',
+            'target'        => 'required|in:all,tutors,guardians,university',
+            'university_id' => 'required_if:target,university|nullable|integer|exists:universities,id',
         ]);
 
-        $phones = User::whereIn('role', ['tutor', 'guardian', 'student'])
-            ->whereNotNull('phone')
-            ->where('phone', '!=', '')
-            ->pluck('phone')
+        $target       = $data['target'];
+        $universityId = isset($data['university_id']) ? (int) $data['university_id'] : null;
+
+        $phones = $this->recipientQuery($target, $universityId)
+            ->pluck('users.phone')
+            ->filter()
+            ->unique()
+            ->values()
             ->toArray();
 
         if (empty($phones)) {
             return response()->json([
                 'success' => false,
-                'message' => 'No users with phone numbers found.',
+                'message' => 'No recipients with phone numbers found for the selected target.',
             ], 422);
         }
 
@@ -127,6 +147,7 @@ class AdminSmsController extends Controller
         if (!$result['success']) {
             Log::warning('Admin broadcast SMS failed', [
                 'admin_id'   => $request->user()->id,
+                'target'     => $target,
                 'recipients' => count($phones),
                 'response'   => $result['response'],
             ]);
@@ -137,12 +158,46 @@ class AdminSmsController extends Controller
         }
 
         $count = count($phones);
+        $label = $this->targetLabel($target, $universityId);
 
-        // data.id carries recipient count so LogAdminActivity can record it
         return response()->json([
             'success' => true,
             'data'    => ['id' => $count],
-            'message' => "Broadcast SMS sent to {$count} users.",
+            'message' => "Broadcast SMS sent to {$count} {$label}.",
         ]);
+    }
+
+    /** Build a query that returns rows from `users` for the given broadcast target. */
+    private function recipientQuery(string $target, ?int $universityId): \Illuminate\Database\Query\Builder
+    {
+        $base = DB::table('users')
+            ->whereNotNull('users.phone')
+            ->where('users.phone', '!=', '');
+
+        return match ($target) {
+            'tutors'     => $base->where('users.role', 'tutor'),
+            'guardians'  => $base->whereIn('users.role', ['guardian', 'student']),
+            'university' => $base
+                ->where('users.role', 'tutor')
+                ->join('tutor_profiles', 'tutor_profiles.user_id', '=', 'users.id')
+                ->join('education_entries', function ($j) use ($universityId) {
+                    $j->on('education_entries.tutor_profile_id', '=', 'tutor_profiles.id')
+                      ->where('education_entries.university_id', '=', $universityId);
+                })
+                ->distinct(),
+            default      => $base->whereIn('users.role', ['tutor', 'guardian', 'student']),
+        };
+    }
+
+    private function targetLabel(string $target, ?int $universityId): string
+    {
+        return match ($target) {
+            'tutors'     => 'tutors',
+            'guardians'  => 'guardians & students',
+            'university' => ($universityId
+                ? (University::find($universityId)?->name ?? 'university') . ' tutors'
+                : 'university tutors'),
+            default      => 'users',
+        };
     }
 }
