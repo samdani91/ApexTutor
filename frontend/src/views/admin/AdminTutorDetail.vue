@@ -633,7 +633,7 @@ async function confirmStatusChange() {
   const newStatus = pendingStatus.value
   pendingStatus.value = null
   try {
-    await adminApi.updateTutorStatus(tutor.value.id, { status: newStatus })
+    await adminApi.updateTutorStatus(tutor.value.tutor_id, { status: newStatus })
     statusValue.value = newStatus
     tutor.value.status = newStatus
     toast.success('Status updated.')
@@ -662,7 +662,7 @@ async function confirmApproveVideo() {
 async function reviewVideo(vid, action) {
   videoActing.value = vid.id
   try {
-    const { data } = await adminApi.reviewTutorVideo(tutor.value.id, vid.id, { action })
+    const { data } = await adminApi.reviewTutorVideo(tutor.value.tutor_id, vid.id, { action })
     const idx = tutor.value.teaching_videos.findIndex(v => v.id === vid.id)
     if (idx !== -1) tutor.value.teaching_videos[idx] = { ...tutor.value.teaching_videos[idx], ...data.data }
     toast.success(action === 'approve' ? 'Video approved.' : 'Video rejected.')
@@ -685,7 +685,7 @@ async function confirmRejectVideo(reason) {
   if (!vid) return
   videoActing.value = vid.id
   try {
-    const { data } = await adminApi.reviewTutorVideo(tutor.value.id, vid.id, { action: 'reject', review_note: reason || null })
+    const { data } = await adminApi.reviewTutorVideo(tutor.value.tutor_id, vid.id, { action: 'reject', review_note: reason || null })
     const idx = tutor.value.teaching_videos.findIndex(v => v.id === vid.id)
     if (idx !== -1) tutor.value.teaching_videos[idx] = { ...tutor.value.teaching_videos[idx], ...data.data }
     toast.success('Video rejected.')
