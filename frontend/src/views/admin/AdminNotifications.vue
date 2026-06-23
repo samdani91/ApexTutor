@@ -249,7 +249,7 @@
               </div>
               <RouterLink :to="`/admin/tuition-jobs/${n.data.job_public_id}`"
                 class="mt-2.5 inline-flex items-center gap-1.5 rounded-md border border-navy-200 bg-navy-50 px-3 py-1.5 text-xs font-semibold font-display text-navy-700 transition-colors hover:bg-navy-100">
-                {{ n.data.request_type === 'demo_requested' ? 'Appoint tutor →' : 'Confirm tutor →' }}
+                {{ n.data.request_type === 'demo_requested' ? 'Appoint tutor' : 'Confirm tutor' }}
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
               </RouterLink>
             </div>
