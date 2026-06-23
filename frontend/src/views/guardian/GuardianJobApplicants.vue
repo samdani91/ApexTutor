@@ -72,88 +72,86 @@
 
     <div v-else class="grid gap-4">
       <div v-for="app in applicants" :key="app.id" class="applicant-card">
+        <div class="p-4 sm:p-5">
+          <div class="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div class="flex min-w-0 items-start gap-3 sm:gap-4">
+              <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-paper-200 bg-navy-100 shadow-xs sm:h-14 sm:w-14">
+                <img v-if="app.tutor_profile?.user?.avatar_url" :src="app.tutor_profile.user.avatar_url" class="h-full w-full object-cover" />
+                <span v-else class="font-display font-bold text-lg text-navy-700">
+                  {{ (app.tutor_profile?.user?.name || '?').charAt(0).toUpperCase() }}
+                </span>
+              </div>
 
-        <!-- Header: avatar + identity + status -->
-        <div class="flex items-start gap-3 sm:gap-4">
-          <div class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-paper-200 bg-navy-100 shadow-xs sm:h-14 sm:w-14">
-            <img v-if="app.tutor_profile?.user?.avatar_url" :src="app.tutor_profile.user.avatar_url" class="h-full w-full object-cover" />
-            <span v-else class="font-display font-bold text-lg text-navy-700">
-              {{ (app.tutor_profile?.user?.name || '?').charAt(0).toUpperCase() }}
+              <div class="min-w-0">
+                <p class="truncate font-display text-lg font-bold leading-tight text-navy-900">
+                  {{ app.tutor_profile?.user?.name || 'Unnamed tutor' }}
+                </p>
+                <p class="mt-1 text-xs text-paper-500 font-body">
+                  Tutor ID: <span class="font-semibold text-navy-600">{{ app.tutor_profile?.tutor_id || '—' }}</span>
+                </p>
+              </div>
+            </div>
+
+            <span class="app-status-chip" :class="statusClass(app.status)">
+              {{ statusLabel(app.status) }}
             </span>
           </div>
 
-          <div class="min-w-0 flex-1">
-            <div class="flex items-start justify-between gap-2">
-              <div class="min-w-0">
-                <p class="truncate font-display font-bold text-base leading-tight text-navy-900 sm:text-lg">
-                  {{ app.tutor_profile?.user?.name || 'Unnamed tutor' }}
-                </p>
-                <p class="mt-0.5 text-xs text-paper-500 font-body">
-                  ID: <span class="font-semibold text-navy-600">{{ app.tutor_profile?.tutor_id || '—' }}</span>
-                </p>
-              </div>
-              <div class="flex shrink-0 flex-col items-end gap-2">
-                <span class="text-xs font-semibold font-display px-2.5 py-1 rounded-pill border"
-                  :class="statusClass(app.status)">
-                  {{ statusLabel(app.status) }}
-                </span>
-                <a :href="`/tutors/${app.tutor_profile?.public_id}`" target="_blank"
-                  class="inline-flex items-center justify-center whitespace-nowrap rounded-md border border-navy-200 bg-navy-50 px-3 py-1.5 text-xs font-semibold font-display text-navy-700 transition-colors hover:bg-navy-100">
-                  View Profile
-                </a>
-              </div>
-            </div>
+          <div class="mt-4 flex flex-wrap items-center gap-2">
+            <span class="info-chip border-gold-200 bg-gold-50 text-gold-700">
+              <span class="text-gold-500">★</span>
+              {{ app.tutor_profile?.rating || '—' }} rating
+              <span class="text-gold-500/70">({{ app.tutor_profile?.review_count ?? 0 }})</span>
+            </span>
+            <span v-if="app.tutor_profile?.personal_info?.gender && app.tutor_profile.personal_info.gender !== 'other'"
+              class="info-chip border-paper-200 bg-paper-50 text-paper-600 capitalize">
+              {{ app.tutor_profile.personal_info.gender }}
+            </span>
+            <span class="info-chip border-paper-200 bg-paper-50 text-paper-600">
+              <svg class="h-3.5 w-3.5 text-paper-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0V11.25A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/>
+              </svg>
+              Applied {{ formatDate(app.applied_at) }}
+            </span>
+          </div>
 
-            <!-- Meta chips -->
-            <div class="mt-2.5 flex flex-wrap items-center gap-1.5">
-              <span class="inline-flex items-center gap-1 rounded-pill border border-gold-200 bg-gold-50 px-2.5 py-1 text-xs font-semibold font-display text-gold-700">
-                <span class="text-gold-500">★</span>
-                {{ app.tutor_profile?.rating || '—' }} ({{ app.tutor_profile?.review_count ?? 0 }})
-              </span>
-              <span v-if="app.tutor_profile?.personal_info?.gender && app.tutor_profile.personal_info.gender !== 'other'"
-                class="inline-flex items-center rounded-pill border border-paper-200 bg-paper-50 px-2.5 py-1 text-xs font-semibold font-display text-paper-600 capitalize">
-                {{ app.tutor_profile.personal_info.gender }}
-              </span>
-              <span class="inline-flex items-center gap-1 rounded-pill border border-paper-200 bg-paper-50 px-2.5 py-1 text-xs font-semibold font-display text-paper-600">
-                <svg class="h-3 w-3 text-paper-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0V11.25A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/>
-                </svg>
-                {{ formatDate(app.applied_at) }}
-              </span>
-            </div>
+          <div v-if="app.status === 'demo_requested'" class="app-notice border-gold-200 bg-gold-50 text-gold-800">
+            Demo request sent to admin. Waiting for admin to appoint this tutor.
+          </div>
+          <div v-if="app.status === 'confirm_requested'" class="app-notice border-emerald-200 bg-emerald-50 text-emerald-800">
+            Confirmation request sent to admin. Waiting for admin to confirm this tutor.
           </div>
         </div>
 
-        <!-- Actions -->
-        <div v-if="actionableButtons(app)" class="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-          <button v-if="app.status === 'applied'" @click="act('shortlist', app)"
-            :disabled="acting[app.id]"
-            class="app-action border-navy-200 bg-navy-700 text-white hover:bg-navy-800 disabled:opacity-50">
-            Shortlist
-          </button>
-          <button v-if="app.status === 'shortlisted'" @click="demoTarget = app"
-            :disabled="acting[app.id]"
-            class="app-action border-gold-500 bg-gold-500 text-navy-900 hover:bg-gold-600 disabled:opacity-50">
-            Request Demo
-          </button>
-          <button v-if="app.status === 'appointed'" @click="confirmTarget = app"
-            :disabled="acting[app.id]"
-            class="app-action border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">
-            Request Confirm
-          </button>
-          <button v-if="!['connected','not_selected','demo_requested','confirm_requested'].includes(app.status)" @click="removeTarget = app"
-            :disabled="acting[app.id]"
-            class="app-action border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50">
-            Remove
-          </button>
-        </div>
-
-        <!-- Pending request notice -->
-        <div v-if="app.status === 'demo_requested'" class="mt-3 rounded-md border border-gold-200 bg-gold-50 px-3 py-2 text-xs font-body text-gold-800">
-          Demo request sent to admin. Waiting for admin to appoint this tutor.
-        </div>
-        <div v-if="app.status === 'confirm_requested'" class="mt-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-body text-emerald-800">
-          Confirmation request sent to admin. Waiting for admin to confirm this tutor.
+        <div class="app-card-footer">
+          <div class="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-none sm:flex sm:justify-end">
+            <a :href="`/tutors/${app.tutor_profile?.public_id}`" target="_blank"
+              class="app-action border-paper-300 bg-white text-navy-700 hover:bg-paper-100">
+              View Profile
+            </a>
+            <template v-if="actionableButtons(app)">
+              <button v-if="app.status === 'applied'" @click="act('shortlist', app)"
+                :disabled="acting[app.id]"
+                class="app-action border-navy-200 bg-navy-700 text-white hover:bg-navy-800 disabled:opacity-50">
+                Shortlist
+              </button>
+              <button v-if="app.status === 'shortlisted'" @click="demoTarget = app"
+                :disabled="acting[app.id]"
+                class="app-action border-gold-500 bg-gold-500 text-navy-900 hover:bg-gold-600 disabled:opacity-50">
+                Request Demo
+              </button>
+              <button v-if="app.status === 'appointed'" @click="confirmTarget = app"
+                :disabled="acting[app.id]"
+                class="app-action border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">
+                Request Confirm
+              </button>
+              <button v-if="!['connected','not_selected','demo_requested','confirm_requested'].includes(app.status)" @click="removeTarget = app"
+                :disabled="acting[app.id]"
+                class="app-action border-red-200 bg-white text-red-600 hover:bg-red-50 disabled:opacity-50">
+                Remove
+              </button>
+            </template>
+          </div>
         </div>
       </div>
     </div>
@@ -309,7 +307,7 @@ async function doRemove() {
 }
 
 function actionableButtons(app) {
-  return ['applied', 'shortlisted', 'appointed', 'demo_requested', 'confirm_requested'].includes(app.status)
+  return ['applied', 'shortlisted', 'appointed'].includes(app.status)
 }
 
 function statusClass(s) {
@@ -355,10 +353,26 @@ onMounted(async () => {
 
 <style scoped>
 .applicant-card {
-  @apply rounded-md border border-paper-200 bg-white p-4 shadow-sm transition-all hover:border-navy-200 hover:shadow-md sm:p-5;
+  @apply overflow-hidden rounded-md border border-paper-200 bg-white shadow-sm transition-all hover:border-navy-200 hover:shadow-md;
+}
+
+.app-status-chip {
+  @apply inline-flex w-fit shrink-0 items-center justify-center whitespace-nowrap rounded-md border px-3 py-1.5 text-xs font-bold font-display;
+}
+
+.info-chip {
+  @apply inline-flex min-h-[32px] items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold font-display;
+}
+
+.app-notice {
+  @apply mt-4 rounded-md border px-3 py-2 text-xs font-body leading-relaxed;
+}
+
+.app-card-footer {
+  @apply flex justify-end border-t border-paper-200 bg-paper-50/70 px-4 py-3 sm:px-5;
 }
 
 .app-action {
-  @apply inline-flex min-h-[40px] items-center justify-center rounded-md border px-4 py-2 text-xs font-semibold font-display transition-colors;
+  @apply inline-flex min-h-[40px] min-w-[8.5rem] items-center justify-center rounded-md border px-3 py-2 text-center text-xs font-semibold font-display transition-colors;
 }
 </style>
