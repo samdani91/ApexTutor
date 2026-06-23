@@ -298,6 +298,22 @@
               </div>
             </template>
 
+            <!-- New job applicant (guardian) -->
+            <template v-else-if="n.data.type === 'new_job_applicant'">
+              <p class="text-sm font-body leading-relaxed" :class="n.read_at ? 'text-navy-800' : 'font-semibold text-navy-900'">
+                Tutor <span class="text-navy-900 font-semibold">{{ n.data.tutor_name }}</span>
+                <span class="font-normal text-paper-500"> ({{ n.data.tutor_id }})</span>
+                applied to your job:
+                <span class="text-navy-700 font-semibold">{{ n.data.job_title }}</span>
+                <span class="font-normal text-paper-500"> (#{{ n.data.job_public_id }})</span>.
+              </p>
+              <RouterLink :to="`/guardian/jobs/${n.data.job_public_id}/applicants`"
+                class="mt-2.5 inline-flex items-center gap-1.5 rounded-md border border-navy-200 bg-navy-50 px-3 py-1.5 text-xs font-semibold font-display text-navy-700 transition-colors hover:bg-navy-100">
+                View applicants
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+              </RouterLink>
+            </template>
+
             <!-- Tuition job guardian update (appointed / confirmed) -->
             <template v-else-if="n.data.type === 'tuition_job_guardian_update'">
               <p class="text-sm font-body leading-relaxed" :class="n.read_at ? 'text-navy-800' : 'font-semibold text-navy-900'">
@@ -408,8 +424,9 @@ const tutorTypes = [
 
 const guardianTypes = [
   { value: '',                            label: 'All' },
-  { value: 'connection_status_changed',   label: 'Connection' },
+  { value: 'new_job_applicant',           label: 'New Applicant' },
   { value: 'tuition_job_guardian_update', label: 'Job Update' },
+  { value: 'connection_status_changed',   label: 'Connection' },
   { value: 'review_approved',             label: 'Review Approved' },
   { value: 'review_rejected',             label: 'Review Rejected' },
   { value: 'ticket_status_updated',       label: 'Ticket Update' },
@@ -522,6 +539,8 @@ function notifMeta(type, data = null) {
     if (e === 'confirmed') return { label: 'Tutor Confirmed', pill: 'bg-emerald-50 text-emerald-700', icon: 'bg-emerald-50 text-emerald-600 ring-emerald-100' }
     return { label: 'Demo Appointed', pill: 'bg-purple-50 text-purple-700', icon: 'bg-purple-50 text-purple-600 ring-purple-100' }
   }
+  if (type === 'new_job_applicant')
+    return { label: 'New Applicant', pill: 'bg-gold-50 text-gold-700', icon: 'bg-gold-50 text-gold-700 ring-gold-100' }
   return { label: 'Notification', pill: 'bg-navy-50 text-navy-700', icon: 'bg-navy-50 text-navy-600 ring-navy-100' }
 }
 
