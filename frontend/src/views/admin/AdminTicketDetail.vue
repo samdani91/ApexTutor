@@ -42,7 +42,7 @@
             </p>
 
             <!-- Claim status -->
-            <div class="mt-3 flex items-center gap-3">
+            <div class="mt-3 flex flex-wrap items-center gap-3">
               <span v-if="claimedByMe"
                 class="inline-flex items-center gap-1.5 text-xs font-semibold font-display px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                 <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -73,7 +73,35 @@
                 </svg>
                 {{ claimLoading ? '…' : claimedByMe ? 'Unclaim' : 'Claim Ticket' }}
               </button>
+
+              <!-- Assign to another admin -->
+              <button @click="showAssignPanel = !showAssignPanel"
+                class="inline-flex items-center gap-1.5 text-xs font-semibold font-display px-3 py-1.5 rounded-sm border border-paper-200 bg-white text-navy-700 transition-colors hover:bg-paper-50">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"/>
+                </svg>
+                Reassign
+              </button>
             </div>
+
+            <!-- Assign panel -->
+            <Transition name="slide-down">
+              <div v-if="showAssignPanel" class="mt-3 flex flex-wrap items-center gap-2 rounded-sm border border-paper-200 bg-paper-50 p-3">
+                <span class="font-display text-xs font-semibold text-navy-700 shrink-0">Assign to:</span>
+                <select v-model="assignAdminId" class="input text-xs flex-1 min-w-[160px]">
+                  <option :value="null">— Select admin —</option>
+                  <option v-for="a in admins" :key="a.id" :value="a.id">{{ a.name }}</option>
+                </select>
+                <button @click="doAssign" :disabled="!assignAdminId || assignLoading"
+                  class="inline-flex items-center gap-1.5 rounded-sm bg-navy-800 px-3 py-1.5 text-xs font-semibold font-display text-white transition-colors hover:bg-navy-900 disabled:opacity-50">
+                  <svg v-if="assignLoading" class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                  {{ assignLoading ? '…' : 'Assign' }}
+                </button>
+              </div>
+            </Transition>
           </div>
 
           <!-- Status actions -->
@@ -202,6 +230,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { adminTicketApi } from '@/api/tickets.js'
+import { adminApi } from '@/api/admin.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { toast } from 'vue-sonner'
 import DropSelect from '@/components/search/DropSelect.vue'
@@ -222,6 +251,11 @@ const newPriority = ref('')
 const claimedByMe    = computed(() => ticket.value?.assigned_to === auth.user?.id)
 const claimedByOther = computed(() => ticket.value?.assigned_to !== null && !claimedByMe.value)
 const showClaimDialog = ref(false)
+
+const showAssignPanel = ref(false)
+const assignAdminId   = ref(null)
+const assignLoading   = ref(false)
+const admins          = ref([])
 
 const statusOptions = [
   { value: 'open',        label: 'Open'        },
@@ -335,5 +369,37 @@ async function toggleClaim() {
   }
 }
 
-onMounted(loadTicket)
+async function doAssign() {
+  if (!assignAdminId.value) return
+  assignLoading.value = true
+  try {
+    const { data } = await adminTicketApi.assign(ticket.value.id, { admin_id: assignAdminId.value })
+    ticket.value.assigned_to    = data.data.assigned_to
+    ticket.value.assigned_admin = data.data.assigned_admin
+    showAssignPanel.value = false
+    assignAdminId.value   = null
+    toast.success(`Ticket assigned to ${data.data.assigned_admin?.name}.`)
+  } catch (e) {
+    toast.error(e.response?.data?.message || 'Failed to assign ticket.')
+  } finally {
+    assignLoading.value = false
+  }
+}
+
+async function loadAdmins() {
+  try {
+    const { data } = await adminApi.getAdmins({ per_page: 100 })
+    admins.value = (data.data?.data || data.data || []).map(a => ({ id: a.id, name: a.name }))
+  } catch { /* silent */ }
+}
+
+onMounted(async () => {
+  await loadTicket()
+  await loadAdmins()
+})
 </script>
+
+<style scoped>
+.slide-down-enter-active, .slide-down-leave-active { transition: opacity 0.15s, transform 0.15s; }
+.slide-down-enter-from, .slide-down-leave-to       { opacity: 0; transform: translateY(-6px); }
+</style>

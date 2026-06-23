@@ -108,7 +108,7 @@ class AdminTuitionJobController extends Controller
     {
         $app = $this->getApplicationWithJob($publicId, $applicationId);
         abort_if($app->tuitionJob->status !== 'open', 422, 'You can only manage applicants while the job is open.');
-        abort_if($app->status !== 'shortlisted', 422, 'Only shortlisted applicants can be appointed.');
+        abort_if(!in_array($app->status, ['shortlisted', 'demo_requested'], true), 422, 'Only shortlisted or demo-requested applicants can be appointed.');
 
         $app->update(['status' => 'appointed']);
 
@@ -132,7 +132,7 @@ class AdminTuitionJobController extends Controller
             ->firstOrFail();
 
         abort_if($job->status === 'closed', 422, 'This job is already closed.');
-        abort_if($app->status !== 'appointed', 422, 'Only appointed applicants can be confirmed.');
+        abort_if(!in_array($app->status, ['appointed', 'confirm_requested'], true), 422, 'Only appointed or confirm-requested applicants can be confirmed.');
 
         $othersIds = DB::transaction(function () use ($job, $app) {
             $app->update(['status' => 'connected']);
@@ -187,7 +187,7 @@ class AdminTuitionJobController extends Controller
     public function changeStatus(Request $request, string $publicId, int $applicationId): JsonResponse
     {
         $data = $request->validate([
-            'status' => 'required|in:applied,shortlisted,appointed',
+            'status' => 'required|in:applied,shortlisted,demo_requested,appointed,confirm_requested',
         ]);
 
         $app = $this->getApplicationWithJob($publicId, $applicationId);
@@ -202,7 +202,7 @@ class AdminTuitionJobController extends Controller
 
         $app->update(['status' => $target]);
 
-        // Notify the tutor for meaningful states (no notification for resetting to plain "applied")
+        // Notify the tutor for meaningful states (no notification for resetting to plain "applied" or request statuses)
         if (in_array($target, ['shortlisted', 'appointed'], true)) {
             $this->notifyTutor($app, $target);
         }

@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Guardian;
 use App\Http\Controllers\Controller;
 use App\Models\TuitionJob;
 use App\Models\TuitionJobApplication;
+use App\Models\User;
+use App\Notifications\AdminGuardianJobRequestNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class TuitionJobApplicantController extends Controller
 {
@@ -38,34 +41,36 @@ class TuitionJobApplicantController extends Controller
         return response()->json(['success' => true, 'message' => 'Tutor shortlisted.']);
     }
 
-    public function appoint(Request $request, string $publicId, int $applicationId): JsonResponse
-    {
-        $app = $this->ownedApplication($request, $publicId, $applicationId);
-        abort_if($app->status !== 'shortlisted', 422, 'Only shortlisted applicants can be appointed.');
-        $app->update(['status' => 'appointed']);
-        return response()->json(['success' => true, 'message' => 'Tutor set for demo class.']);
-    }
-
-    public function confirm(Request $request, string $publicId, int $applicationId): JsonResponse
+    public function requestDemo(Request $request, string $publicId, int $applicationId): JsonResponse
     {
         $job = $this->ownedJob($request, $publicId);
         $app = TuitionJobApplication::where('id', $applicationId)
             ->where('tuition_job_id', $job->id)
+            ->with(['tutorProfile.user'])
             ->firstOrFail();
 
-        abort_if($job->status === 'closed', 422, 'This job is already closed.');
-        abort_if($app->status !== 'appointed', 422, 'Only appointed applicants can be confirmed.');
+        abort_if($app->status !== 'shortlisted', 422, 'Only shortlisted applicants can be requested for demo.');
+        $app->update(['status' => 'demo_requested']);
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($job, $app) {
-            $app->update(['status' => 'connected']);
-            $job->update(['status' => 'closed']);
-            TuitionJobApplication::where('tuition_job_id', $job->id)
-                ->where('id', '!=', $app->id)
-                ->whereNotIn('status', ['connected'])
-                ->update(['status' => 'not_selected']);
-        });
+        $this->notifyAdmins($request->user(), $app, $job, 'demo_requested');
 
-        return response()->json(['success' => true, 'message' => 'Tutor confirmed.']);
+        return response()->json(['success' => true, 'message' => 'Demo class request sent to admin.']);
+    }
+
+    public function requestConfirm(Request $request, string $publicId, int $applicationId): JsonResponse
+    {
+        $job = $this->ownedJob($request, $publicId);
+        $app = TuitionJobApplication::where('id', $applicationId)
+            ->where('tuition_job_id', $job->id)
+            ->with(['tutorProfile.user'])
+            ->firstOrFail();
+
+        abort_if($app->status !== 'appointed', 422, 'Only appointed applicants can be requested for confirmation.');
+        $app->update(['status' => 'confirm_requested']);
+
+        $this->notifyAdmins($request->user(), $app, $job, 'confirm_requested');
+
+        return response()->json(['success' => true, 'message' => 'Confirmation request sent to admin.']);
     }
 
     public function remove(Request $request, string $publicId, int $applicationId): JsonResponse
@@ -74,6 +79,27 @@ class TuitionJobApplicantController extends Controller
         abort_if($app->status === 'connected', 422, 'Cannot remove a confirmed tutor.');
         $app->update(['status' => 'not_selected']);
         return response()->json(['success' => true, 'message' => 'Applicant not selected.']);
+    }
+
+    private function notifyAdmins(User $guardian, TuitionJobApplication $app, TuitionJob $job, string $requestType): void
+    {
+        try {
+            $tutorName = $app->tutorProfile?->user?->name ?? 'a tutor';
+            $notification = new AdminGuardianJobRequestNotification(
+                requestType:   $requestType,
+                guardianName:  $guardian->name,
+                tutorName:     $tutorName,
+                jobTitle:      $job->title,
+                jobPublicId:   $job->public_id,
+            );
+            User::where('role', 'super_admin')->get()->each(fn ($admin) => $admin->notify($notification));
+        } catch (\Exception $e) {
+            Log::error('Guardian job request admin notification failed', [
+                'error'          => $e->getMessage(),
+                'application_id' => $app->id,
+                'request_type'   => $requestType,
+            ]);
+        }
     }
 
     private function ownedJob(Request $request, string $publicId): TuitionJob

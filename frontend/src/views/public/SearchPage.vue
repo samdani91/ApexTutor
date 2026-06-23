@@ -105,6 +105,7 @@
               :tutor="tutor"
               class="reveal"
               :style="{ animationDelay: `${Math.min(index, 8) * 45}ms` }"
+              @needs-auth="showLoginModal = true"
             />
           </div>
 
@@ -145,6 +146,37 @@
       </div>
     </div>
     </main>
+
+    <!-- ── Login required modal ──────────────────────────────── -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showLoginModal"
+          class="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          @click.self="showLoginModal = false">
+          <div class="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
+            <div class="text-center">
+              <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-navy-50">
+                <svg class="h-7 w-7 text-navy-700" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
+                </svg>
+              </div>
+              <h3 class="font-display text-lg font-bold text-navy-900">Login Required</h3>
+              <p class="mt-1.5 font-body text-sm text-paper-500">Please log in to view tutor details.</p>
+            </div>
+            <div class="mt-5 flex gap-3">
+              <RouterLink to="/login" @click="showLoginModal = false"
+                class="flex-1 rounded-lg bg-navy-800 px-4 py-2.5 text-center font-display text-sm font-bold text-white transition-colors hover:bg-navy-900">
+                Login
+              </RouterLink>
+              <RouterLink to="/register" @click="showLoginModal = false"
+                class="flex-1 rounded-lg border border-paper-200 px-4 py-2.5 text-center font-display text-sm font-bold text-navy-700 transition-colors hover:bg-paper-50">
+                Register
+              </RouterLink>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
     <!-- ── Mobile filter drawer ─────────────────────────────── -->
     <Teleport to="body">
@@ -205,7 +237,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, RouterLink } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import SearchFilters from '@/components/search/SearchFilters.vue'
 import TutorCard from '@/components/tutor/TutorCard.vue'
@@ -222,6 +254,7 @@ const {
 const filtersRef       = ref(null)
 const mobileFiltersRef = ref(null)
 const drawerOpen       = ref(false)
+const showLoginModal   = ref(false)
 
 const activeChips = computed(() => buildActiveChips(filtersRef.value, mobileFiltersRef.value))
 

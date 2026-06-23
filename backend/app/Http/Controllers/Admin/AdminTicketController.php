@@ -174,6 +174,27 @@ class AdminTicketController extends Controller
         return response()->json(['success' => true, 'data' => $ticket->fresh(['assignedAdmin'])]);
     }
 
+    public function assign(Request $request, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'admin_id' => 'required|integer|exists:users,id',
+        ]);
+
+        $admin = User::where('id', $data['admin_id'])
+                     ->where('role', 'super_admin')
+                     ->first();
+
+        if (!$admin) {
+            return response()->json(['success' => false, 'message' => 'Selected user is not an admin.'], 422);
+        }
+
+        $ticket = SupportTicket::findOrFail($id);
+        $ticket->update(['assigned_to' => $admin->id]);
+        $ticket->load('assignedAdmin:id,name');
+
+        return response()->json(['success' => true, 'data' => $ticket->fresh(['assignedAdmin'])]);
+    }
+
     private function notifyAllAdmins(SupportTicket $ticket, $actor, string $action): void
     {
         User::where('role', 'super_admin')->each(function ($admin) use ($ticket, $actor, $action) {

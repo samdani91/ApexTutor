@@ -171,21 +171,29 @@
               </div>
             </div>
 
+            <!-- Guardian request notice -->
+            <div v-if="app.status === 'demo_requested'" class="mt-3 rounded-md border border-gold-200 bg-gold-50 px-3 py-2 text-xs font-body text-gold-800">
+              Guardian has requested a demo class appointment for this tutor.
+            </div>
+            <div v-if="app.status === 'confirm_requested'" class="mt-3 rounded-md border border-teal-200 bg-teal-50 px-3 py-2 text-xs font-body text-teal-800">
+              Guardian has requested confirmation of this tutor after the demo class.
+            </div>
+
             <div v-if="hasWorkflowActions(app)" class="mt-4 flex flex-col gap-2 border-t border-paper-100 pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
                 <button v-if="app.status === 'applied'" @click="shortlistTarget = app"
                   :disabled="!!acting"
                 class="app-action-primary bg-navy-700 hover:bg-navy-800">
                   Shortlist
                 </button>
-                <button v-if="app.status === 'shortlisted'" @click="appointTarget = app"
+                <button v-if="['shortlisted', 'demo_requested'].includes(app.status)" @click="appointTarget = app"
                   :disabled="!!acting"
                 class="app-action-primary bg-purple-600 hover:bg-purple-700">
-                  Appoint
+                  {{ app.status === 'demo_requested' ? 'Appoint (Requested)' : 'Appoint' }}
                 </button>
-                <button v-if="app.status === 'appointed'" @click="confirmTarget = app"
+                <button v-if="['appointed', 'confirm_requested'].includes(app.status)" @click="confirmTarget = app"
                   :disabled="!!acting"
                 class="app-action-primary bg-emerald-600 hover:bg-emerald-700">
-                  Confirm
+                  {{ app.status === 'confirm_requested' ? 'Confirm (Requested)' : 'Confirm' }}
                 </button>
                 <button @click="removeTarget = app"
                   :disabled="!!acting"
@@ -233,7 +241,9 @@
     <ConfirmDialog
       :show="!!appointTarget"
       title="Appoint for Demo"
-      :message="appointTarget ? `Appoint ${appointTarget.tutor_profile?.user?.name} for a demo class?` : ''"
+      :message="appointTarget
+        ? `Appoint ${appointTarget.tutor_profile?.user?.name} for a demo class?${appointTarget.status === 'demo_requested' ? ' (Guardian has requested this.)' : ''}`
+        : ''"
       confirm-label="Appoint"
       @confirm="doAppoint"
       @cancel="appointTarget = null"
@@ -243,7 +253,9 @@
     <ConfirmDialog
       :show="!!confirmTarget"
       title="Confirm Tutor"
-      :message="confirmTarget ? `Confirm ${confirmTarget.tutor_profile?.user?.name} as the tutor? The job will be closed and a connection request will be created.` : ''"
+      :message="confirmTarget
+        ? `Confirm ${confirmTarget.tutor_profile?.user?.name} as the tutor? The job will be closed.${confirmTarget.status === 'confirm_requested' ? ' (Guardian has requested this confirmation.)' : ''}`
+        : ''"
       confirm-label="Confirm Tutor"
       @confirm="doConfirm"
       @cancel="confirmTarget = null"
@@ -301,22 +313,26 @@ const statusChangeTarget = ref(null)
 const jobOpen = computed(() => job.value?.status === 'open')
 
 function hasWorkflowActions(app) {
-  return jobOpen.value && ['applied', 'shortlisted', 'appointed'].includes(app.status)
+  return jobOpen.value && ['applied', 'shortlisted', 'demo_requested', 'appointed', 'confirm_requested'].includes(app.status)
 }
 
 const restoreOptions = [
-  { value: 'applied',     label: 'Applied'     },
-  { value: 'shortlisted', label: 'Shortlisted' },
-  { value: 'appointed',   label: 'Appointed'   },
+  { value: 'applied',          label: 'Applied'           },
+  { value: 'shortlisted',      label: 'Shortlisted'       },
+  { value: 'demo_requested',   label: 'Demo Requested'    },
+  { value: 'appointed',        label: 'Appointed'         },
+  { value: 'confirm_requested',label: 'Confirm Requested' },
 ]
 
 const appTabs = [
-  { value: 'all',         label: 'All'          },
-  { value: 'applied',     label: 'Applied'      },
-  { value: 'shortlisted', label: 'Shortlisted'  },
-  { value: 'appointed',   label: 'Appointed'    },
-  { value: 'connected',   label: 'Confirmed'    },
-  { value: 'not_selected', label: 'Not Selected' },
+  { value: 'all',              label: 'All'               },
+  { value: 'applied',          label: 'Applied'           },
+  { value: 'shortlisted',      label: 'Shortlisted'       },
+  { value: 'demo_requested',   label: 'Demo Requested'    },
+  { value: 'appointed',        label: 'Appointed'         },
+  { value: 'confirm_requested',label: 'Confirm Requested' },
+  { value: 'connected',        label: 'Confirmed'         },
+  { value: 'not_selected',     label: 'Not Selected'      },
 ]
 
 const MEDIUM_MAP = {
@@ -496,15 +512,25 @@ async function doReopenJob() {
 }
 
 function statusClass(s) {
-  if (s === 'applied')     return 'bg-blue-50 text-blue-700 border-blue-200'
-  if (s === 'shortlisted') return 'bg-navy-50 text-navy-700 border-navy-200'
-  if (s === 'appointed')   return 'bg-gold-50 text-gold-700 border-gold-200'
-  if (s === 'connected')   return 'bg-emerald-50 text-emerald-700 border-emerald-200'
+  if (s === 'applied')           return 'bg-blue-50 text-blue-700 border-blue-200'
+  if (s === 'shortlisted')       return 'bg-navy-50 text-navy-700 border-navy-200'
+  if (s === 'demo_requested')    return 'bg-gold-50 text-gold-700 border-gold-200'
+  if (s === 'appointed')         return 'bg-purple-50 text-purple-700 border-purple-200'
+  if (s === 'confirm_requested') return 'bg-teal-50 text-teal-700 border-teal-200'
+  if (s === 'connected')         return 'bg-emerald-50 text-emerald-700 border-emerald-200'
   return 'bg-red-50 text-red-600 border-red-200'
 }
 
 function statusLabel(s) {
-  return { applied:'Applied', shortlisted:'Shortlisted', appointed:'Appointed', connected:'Confirmed', not_selected:'Not Selected' }[s] ?? s
+  return {
+    applied:          'Applied',
+    shortlisted:      'Shortlisted',
+    demo_requested:   'Demo Requested',
+    appointed:        'Appointed',
+    confirm_requested:'Confirm Requested',
+    connected:        'Confirmed',
+    not_selected:     'Not Selected',
+  }[s] ?? s
 }
 
 function nameInitials(name = '') {

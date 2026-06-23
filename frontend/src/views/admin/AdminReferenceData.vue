@@ -538,6 +538,11 @@ async function removeUniversity(u) {
 async function handleLogoUpload(u, event) {
   const file = event.target.files?.[0]
   if (!file) return
+  if (file.size > 512 * 1024) {
+    toast.error('Logo must be under 512 KB. Please resize the image and try again.')
+    event.target.value = ''
+    return
+  }
   const formData = new FormData()
   formData.append('logo', file)
   try {

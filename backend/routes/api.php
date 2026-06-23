@@ -177,11 +177,11 @@ Route::middleware(['auth:sanctum', 'active.user', 'verified', 'role:guardian,stu
     Route::put('jobs/{publicId}',           [GuardianTuitionJobController::class, 'update']);
     Route::patch('jobs/{publicId}/close',   [GuardianTuitionJobController::class, 'close']);
     Route::patch('jobs/{publicId}/reopen',  [GuardianTuitionJobController::class, 'reopen']);
-    Route::get('jobs/{publicId}/applicants',                                          [TuitionJobApplicantController::class, 'index']);
-    Route::patch('jobs/{publicId}/applicants/{applicationId}/shortlist',              [TuitionJobApplicantController::class, 'shortlist']);
-    Route::patch('jobs/{publicId}/applicants/{applicationId}/appoint',               [TuitionJobApplicantController::class, 'appoint']);
-    Route::patch('jobs/{publicId}/applicants/{applicationId}/confirm',               [TuitionJobApplicantController::class, 'confirm']);
-    Route::patch('jobs/{publicId}/applicants/{applicationId}/remove',                [TuitionJobApplicantController::class, 'remove']);
+    Route::get('jobs/{publicId}/applicants',                                             [TuitionJobApplicantController::class, 'index']);
+    Route::patch('jobs/{publicId}/applicants/{applicationId}/shortlist',                 [TuitionJobApplicantController::class, 'shortlist']);
+    Route::patch('jobs/{publicId}/applicants/{applicationId}/request-demo',              [TuitionJobApplicantController::class, 'requestDemo']);
+    Route::patch('jobs/{publicId}/applicants/{applicationId}/request-confirm',           [TuitionJobApplicantController::class, 'requestConfirm']);
+    Route::patch('jobs/{publicId}/applicants/{applicationId}/remove',                    [TuitionJobApplicantController::class, 'remove']);
 });
 
 // Admin routes
@@ -285,6 +285,7 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:super_admin', 'log.admin
     Route::put('tickets/{id}/status',        [AdminTicketController::class, 'updateStatus']);
     Route::post('tickets/{id}/claim',        [AdminTicketController::class, 'claim']);
     Route::post('tickets/{id}/unclaim',      [AdminTicketController::class, 'unclaim']);
+    Route::post('tickets/{id}/assign',       [AdminTicketController::class, 'assign']);
     Route::post('tickets/{id}/reply',        [AdminTicketController::class, 'reply']);
 
     Route::get('sms/search-users',    [AdminSmsController::class, 'searchUsers']);

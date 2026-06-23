@@ -8,11 +8,11 @@ export const guardianJobsApi = {
   update:            (publicId, data)             => http.put(`/guardian/jobs/${publicId}`, data),
   close:             (publicId)                   => http.patch(`/guardian/jobs/${publicId}/close`),
   reopen:            (publicId)                   => http.patch(`/guardian/jobs/${publicId}/reopen`),
-  applicants:        (publicId, status)           => http.get(`/guardian/jobs/${publicId}/applicants`, { params: status ? { status } : {} }),
-  shortlistApplicant:(publicId, appId)            => http.patch(`/guardian/jobs/${publicId}/applicants/${appId}/shortlist`),
-  appointApplicant:  (publicId, appId)            => http.patch(`/guardian/jobs/${publicId}/applicants/${appId}/appoint`),
-  confirmApplicant:  (publicId, appId)            => http.patch(`/guardian/jobs/${publicId}/applicants/${appId}/confirm`),
-  removeApplicant:   (publicId, appId)            => http.patch(`/guardian/jobs/${publicId}/applicants/${appId}/remove`),
+  applicants:            (publicId, status)  => http.get(`/guardian/jobs/${publicId}/applicants`, { params: status ? { status } : {} }),
+  shortlistApplicant:    (publicId, appId)   => http.patch(`/guardian/jobs/${publicId}/applicants/${appId}/shortlist`),
+  requestDemoApplicant:  (publicId, appId)   => http.patch(`/guardian/jobs/${publicId}/applicants/${appId}/request-demo`),
+  requestConfirmApplicant:(publicId, appId)  => http.patch(`/guardian/jobs/${publicId}/applicants/${appId}/request-confirm`),
+  removeApplicant:       (publicId, appId)   => http.patch(`/guardian/jobs/${publicId}/applicants/${appId}/remove`),
 }
 
 export const tutorJobsApi = {

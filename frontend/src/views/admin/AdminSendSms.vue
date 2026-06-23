@@ -224,7 +224,7 @@
             <select v-else
               v-model="selectedUniversityId"
               @change="fetchBroadcastPreview"
-              class="w-full rounded-lg border border-paper-200 bg-white px-3.5 py-2.5 font-body text-sm text-navy-900 outline-none transition focus:border-navy-500 focus:ring-2 focus:ring-navy-100"
+              class="input text-sm w-full"
             >
               <option :value="null">— Select a university —</option>
               <option v-for="u in universities" :key="u.id" :value="u.id">{{ u.name }}</option>
@@ -251,9 +251,6 @@
             </div>
             <div v-if="broadcastCount === 0" class="rounded-md bg-red-50 px-3 py-2 font-body text-sm text-red-600">
               No phone numbers found — nothing to send.
-            </div>
-            <div v-else class="rounded-md bg-navy-50 px-3 py-2 font-body text-sm text-navy-700">
-              ~<strong>{{ broadcastCount }}</strong> SMS credits will be used.
             </div>
           </div>
         </div>

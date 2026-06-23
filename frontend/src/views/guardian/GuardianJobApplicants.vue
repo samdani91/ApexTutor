@@ -45,6 +45,22 @@
       </button>
     </div>
 
+    <!-- Flow guide -->
+    <div class="rounded-md border border-navy-100 bg-navy-50 px-4 py-3">
+      <p class="text-xs font-semibold font-display text-navy-700 mb-1.5">How it works</p>
+      <div class="flex flex-wrap items-center gap-1.5 text-xs font-body text-navy-600">
+        <span class="rounded-pill bg-white border border-navy-200 px-2.5 py-1 font-semibold">1. Shortlist</span>
+        <svg class="h-3 w-3 text-navy-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <span class="rounded-pill bg-white border border-navy-200 px-2.5 py-1 font-semibold">2. Request Demo</span>
+        <svg class="h-3 w-3 text-navy-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <span class="rounded-pill bg-white border border-navy-200 px-2.5 py-1 font-semibold">3. Admin appoints</span>
+        <svg class="h-3 w-3 text-navy-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <span class="rounded-pill bg-white border border-navy-200 px-2.5 py-1 font-semibold">4. Request Confirm</span>
+        <svg class="h-3 w-3 text-navy-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <span class="rounded-pill bg-white border border-navy-200 px-2.5 py-1 font-semibold">5. Admin confirms</span>
+      </div>
+    </div>
+
     <div v-if="loading" class="card py-16 text-center text-paper-400 font-body text-sm">Loading…</div>
 
     <div v-else-if="!applicants.length" class="card py-16 text-center">
@@ -112,35 +128,53 @@
         <div v-if="actionableButtons(app)" class="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
           <button v-if="app.status === 'applied'" @click="act('shortlist', app)"
             :disabled="acting[app.id]"
-            class="app-action border-gold-500 bg-gold-500 text-navy-900 hover:bg-gold-600 disabled:opacity-50">
+            class="app-action border-navy-200 bg-navy-700 text-white hover:bg-navy-800 disabled:opacity-50">
             Shortlist
           </button>
-          <button v-if="app.status === 'shortlisted'" @click="act('appoint', app)"
+          <button v-if="app.status === 'shortlisted'" @click="demoTarget = app"
             :disabled="acting[app.id]"
             class="app-action border-gold-500 bg-gold-500 text-navy-900 hover:bg-gold-600 disabled:opacity-50">
-            Set for Demo
+            Request Demo
           </button>
           <button v-if="app.status === 'appointed'" @click="confirmTarget = app"
             :disabled="acting[app.id]"
             class="app-action border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">
-            Confirm Tutor
+            Request Confirm
           </button>
-          <button v-if="!['connected','not_selected'].includes(app.status)" @click="removeTarget = app"
+          <button v-if="!['connected','not_selected','demo_requested','confirm_requested'].includes(app.status)" @click="removeTarget = app"
             :disabled="acting[app.id]"
             class="app-action border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50">
             Remove
           </button>
         </div>
+
+        <!-- Pending request notice -->
+        <div v-if="app.status === 'demo_requested'" class="mt-3 rounded-md border border-gold-200 bg-gold-50 px-3 py-2 text-xs font-body text-gold-800">
+          Demo request sent to admin. Waiting for admin to appoint this tutor.
+        </div>
+        <div v-if="app.status === 'confirm_requested'" class="mt-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-body text-emerald-800">
+          Confirmation request sent to admin. Waiting for admin to confirm this tutor.
+        </div>
       </div>
     </div>
 
-    <!-- Confirm Tutor dialog -->
+    <!-- Request Demo dialog -->
+    <ConfirmDialog
+      :show="!!demoTarget"
+      title="Request Demo Appointment?"
+      :message="demoTarget ? `Send a request to admin to appoint ${demoTarget.tutor_profile?.user?.name} for a demo class? Admin will coordinate the schedule.` : ''"
+      confirm-label="Send Request"
+      @confirm="doRequestDemo"
+      @cancel="demoTarget = null"
+    />
+
+    <!-- Request Confirm dialog -->
     <ConfirmDialog
       :show="!!confirmTarget"
-      title="Confirm This Tutor?"
-      :message="confirmTarget ? `Confirm ${confirmTarget.tutor_profile?.user?.name} as tutor? This will close the job and send a connection request to admin.` : ''"
-      confirm-label="Confirm Tutor"
-      @confirm="doConfirm"
+      title="Request Confirmation?"
+      :message="confirmTarget ? `Send a request to admin to confirm ${confirmTarget.tutor_profile?.user?.name} as the tutor for this job?` : ''"
+      confirm-label="Send Request"
+      @confirm="doRequestConfirm"
       @cancel="confirmTarget = null"
     />
 
@@ -169,12 +203,14 @@ const route       = useRoute()
 const publicId    = route.params.publicId
 
 const tabs = [
-  { value: 'all',         label: 'All'         },
-  { value: 'applied',     label: 'Applied'     },
-  { value: 'shortlisted', label: 'Shortlisted' },
-  { value: 'appointed',   label: 'Appointed'   },
-  { value: 'connected',   label: 'Confirmed'   },
-  { value: 'not_selected', label: 'Not Selected' },
+  { value: 'all',              label: 'All'              },
+  { value: 'applied',          label: 'Applied'          },
+  { value: 'shortlisted',      label: 'Shortlisted'      },
+  { value: 'demo_requested',   label: 'Demo Requested'   },
+  { value: 'appointed',        label: 'Appointed'        },
+  { value: 'confirm_requested',label: 'Confirm Requested'},
+  { value: 'connected',        label: 'Confirmed'        },
+  { value: 'not_selected',     label: 'Not Selected'     },
 ]
 
 const job           = ref(null)
@@ -182,6 +218,7 @@ const applicants    = ref([])
 const loading       = ref(false)
 const activeTab     = ref('all')
 const acting        = ref({})
+const demoTarget    = ref(null)
 const confirmTarget = ref(null)
 const removeTarget  = ref(null)
 
@@ -209,14 +246,9 @@ function switchTab(tab) {
 async function act(action, app) {
   acting.value[app.id] = true
   try {
-    const fnMap = {
-      shortlist: () => guardianJobsApi.shortlistApplicant(publicId, app.id),
-      appoint:   () => guardianJobsApi.appointApplicant(publicId, app.id),
-    }
-    await fnMap[action]()
-    const nextStatus = { shortlist: 'shortlisted', appoint: 'appointed' }[action]
-    app.status = nextStatus
-    toast.success(action === 'shortlist' ? 'Tutor shortlisted.' : 'Set for demo class.')
+    await guardianJobsApi.shortlistApplicant(publicId, app.id)
+    app.status = 'shortlisted'
+    toast.success('Tutor shortlisted.')
     if (activeTab.value !== 'all') loadApplicants()
   } catch (err) {
     toast.error(err.response?.data?.message || 'Action failed.')
@@ -225,19 +257,35 @@ async function act(action, app) {
   }
 }
 
-async function doConfirm() {
+async function doRequestDemo() {
+  const app = demoTarget.value
+  demoTarget.value = null
+  if (!app) return
+  acting.value[app.id] = true
+  try {
+    await guardianJobsApi.requestDemoApplicant(publicId, app.id)
+    app.status = 'demo_requested'
+    toast.success('Demo request sent to admin.')
+    if (activeTab.value !== 'all' && activeTab.value !== 'demo_requested') loadApplicants()
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'Failed to send demo request.')
+  } finally {
+    delete acting.value[app.id]
+  }
+}
+
+async function doRequestConfirm() {
   const app = confirmTarget.value
   confirmTarget.value = null
   if (!app) return
   acting.value[app.id] = true
   try {
-    await guardianJobsApi.confirmApplicant(publicId, app.id)
-    app.status = 'connected'
-    if (job.value) job.value.status = 'closed'
-    toast.success('Tutor confirmed! Connection request sent to admin.')
-    loadApplicants()
+    await guardianJobsApi.requestConfirmApplicant(publicId, app.id)
+    app.status = 'confirm_requested'
+    toast.success('Confirmation request sent to admin.')
+    if (activeTab.value !== 'all' && activeTab.value !== 'confirm_requested') loadApplicants()
   } catch (err) {
-    toast.error(err.response?.data?.message || 'Failed to confirm tutor.')
+    toast.error(err.response?.data?.message || 'Failed to send confirmation request.')
   } finally {
     delete acting.value[app.id]
   }
@@ -261,20 +309,30 @@ async function doRemove() {
 }
 
 function actionableButtons(app) {
-  return ['applied', 'shortlisted', 'appointed'].includes(app.status)
+  return ['applied', 'shortlisted', 'appointed', 'demo_requested', 'confirm_requested'].includes(app.status)
 }
 
 function statusClass(s) {
-  if (s === 'applied')     return 'bg-blue-50 text-blue-700 border-blue-200'
-  if (s === 'shortlisted') return 'bg-navy-50 text-navy-700 border-navy-200'
-  if (s === 'appointed')   return 'bg-gold-50 text-gold-700 border-gold-200'
-  if (s === 'connected')   return 'bg-emerald-50 text-emerald-700 border-emerald-200'
-  if (s === 'not_selected') return 'bg-red-50 text-red-600 border-red-200'
+  if (s === 'applied')           return 'bg-blue-50 text-blue-700 border-blue-200'
+  if (s === 'shortlisted')       return 'bg-navy-50 text-navy-700 border-navy-200'
+  if (s === 'demo_requested')    return 'bg-gold-50 text-gold-700 border-gold-200'
+  if (s === 'appointed')         return 'bg-purple-50 text-purple-700 border-purple-200'
+  if (s === 'confirm_requested') return 'bg-teal-50 text-teal-700 border-teal-200'
+  if (s === 'connected')         return 'bg-emerald-50 text-emerald-700 border-emerald-200'
+  if (s === 'not_selected')      return 'bg-red-50 text-red-600 border-red-200'
   return 'bg-paper-100 text-paper-500 border-paper-200'
 }
 
 function statusLabel(s) {
-  const map = { applied: 'Applied', shortlisted: 'Shortlisted', appointed: 'Appointed', connected: 'Confirmed', not_selected: 'Not Selected' }
+  const map = {
+    applied:          'Applied',
+    shortlisted:      'Shortlisted',
+    demo_requested:   'Demo Requested',
+    appointed:        'Appointed',
+    confirm_requested:'Confirm Requested',
+    connected:        'Confirmed',
+    not_selected:     'Not Selected',
+  }
   return map[s] ?? s
 }
 

@@ -106,12 +106,14 @@ import { tutorJobsApi } from '@/api/jobs.js'
 import DropSelect from '@/components/search/DropSelect.vue'
 
 const tabs = [
-  { value: 'all',         label: 'All'          },
-  { value: 'applied',     label: 'Applied'      },
-  { value: 'shortlisted', label: 'Shortlisted'  },
-  { value: 'appointed',   label: 'Appointed'    },
-  { value: 'connected',   label: 'Confirmed'    },
-  { value: 'not_selected', label: 'Not Selected' },
+  { value: 'all',              label: 'All'               },
+  { value: 'applied',          label: 'Applied'           },
+  { value: 'shortlisted',      label: 'Shortlisted'       },
+  { value: 'demo_requested',   label: 'Demo Pending'      },
+  { value: 'appointed',        label: 'Appointed'         },
+  { value: 'confirm_requested',label: 'Confirm Pending'   },
+  { value: 'connected',        label: 'Confirmed'         },
+  { value: 'not_selected',     label: 'Not Selected'      },
 ]
 
 const jobStatusFilters = [
@@ -149,21 +151,25 @@ function switchJobStatus(val) {
 }
 
 function appStatusClass(s) {
-  if (s === 'applied')     return 'bg-blue-50 text-blue-700 border-blue-200'
-  if (s === 'shortlisted') return 'bg-navy-50 text-navy-700 border-navy-200'
-  if (s === 'appointed')   return 'bg-gold-50 text-gold-700 border-gold-200'
-  if (s === 'connected')   return 'bg-emerald-50 text-emerald-700 border-emerald-200'
-  if (s === 'not_selected') return 'bg-red-50 text-red-600 border-red-200'
+  if (s === 'applied')           return 'bg-blue-50 text-blue-700 border-blue-200'
+  if (s === 'shortlisted')       return 'bg-navy-50 text-navy-700 border-navy-200'
+  if (s === 'demo_requested')    return 'bg-gold-50 text-gold-700 border-gold-200'
+  if (s === 'appointed')         return 'bg-purple-50 text-purple-700 border-purple-200'
+  if (s === 'confirm_requested') return 'bg-teal-50 text-teal-700 border-teal-200'
+  if (s === 'connected')         return 'bg-emerald-50 text-emerald-700 border-emerald-200'
+  if (s === 'not_selected')      return 'bg-red-50 text-red-600 border-red-200'
   return 'bg-paper-100 text-paper-500 border-paper-200'
 }
 
 function appStatusLabel(s) {
   return {
-    applied:     'Applied',
-    shortlisted: 'Shortlisted',
-    appointed:   'Appointed',
-    connected:   'Confirmed',
-    not_selected: 'Not Selected',
+    applied:          'Applied',
+    shortlisted:      'Shortlisted',
+    demo_requested:   'Demo Pending',
+    appointed:        'Appointed',
+    confirm_requested:'Confirm Pending',
+    connected:        'Confirmed',
+    not_selected:     'Not Selected',
   }[s] ?? s
 }
 

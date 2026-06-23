@@ -15,5 +15,6 @@ export const adminTicketApi = {
   updateStatus: (id, data)    => http.put(`/admin/tickets/${id}/status`, data),
   claim:        (id)          => http.post(`/admin/tickets/${id}/claim`),
   unclaim:      (id)          => http.post(`/admin/tickets/${id}/unclaim`),
+  assign:       (id, data)    => http.post(`/admin/tickets/${id}/assign`, data),
   reply:        (id, data)    => http.post(`/admin/tickets/${id}/reply`, data),
 }

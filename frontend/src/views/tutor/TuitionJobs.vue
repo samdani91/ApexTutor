@@ -87,90 +87,107 @@
             <!-- Job cards -->
             <div v-else class="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-5">
               <div v-for="(job, index) in jobs" :key="job.id"
-                class="job-card reveal flex h-full min-h-[22rem] flex-col rounded-md border border-paper-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-navy-200 hover:shadow-lg sm:p-6"
+                class="job-card reveal flex h-full flex-col rounded-md border border-paper-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-navy-200 hover:shadow-lg"
                 :style="{ animationDelay: `${Math.min(index, 8) * 45}ms` }">
 
-                <div class="min-h-[6.75rem]">
-                  <RouterLink :to="`/jobs/${job.public_id}`"
-                    class="job-title-clamp block max-w-3xl font-display text-xl font-semibold leading-snug text-navy-900 transition-colors hover:text-navy-700">
+                <!-- Card header -->
+                <div class="p-5 pb-4">
+                  <button @click="handleJobNav(job.public_id)"
+                    class="job-title-clamp text-left w-full font-display text-lg font-bold leading-snug text-navy-900 transition-colors hover:text-navy-700 min-h-[3.1rem]">
                     {{ job.title }}
-                  </RouterLink>
-                  <p class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-paper-500 font-body">
-                    <span>Job ID : <span class="font-medium text-paper-600">{{ job.public_id }}</span></span>
-                    <span class="hidden h-5 w-px bg-paper-400 sm:block"></span>
-                    <span>Posted Date : <span class="font-medium text-paper-600">{{ formatDate(job.created_at) }}</span></span>
+                  </button>
+                  <p class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-body text-xs text-paper-400">
+                    <span class="font-medium text-paper-500">{{ job.public_id }}</span>
+                    <span class="h-3 w-px bg-paper-200"></span>
+                    <span>{{ formatDate(job.created_at) }}</span>
                   </p>
                 </div>
 
-                <div class="mt-6 flex flex-1 flex-col">
-                  <div class="grid gap-x-8 gap-y-7 sm:grid-cols-2">
-                    <div class="job-info-row">
-                      <svg class="job-info-icon" fill="none" stroke="currentColor" stroke-width="1.85" viewBox="0 0 24 24">
+                <!-- Salary highlight -->
+                <div class="mx-5 mb-4 flex items-center gap-3 rounded-md bg-navy-50 px-4 py-3">
+                  <svg class="h-5 w-5 shrink-0 text-navy-600" fill="none" stroke="currentColor" stroke-width="1.85" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33"/>
+                  </svg>
+                  <div>
+                    <p class="font-display text-[10px] font-bold uppercase tracking-wide text-navy-500">Monthly Salary</p>
+                    <p class="font-display text-base font-bold leading-tight text-navy-900">
+                      {{ job.offered_salary ? `${Number(job.offered_salary).toLocaleString()} BDT` : 'Negotiable' }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Fact boxes — flex-1 pushes footer to bottom -->
+                <div class="flex-1 px-5">
+                <div class="grid grid-cols-2 gap-2.5">
+                  <div class="job-fact">
+                    <div class="job-fact-icon">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.85" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 4.75h5.5v5.5h-5.5v-5.5ZM13.75 4.75h5.5v5.5h-5.5v-5.5ZM4.75 13.75h5.5v5.5h-5.5v-5.5ZM13.75 13.75h5.5v5.5h-5.5v-5.5Z"/>
                       </svg>
-                      <span class="min-w-0">
-                        <span class="job-info-label">Tuition Type</span>
-                        <span class="job-info-value">{{ typeLabel(job.tuition_type) }}</span>
-                      </span>
                     </div>
+                    <span class="min-w-0">
+                      <span class="job-fact-label">Type</span>
+                      <span class="job-fact-value truncate block">{{ typeLabel(job.tuition_type) }}</span>
+                    </span>
+                  </div>
 
-                    <div class="job-info-row">
-                      <svg class="job-info-icon" fill="none" stroke="currentColor" stroke-width="1.85" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33"/>
-                      </svg>
-                      <span class="min-w-0">
-                        <span class="job-info-label">Salary</span>
-                        <span class="job-info-value">{{ job.offered_salary?.toLocaleString() || 'Negotiable' }} BDT</span>
-                      </span>
-                    </div>
-
-                    <div class="job-info-row">
-                      <svg class="job-info-icon" fill="none" stroke="currentColor" stroke-width="1.85" viewBox="0 0 24 24">
+                  <div class="job-fact">
+                    <div class="job-fact-icon">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.85" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 0 1 15 0z"/>
                       </svg>
-                      <span class="min-w-0">
-                        <span class="job-info-label">Location</span>
-                        <span class="job-info-value">{{ job.area?.name ? `${job.area.name}, ${job.district?.name}` : (job.district?.name || 'Location not set') }}</span>
-                      </span>
                     </div>
+                    <span class="min-w-0">
+                      <span class="job-fact-label">Location</span>
+                      <span class="job-fact-value truncate block">
+                        {{ job.area?.name ? `${job.area.name}, ${job.district?.name}` : (job.district?.name || 'Not set') }}
+                      </span>
+                    </span>
+                  </div>
 
-                    <div class="job-info-row">
-                      <svg class="job-info-icon" fill="none" stroke="currentColor" stroke-width="1.85" viewBox="0 0 24 24">
+                  <div class="job-fact col-span-2">
+                    <div class="job-fact-icon">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.85" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/>
                       </svg>
-                      <span class="min-w-0">
-                        <span class="job-info-label">Subjects</span>
-                        <span class="job-info-value job-info-clamp">{{ job.subjects?.map(s => s.name).join(', ') || 'Not specified' }}</span>
-                      </span>
                     </div>
+                    <span class="min-w-0">
+                      <span class="job-fact-label">Subjects</span>
+                      <span class="job-fact-value job-subjects-clamp block">{{ job.subjects?.map(s => s.name).join(' · ') || 'Not specified' }}</span>
+                    </span>
                   </div>
+                </div>
+                </div>
 
-                  <div class="mt-auto flex flex-col gap-4 pt-8 sm:flex-row sm:items-center sm:justify-between">
+                <!-- Footer -->
+                <div class="mt-4 flex items-center justify-between gap-3 border-t border-paper-100 px-5 py-4">
+                  <div class="flex flex-wrap items-center gap-2">
                     <span v-if="job.tutor_gender_pref && job.tutor_gender_pref !== 'any'"
-                      class="inline-flex items-center gap-1.5 text-sm font-semibold font-display"
-                      :class="job.tutor_gender_pref === 'female' ? 'text-pink-600' : 'text-emerald-700'">
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24">
+                      class="inline-flex items-center gap-1 rounded-pill border px-2.5 py-1 font-display text-xs font-semibold"
+                      :class="job.tutor_gender_pref === 'female' ? 'border-pink-200 bg-pink-50 text-pink-600' : 'border-emerald-200 bg-emerald-50 text-emerald-700'">
+                      <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0zM4.501 20.118a7.5 7.5 0 0 1 14.998 0"/>
                       </svg>
-                      {{ genderLabel(job.tutor_gender_pref) }} preferred
+                      {{ genderLabel(job.tutor_gender_pref) }}
                     </span>
-                    <span v-else class="text-sm font-semibold font-display text-paper-500">Any tutor preferred</span>
-
-                    <div class="flex items-center gap-3 sm:ml-auto">
-                      <span v-if="job.already_applied"
-                        class="inline-flex items-center rounded-pill border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold font-display text-emerald-700">
-                        Applied
-                      </span>
-                    <RouterLink :to="`/jobs/${job.public_id}`"
-                      class="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold font-display text-navy-700 transition-colors hover:bg-navy-50">
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
-                      </svg>
-                      Details
-                    </RouterLink>
-                    </div>
+                    <span v-else
+                      class="inline-flex items-center rounded-pill border border-paper-200 bg-paper-50 px-2.5 py-1 font-display text-xs font-semibold text-paper-500">
+                      Any tutor
+                    </span>
+                    <span v-if="job.already_applied"
+                      class="inline-flex items-center rounded-pill border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-display text-[11px] font-bold text-emerald-700">
+                      Applied
+                    </span>
                   </div>
+
+                  <button @click="handleJobNav(job.public_id)"
+                    class="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-navy-800 px-4 py-2 font-display text-xs font-bold text-white transition-colors hover:bg-navy-900">
+                    View Details
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
@@ -242,15 +259,51 @@
         </div>
       </Transition>
     </Teleport>
+
+    <!-- Login required modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="showLoginModal"
+          class="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          @click.self="showLoginModal = false">
+          <div class="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
+            <div class="text-center">
+              <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-navy-50">
+                <svg class="h-7 w-7 text-navy-700" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
+                </svg>
+              </div>
+              <h3 class="font-display text-lg font-bold text-navy-900">Login Required</h3>
+              <p class="mt-1.5 font-body text-sm text-paper-500">Please log in to view job details.</p>
+            </div>
+            <div class="mt-5 flex gap-3">
+              <RouterLink to="/login"
+                class="flex-1 rounded-lg bg-navy-800 px-4 py-2.5 text-center font-display text-sm font-bold text-white transition-colors hover:bg-navy-900">
+                Login
+              </RouterLink>
+              <RouterLink to="/register"
+                class="flex-1 rounded-lg border border-paper-200 px-4 py-2.5 text-center font-display text-sm font-bold text-navy-700 transition-colors hover:bg-paper-50">
+                Register
+              </RouterLink>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </DefaultLayout>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { tutorJobsApi } from '@/api/jobs.js'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import TuitionJobFilters from './TuitionJobFilters.vue'
+import { useAuthStore } from '@/stores/auth.js'
+
+const router         = useRouter()
+const auth           = useAuthStore()
+const showLoginModal = ref(false)
 
 const jobs            = ref([])
 const loading         = ref(false)
@@ -360,6 +413,14 @@ function formatDate(iso) {
   return iso ? new Date(iso).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : ''
 }
 
+function handleJobNav(publicId) {
+  if (auth.isAuthenticated) {
+    router.push(`/jobs/${publicId}`)
+  } else {
+    showLoginModal.value = true
+  }
+}
+
 // Initial load
 doLoad(lastFilters.value)
 </script>
@@ -382,6 +443,13 @@ doLoad(lastFilters.value)
   overflow: hidden;
 }
 
+.job-subjects-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .job-fact {
   @apply flex min-w-0 items-center gap-2 rounded-md border border-paper-200 bg-paper-50/80 px-3 py-2.5;
 }
@@ -391,35 +459,13 @@ doLoad(lastFilters.value)
 }
 
 .job-fact-label {
-  @apply block text-[10px] font-bold font-display uppercase text-paper-400;
+  @apply block text-[10px] font-bold font-display uppercase tracking-wide text-paper-400;
 }
 
 .job-fact-value {
-  @apply block text-sm font-bold font-display leading-snug text-navy-800;
+  @apply mt-0.5 text-sm font-semibold font-display leading-snug text-navy-800;
 }
 
-.job-info-row {
-  @apply flex min-w-0 items-start gap-3;
-}
-
-.job-info-icon {
-  @apply mt-1 h-4 w-4 shrink-0 text-navy-600;
-}
-
-.job-info-label {
-  @apply block text-sm font-body text-paper-500;
-}
-
-.job-info-value {
-  @apply mt-0.5 block text-sm font-semibold font-body leading-relaxed text-paper-700;
-}
-
-.job-info-clamp {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
 
 .public-grid {
   background-image:
