@@ -94,6 +94,9 @@
             <svg v-else-if="n.data.type === 'ticket_claim_update'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"/>
             </svg>
+            <svg v-else-if="n.data.type === 'guardian_job_request'" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/>
+            </svg>
             <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
             </svg>
@@ -219,6 +222,38 @@
               </RouterLink>
             </div>
 
+            <!-- Guardian demo / confirm request detail -->
+            <div v-else-if="n.data.type === 'guardian_job_request'" class="mt-3">
+              <div class="mb-2.5 inline-flex items-center gap-1.5 rounded-pill border px-2.5 py-1 text-[11px] font-bold font-display uppercase tracking-wide"
+                :class="n.data.request_type === 'demo_requested'
+                  ? 'border-gold-200 bg-gold-50 text-gold-700'
+                  : 'border-teal-200 bg-teal-50 text-teal-700'">
+                {{ n.data.request_type === 'demo_requested' ? 'Demo Requested' : 'Confirm Requested' }}
+              </div>
+              <div class="grid gap-2 sm:grid-cols-2">
+                <div class="rounded-md bg-paper-50 px-3 py-2">
+                  <p class="text-[11px] font-bold font-display text-paper-400 uppercase tracking-wide">Guardian</p>
+                  <p class="mt-0.5 truncate text-sm font-semibold font-body text-navy-800">{{ n.data.guardian_name }}</p>
+                </div>
+                <div class="rounded-md bg-paper-50 px-3 py-2">
+                  <p class="text-[11px] font-bold font-display text-paper-400 uppercase tracking-wide">Tutor</p>
+                  <p class="mt-0.5 truncate text-sm font-semibold font-body text-navy-800">{{ n.data.tutor_name }}</p>
+                </div>
+              </div>
+              <div class="mt-2 rounded-md bg-paper-50 px-3 py-2">
+                <p class="text-[11px] font-bold font-display text-paper-400 uppercase tracking-wide">Job</p>
+                <p class="mt-0.5 text-sm font-semibold font-body text-navy-800">
+                  {{ n.data.job_title }}
+                  <span class="font-normal text-paper-400 text-xs ml-1">#{{ n.data.job_public_id }}</span>
+                </p>
+              </div>
+              <RouterLink :to="`/admin/tuition-jobs/${n.data.job_public_id}`"
+                class="mt-2.5 inline-flex items-center gap-1.5 rounded-md border border-navy-200 bg-navy-50 px-3 py-1.5 text-xs font-semibold font-display text-navy-700 transition-colors hover:bg-navy-100">
+                {{ n.data.request_type === 'demo_requested' ? 'Appoint tutor →' : 'Confirm tutor →' }}
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+              </RouterLink>
+            </div>
+
             <p class="text-xs text-paper-400 font-body mt-3">{{ formatDate(n.created_at) }}</p>
           </div>
 
@@ -261,6 +296,7 @@ const meta          = ref({ current_page: 1, last_page: 1, total: 0, from: 0, to
 
 const typeOptions = [
   { value: '',                       label: 'All' },
+  { value: 'guardian_job_request',   label: 'Job Request' },
   { value: 'tutor_shortlisted',      label: 'Shortlist' },
   { value: 'connection_requested',   label: 'Connection' },
   { value: 'pending_profile_change', label: 'Profile Change' },
@@ -336,6 +372,8 @@ function typeMeta(type) {
       return { label: 'Support Ticket',  badge: 'bg-blue-50 text-blue-700',      iconBg: 'bg-blue-50 text-blue-600 ring-blue-100',       accent: 'bg-blue-500' }
     case 'ticket_claim_update':
       return { label: 'Ticket Claim',    badge: 'bg-emerald-50 text-emerald-700', iconBg: 'bg-emerald-50 text-emerald-600 ring-emerald-100', accent: 'bg-emerald-500' }
+    case 'guardian_job_request':
+      return { label: 'Job Request',     badge: 'bg-gold-50 text-gold-700',      iconBg: 'bg-gold-50 text-gold-700 ring-gold-100',       accent: 'bg-gold-400' }
     default:
       return { label: 'Notification',    badge: 'bg-navy-50 text-navy-700',      iconBg: 'bg-navy-50 text-navy-600 ring-navy-100',       accent: 'bg-navy-400' }
   }
