@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Tutor;
 use App\Http\Controllers\Controller;
 use App\Models\TuitionJob;
 use App\Models\TuitionJobApplication;
+use App\Notifications\GuardianNewApplicantNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class TuitionJobController extends Controller
 {
@@ -91,7 +93,9 @@ class TuitionJobController extends Controller
     {
         $tutorProfile = $request->user()->tutorProfile;
 
-        $job = TuitionJob::where('public_id', $publicId)->firstOrFail();
+        $job = TuitionJob::where('public_id', $publicId)
+            ->with('guardianProfile.user')
+            ->firstOrFail();
 
         abort_if($job->status === 'closed', 422, 'This job is no longer accepting applications.');
 
@@ -107,7 +111,29 @@ class TuitionJobController extends Controller
             'status'          => 'applied',
         ]);
 
+        $this->notifyGuardian($job, $request->user(), $tutorProfile);
+
         return response()->json(['success' => true, 'message' => 'Application submitted.'], 201);
+    }
+
+    private function notifyGuardian(TuitionJob $job, $tutorUser, $tutorProfile): void
+    {
+        try {
+            $guardianUser = $job->guardianProfile?->user;
+            if (!$guardianUser) return;
+
+            $guardianUser->notify(new GuardianNewApplicantNotification(
+                tutorName:   $tutorUser->name,
+                tutorId:     $tutorProfile->tutor_id ?? 'N/A',
+                jobTitle:    $job->title,
+                jobPublicId: $job->public_id,
+            ));
+        } catch (\Exception $e) {
+            Log::error('Guardian new applicant notification failed', [
+                'error'  => $e->getMessage(),
+                'job_id' => $job->id,
+            ]);
+        }
     }
 
     public function myApplications(Request $request): JsonResponse

@@ -263,7 +263,7 @@ const detailRows = computed(() => {
   const j = job.value
   const typeMap   = { student_home:"Student's Home", tutor_home:"Tutor's Home", online:'Online', home:'Home Tutoring', group:'Group Tutoring', home_and_online:'Home & Online' }
   const mediumMap = { bangla_medium:'Bangla Medium', english_medium:'English Medium', english_version:'English Version' }
-  const styleMap  = { one_to_one:'One-to-one', group:'Group', online:'Online' }
+  const styleMap  = { one_to_one:'One-to-one', group:'Group', online:'Online', in_person:'In-person' }
   const genderMap = { male:'Male', female:'Female', any:'Any' }
   const rows = [
     { label: 'Place of Tutoring', value: typeMap[j.tuition_type] ?? j.tuition_type,                    icon: 'briefcase' },
@@ -283,7 +283,15 @@ const detailRows = computed(() => {
 })
 
 function statusLabel(s) {
-  return { applied:'Submitted', shortlisted:'Shortlisted', appointed:'Appointed for Demo', connected:'Confirmed', not_selected:'Not Selected' }[s] ?? s
+  return {
+    applied:          'Submitted',
+    shortlisted:      'Shortlisted',
+    demo_requested:   'Demo Requested',
+    appointed:        'Appointed for Demo',
+    confirm_requested:'Confirm Requested',
+    connected:        'Confirmed',
+    not_selected:     'Not Selected',
+  }[s] ?? s
 }
 
 function appStatusIsNegative(s) {

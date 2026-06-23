@@ -349,6 +349,7 @@ const STYLE_MAP = {
   one_to_one: 'One-to-one',
   group:      'Group',
   online:     'Online',
+  in_person:  'In-person',
 }
 
 const details = computed(() => {

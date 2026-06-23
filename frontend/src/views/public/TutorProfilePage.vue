@@ -210,8 +210,8 @@
           <p class="info-label">Tutoring style</p>
           <div class="chip-list">
             <span v-for="style in asArray(tutor.tuition_preference.tutoring_styles)" :key="style"
-              class="chip capitalize">
-              {{ style.replace(/_/g,' ') }}
+              class="chip">
+              {{ STYLE_LABELS[style] || style.replace(/_/g,' ') }}
             </span>
           </div>
         </div>
@@ -388,8 +388,9 @@ import { toast } from 'vue-sonner'
 import { getInitials, formatSalaryRange } from '@/utils/helpers.js'
 import { PREFERRED_TIMES } from '@/utils/constants.js'
 
-const TIME_MAP    = Object.fromEntries(PREFERRED_TIMES.map(t => [t.value, `${t.label} (${t.hint})`]))
+const TIME_MAP     = Object.fromEntries(PREFERRED_TIMES.map(t => [t.value, `${t.label} (${t.hint})`]))
 const PLACE_LABELS = { student_home: "Student's home", tutor_home: "Tutor's home", online: 'Online' }
+const STYLE_LABELS = { one_to_one: 'One-to-one', group: 'Group', online: 'Online', in_person: 'In-person' }
 
 const route   = useRoute()
 const router  = useRouter()

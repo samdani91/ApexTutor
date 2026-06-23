@@ -531,8 +531,8 @@ const preferenceRows = computed(() => {
     { label: 'Days/week', value: pref.days_per_week || 'Not given' },
     { label: 'Hours/session', value: pref.hours_per_day ? `${pref.hours_per_day} hr` : 'Not given' },
     { label: 'Preferred time', value: pref.preferred_time?.length ? pref.preferred_time.map(t => TIME_MAP[t] || t).join(', ') : 'Not given' },
-    { label: 'Style', value: formatLabels(pref.tutoring_styles) || 'Not given' },
-    { label: 'Place', value: formatLabels(pref.place_of_tutoring) || 'Not given' },
+    { label: 'Style', value: formatStyleLabels(pref.tutoring_styles) || 'Not given' },
+    { label: 'Place', value: formatPlaceLabels(pref.place_of_tutoring) || 'Not given' },
     { label: 'Salary range', value: `৳${pref.expected_salary_min || 0} – ৳${pref.expected_salary_max || 0}` },
   ]
 })
@@ -580,6 +580,21 @@ function formatSize(bytes) {
 function formatArray(arr) {
   if (!arr?.length) return null
   return Array.isArray(arr) ? arr.join(', ') : arr
+}
+
+const STYLE_MAP = { one_to_one: 'One-to-one', group: 'Group', online: 'Online', in_person: 'In-person' }
+const PLACE_MAP = { student_home: "Student's home", tutor_home: "Tutor's home", online: 'Online' }
+
+function formatStyleLabels(arr) {
+  if (!arr) return ''
+  const items = Array.isArray(arr) ? arr : [arr]
+  return items.map(v => STYLE_MAP[v] || titleize(v)).join(', ')
+}
+
+function formatPlaceLabels(arr) {
+  if (!arr) return ''
+  const items = Array.isArray(arr) ? arr : [arr]
+  return items.map(v => PLACE_MAP[v] || titleize(v)).join(', ')
 }
 
 function formatLabels(arr) {
