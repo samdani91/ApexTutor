@@ -47,13 +47,29 @@ use Illuminate\Support\Facades\Route;
 Route::get('health', fn() => response()->json(['status' => 'ok', 'timestamp' => now()->toISOString()]));
 
 // Private storage — authenticated file serving for sensitive documents (NID, marksheets)
-// Path is base64url-encoded so the URL has no file extension (avoids OpenResty static-file interception)
+// Path is base64url-encoded (no padding) to avoid OpenResty intercepting extension-based static file URLs
 Route::middleware('auth:sanctum')->get('private-storage/{encoded}', function (string $encoded) {
     $path = base64_decode(strtr($encoded, '-_', '+/'));
-    abort_if(
-        !str_starts_with($path, 'nid_documents/') && !str_starts_with($path, 'documents/'),
-        403
-    );
+    $user = auth()->user();
+    $isAdmin = $user->role === 'super_admin';
+
+    if (str_starts_with($path, 'nid_documents/')) {
+        // Path format: nid_documents/{user_id}/filename — owner check via user_id segment
+        $ownerId = explode('/', $path)[1] ?? null;
+        abort_if(!$isAdmin && (string) $user->id !== (string) $ownerId, 403);
+
+    } elseif (str_starts_with($path, 'documents/')) {
+        // Tutor documents — verify ownership via DB; admin bypasses
+        if (!$isAdmin) {
+            $owns = \App\Models\TutorDocument::where('file_path', $path)
+                ->whereHas('tutorProfile', fn($q) => $q->where('user_id', $user->id))
+                ->exists();
+            abort_if(!$owns, 403);
+        }
+    } else {
+        abort(403);
+    }
+
     $file = rtrim(config('filesystems.disks.public.root'), '/') . '/' . $path;
     abort_if(!file_exists($file), 404);
     return response()->file($file);
