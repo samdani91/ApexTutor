@@ -38,6 +38,8 @@ $app->bootstrapWith([
 ]);
 
 // Auth — read Sanctum token from cookie
+header('Cache-Control: no-store, no-cache, must-revalidate');
+
 $tokenString = $_COOKIE['auth_token'] ?? null;
 if (!$tokenString) {
     http_response_code(401);
