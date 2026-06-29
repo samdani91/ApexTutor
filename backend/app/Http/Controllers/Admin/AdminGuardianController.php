@@ -130,7 +130,7 @@ class AdminGuardianController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => ['nid_document_url' => rtrim(config('app.url'), '/') . '/private-storage/' . $path],
+            'data'    => ['nid_document_url' => rtrim(config('app.url'), '/') . '/private-storage/' . strtr(base64_encode($path), '+/', '-_')],
             'message' => 'NID document updated.',
         ]);
     }

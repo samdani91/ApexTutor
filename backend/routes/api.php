@@ -47,7 +47,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('health', fn() => response()->json(['status' => 'ok', 'timestamp' => now()->toISOString()]));
 
 // Private storage — authenticated file serving for sensitive documents (NID, marksheets)
-Route::middleware('auth:sanctum')->get('private-storage/{path}', function (string $path) {
+// Path is base64url-encoded so the URL has no file extension (avoids OpenResty static-file interception)
+Route::middleware('auth:sanctum')->get('private-storage/{encoded}', function (string $encoded) {
+    $path = base64_decode(strtr($encoded, '-_', '+/'));
     abort_if(
         !str_starts_with($path, 'nid_documents/') && !str_starts_with($path, 'documents/'),
         403
@@ -55,7 +57,7 @@ Route::middleware('auth:sanctum')->get('private-storage/{path}', function (strin
     $file = rtrim(config('filesystems.disks.public.root'), '/') . '/' . $path;
     abort_if(!file_exists($file), 404);
     return response()->file($file);
-})->where('path', '.*');
+});
 
 // Public auth routes
 Route::prefix('auth')->group(function () {

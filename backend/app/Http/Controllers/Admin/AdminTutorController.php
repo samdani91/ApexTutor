@@ -55,7 +55,7 @@ class AdminTutorController extends Controller
         ])->where('tutor_id', $tutorId)->firstOrFail();
 
         $tutor->documents->each(function ($doc) {
-            $doc->file_url = rtrim(config('app.url'), '/') . '/private-storage/' . $doc->file_path;
+            $doc->file_url = rtrim(config('app.url'), '/') . '/private-storage/' . strtr(base64_encode($doc->file_path), '+/', '-_');
         });
         foreach ($tutor->teachingVideos as $video) {
             if ($video->file_path) {
@@ -228,7 +228,7 @@ class AdminTutorController extends Controller
         }
 
         $doc = $tutor->documents()->create($payload);
-        $doc->file_url = rtrim(config('app.url'), '/') . '/private-storage/' . $doc->file_path;
+        $doc->file_url = rtrim(config('app.url'), '/') . '/private-storage/' . strtr(base64_encode($doc->file_path), '+/', '-_');
 
         return response()->json(['success' => true, 'data' => $doc, 'message' => 'Document uploaded.'], 201);
     }
