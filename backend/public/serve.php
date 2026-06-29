@@ -14,7 +14,7 @@ if (!$encoded) { http_response_code(400); exit; }
 $path = base64_decode(strtr($encoded, '-_', '+/'));
 
 // Only allow private paths
-if (!str_starts_with($path, 'documents/') && !str_starts_with($path, 'nid_documents/')) {
+if (strpos($path, 'documents/') !== 0 && strpos($path, 'nid_documents/') !== 0) {
     http_response_code(403); exit;
 }
 
@@ -49,7 +49,7 @@ if (!$tokenString) {
 }
 
 $tokenModel = Laravel\Sanctum\PersonalAccessToken::findToken($tokenString);
-$user       = $tokenModel?->tokenable;
+$user       = $tokenModel ? $tokenModel->tokenable : null;
 
 if (!$user) {
     http_response_code(401);
@@ -61,15 +61,18 @@ if (!$user) {
 $isAdmin = $user->role === 'super_admin';
 
 // IDOR check
-if (str_starts_with($path, 'nid_documents/')) {
-    $ownerId = explode('/', $path)[1] ?? null;
+if (strpos($path, 'nid_documents/') === 0) {
+    $segments = explode('/', $path);
+    $ownerId  = isset($segments[1]) ? $segments[1] : null;
     if (!$isAdmin && (string) $user->id !== (string) $ownerId) {
         http_response_code(403); exit;
     }
-} elseif (str_starts_with($path, 'documents/')) {
+} elseif (strpos($path, 'documents/') === 0) {
     if (!$isAdmin) {
         $owns = App\Models\TutorDocument::where('file_path', $path)
-            ->whereHas('tutorProfile', fn($q) => $q->where('user_id', $user->id))
+            ->whereHas('tutorProfile', function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
             ->exists();
         if (!$owns) { http_response_code(403); exit; }
     }
