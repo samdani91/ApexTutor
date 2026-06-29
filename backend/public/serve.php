@@ -1,8 +1,12 @@
 <?php
-/**
- * Private document server — bypasses Laravel routing (OpenResty compatibility).
- * Auth via Sanctum personal access token stored in 'auth_token' cookie.
- */
+// DEBUG MODE — remove after fixing
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
+set_exception_handler(function($e) {
+    http_response_code(500);
+    echo '<pre>ERROR: ' . $e->getMessage() . "\nFile: " . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString() . '</pre>';
+    exit;
+});
 
 $encoded = $_GET['f'] ?? null;
 if (!$encoded) { http_response_code(400); exit; }
