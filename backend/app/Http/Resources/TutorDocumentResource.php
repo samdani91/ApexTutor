@@ -17,7 +17,7 @@ class TutorDocumentResource extends JsonResource
             'mime_type'     => $this->mime_type,
             'review_status' => $this->review_status,
             'file_url'      => $this->file_path
-                ? rtrim(config('app.url'), '/') . '/private-storage/' . rtrim(strtr(base64_encode($this->file_path), '+/', '-_'), '=')
+                ? rtrim(config('app.url'), '/') . '/serve.php?f=' . rtrim(strtr(base64_encode($this->file_path), '+/', '-_'), '=')
                 : null,
         ];
     }

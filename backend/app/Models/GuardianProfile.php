@@ -22,7 +22,7 @@ class GuardianProfile extends Model
     public function getNidDocumentUrlAttribute(): ?string
     {
         if (!$this->nid_document) return null;
-        return rtrim(config('app.url'), '/') . '/private-storage/' . rtrim(strtr(base64_encode($this->nid_document), '+/', '-_'), '=');
+        return rtrim(config('app.url'), '/') . '/serve.php?f=' . rtrim(strtr(base64_encode($this->nid_document), '+/', '-_'), '=');
     }
 
     protected static function booted(): void

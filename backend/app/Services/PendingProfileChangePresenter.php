@@ -45,7 +45,7 @@ class PendingProfileChangePresenter
 
         $profile->documents->each(function ($doc) {
             if ($doc->file_path) {
-                $doc->file_url = rtrim(config('app.url'), '/') . '/private-storage/' . rtrim(strtr(base64_encode($doc->file_path), '+/', '-_'), '=');
+                $doc->file_url = rtrim(config('app.url'), '/') . '/serve.php?f=' . rtrim(strtr(base64_encode($doc->file_path), '+/', '-_'), '=');
             }
         });
 
@@ -106,7 +106,7 @@ class PendingProfileChangePresenter
         foreach ($changes['documents']['upsert'] ?? [] as $type => $doc) {
             if (!empty($doc['file_path'])) {
                 $changes['documents']['upsert'][$type]['file_url'] =
-                    rtrim(config('app.url'), '/') . '/private-storage/' . rtrim(strtr(base64_encode($doc['file_path']), '+/', '-_'), '=');
+                    rtrim(config('app.url'), '/') . '/serve.php?f=' . rtrim(strtr(base64_encode($doc['file_path']), '+/', '-_'), '=');
             }
         }
 
