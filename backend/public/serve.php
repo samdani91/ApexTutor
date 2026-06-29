@@ -16,8 +16,8 @@ if (!str_starts_with($path, 'documents/') && !str_starts_with($path, 'nid_docume
 
 // Bootstrap Laravel (env, config, DB, providers — no HTTP request handling)
 define('LARAVEL_START', microtime(true));
-require __DIR__ . '/../vendor/autoload.php';
-$app = require_once __DIR__ . '/../bootstrap/app.php';
+require '/home/annoghor/repositories/ApexTutor/backend/vendor/autoload.php';
+$app = require_once '/home/annoghor/repositories/ApexTutor/backend/bootstrap/app.php';
 $app->usePublicPath(__DIR__);
 $app->bootstrapWith([
     Illuminate\Foundation\Bootstrap\LoadEnvironmentVariables::class,
