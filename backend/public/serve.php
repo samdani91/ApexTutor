@@ -23,6 +23,12 @@ define('LARAVEL_START', microtime(true));
 require '/home/annoghor/repositories/ApexTutor/backend/vendor/autoload.php';
 $app = require_once '/home/annoghor/repositories/ApexTutor/backend/bootstrap/app.php';
 $app->usePublicPath(__DIR__);
+
+// Bind a real Request so AppServiceProvider::boot() (URL::forceScheme) doesn't fail
+$request = Illuminate\Http\Request::capture();
+$app->instance('request', $request);
+Illuminate\Support\Facades\Facade::clearResolvedInstances();
+
 $app->bootstrapWith([
     Illuminate\Foundation\Bootstrap\LoadEnvironmentVariables::class,
     Illuminate\Foundation\Bootstrap\LoadConfiguration::class,
