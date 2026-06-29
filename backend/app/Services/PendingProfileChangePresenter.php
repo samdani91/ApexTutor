@@ -45,7 +45,7 @@ class PendingProfileChangePresenter
 
         $profile->documents->each(function ($doc) {
             if ($doc->file_path) {
-                $doc->file_url = Storage::disk('public')->url($doc->file_path);
+                $doc->file_url = rtrim(config('app.url'), '/') . '/private-storage/' . $doc->file_path;
             }
         });
 
@@ -106,7 +106,7 @@ class PendingProfileChangePresenter
         foreach ($changes['documents']['upsert'] ?? [] as $type => $doc) {
             if (!empty($doc['file_path'])) {
                 $changes['documents']['upsert'][$type]['file_url'] =
-                    Storage::disk('public')->url($doc['file_path']);
+                    rtrim(config('app.url'), '/') . '/private-storage/' . $doc['file_path'];
             }
         }
 

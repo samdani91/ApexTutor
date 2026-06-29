@@ -19,7 +19,7 @@ class DocumentController extends Controller
     public function index(Request $request): JsonResponse
     {
         $documents = $request->user()->tutorProfile->documents->map(function ($doc) {
-            $doc->file_url = Storage::disk('public')->url($doc->file_path);
+            $doc->file_url = rtrim(config('app.url'), '/') . '/private-storage/' . $doc->file_path;
             return $doc;
         });
         return response()->json(['success' => true, 'data' => $documents]);
@@ -66,7 +66,7 @@ class DocumentController extends Controller
         }
 
         $doc = $profile->documents()->create($payload);
-        $doc->file_url = Storage::disk('public')->url($doc->file_path);
+        $doc->file_url = rtrim(config('app.url'), '/') . '/private-storage/' . $doc->file_path;
 
         return response()->json(['success' => true, 'data' => $doc, 'message' => 'Document uploaded.'], 201);
     }

@@ -46,6 +46,17 @@ use Illuminate\Support\Facades\Route;
 // Health check — no auth, no throttle
 Route::get('health', fn() => response()->json(['status' => 'ok', 'timestamp' => now()->toISOString()]));
 
+// Private storage — authenticated file serving for sensitive documents (NID, marksheets)
+Route::middleware('auth:sanctum')->get('private-storage/{path}', function (string $path) {
+    abort_if(
+        !str_starts_with($path, 'nid_documents/') && !str_starts_with($path, 'documents/'),
+        403
+    );
+    $file = rtrim(config('filesystems.disks.public.root'), '/') . '/' . $path;
+    abort_if(!file_exists($file), 404);
+    return response()->file($file);
+})->where('path', '.*');
+
 // Public auth routes
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register'])->middleware('throttle:10,1');

@@ -71,7 +71,7 @@ class GuardianProfileController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => ['nid_document_url' => Storage::disk('public')->url($path)],
+            'data'    => ['nid_document_url' => rtrim(config('app.url'), '/') . '/private-storage/' . $path],
             'message' => 'NID document uploaded.',
         ]);
     }
