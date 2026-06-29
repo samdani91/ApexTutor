@@ -9,7 +9,6 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('guardian_profile_id')->constrained()->cascadeOnDelete();
             $table->foreignId('tutor_profile_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('requirement_id')->nullable()->constrained('tuition_requirements')->nullOnDelete();
             $table->enum('status', ['pending','admin_reviewing','tutor_contacted','connected','declined','closed'])->default('pending');
             $table->text('guardian_message')->nullable();
             $table->text('admin_notes')->nullable();
