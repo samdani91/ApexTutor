@@ -5,7 +5,7 @@
     <div class="hidden lg:flex lg:w-[420px] xl:w-[500px] shrink-0 bg-navy-900 flex-col justify-between p-10 relative overflow-hidden">
       <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.055)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.055)_1px,transparent_1px)] bg-[length:34px_34px]" />
       <RouterLink to="/" class="relative z-10 inline-block">
-        <span class="font-display font-bold text-2xl text-white">Tutor<span class="text-gold-300">Khujo</span></span>
+        <span class="font-display font-bold text-2xl text-white">Apex Tutor</span>
       </RouterLink>
       <div class="relative z-10 space-y-5">
         <div class="w-12 h-12 rounded-sm bg-gold-400/15 border border-gold-300/30 flex items-center justify-center">
@@ -51,7 +51,7 @@
           Back
         </button>
         <RouterLink to="/" class="lg:hidden font-display font-bold text-navy-700">
-          Tutor<span class="text-gold-600">Khujo</span>
+          Apex Tutor
         </RouterLink>
         <div class="w-12 lg:hidden" />
       </div>
