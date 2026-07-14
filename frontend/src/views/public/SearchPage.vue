@@ -47,11 +47,11 @@
       </div>
 
       <!-- ── Main layout ─────────────────────────────────────── -->
-      <div class="flex items-stretch gap-7">
+      <div class="flex items-start gap-7">
 
         <!-- Desktop sidebar -->
-        <aside class="reveal hidden w-80 shrink-0 self-stretch lg:block">
-          <div class="h-full rounded-md border border-paper-200 bg-white p-5 shadow-lg">
+        <aside class="reveal hidden w-80 shrink-0 lg:sticky lg:top-20 lg:block">
+          <div class="rounded-md border border-paper-200 bg-white p-5 shadow-lg">
             <SearchFilters ref="filtersRef" :model-value="lastFilters" @search="handleSearch" />
           </div>
         </aside>

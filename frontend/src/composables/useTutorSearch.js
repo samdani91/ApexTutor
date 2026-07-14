@@ -2,7 +2,7 @@ import { ref, computed } from 'vue'
 import { useSearchStore } from '@/stores/search.js'
 import { MEDIUMS, CLASS_LEVELS } from '@/utils/constants.js'
 
-const PER_PAGE = 6
+const PER_PAGE = 9
 
 /**
  * Encapsulates all search state and handlers for SearchPage.vue.

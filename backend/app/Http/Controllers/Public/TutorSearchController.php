@@ -65,7 +65,7 @@ class TutorSearchController extends Controller
         $query = TutorProfile::query()
             ->with([
                 'user:id,name,avatar',
-                'tuitionPreference:id,tutor_profile_id,district_id,preferred_curricula,preferred_classes,expected_salary_min,expected_salary_max,tutoring_methods,tutoring_styles,total_experience_years,place_of_tutoring',
+                'tuitionPreference:id,tutor_profile_id,district_id,preferred_curricula,preferred_classes,expected_salary_min,expected_salary_max,tutoring_methods,tutoring_styles,total_experience_years,place_of_tutoring,days_per_week',
                 'tuitionPreference.subjects:id,name',
                 'tuitionPreference.locations.area:id,name',
                 'travelAvailabilities' => fn($q) => $q->with(['district:id,name', 'areas:id,name'])

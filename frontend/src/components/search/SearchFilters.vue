@@ -236,6 +236,11 @@ watch(() => filters.class_level, async (classLevel, oldClassLevel) => {
   }
   await loadSubjectsForClass(classLevel)
   classLevelChanging.value = false
+  // The deep watcher below skips while classLevelChanging is true, and no further
+  // filters mutation happens once subjects finish loading — so a class-only change
+  // (no subject picked) needs to trigger the search itself here.
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(applyFilters, 400)
 })
 
 // Auto-search: fire 400ms after the last filter change (class changes are excluded)
