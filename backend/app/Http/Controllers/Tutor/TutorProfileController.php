@@ -27,8 +27,19 @@ class TutorProfileController extends Controller
 
     public function update(Request $request): JsonResponse
     {
-        $data    = $request->validate(['bio' => 'nullable|string|max:2000', 'status' => 'nullable|in:active,inactive']);
+        $data = $request->validate([
+            'bio'    => 'nullable|string|max:2000',
+            'status' => 'nullable|in:active,inactive',
+            'name'   => 'nullable|string|max:255',
+        ]);
         $profile = $request->user()->tutorProfile()->firstOrCreate(['user_id' => $request->user()->id]);
+
+        // Name lives on User, not TutorProfile — handle it separately from the
+        // TutorProfile-column diff below (comparing it against $profile->name
+        // would be meaningless since that attribute doesn't exist there).
+        $name        = $data['name'] ?? null;
+        $nameChanged = $name !== null && $name !== $request->user()->name;
+        unset($data['name']);
 
         if ($this->pending->requiresPendingFlow($profile)) {
             // Only stage fields that actually differ from the live profile value
@@ -36,11 +47,20 @@ class TutorProfileController extends Controller
             if (!empty($changed)) {
                 $this->pending->mergeTopLevel($profile, $changed);
             }
+            if ($nameChanged) {
+                $this->pending->stageName($profile, $name);
+            }
+            if (empty($changed) && !$nameChanged) {
+                return response()->json(['success' => true, 'message' => 'No changes to save.']);
+            }
             return response()->json(['success' => true, 'pending' => true, 'message' => 'Changes saved — pending admin review.']);
         }
 
         $profile->update($data);
-        return response()->json(['success' => true, 'data' => $profile, 'message' => 'Profile updated.']);
+        if ($nameChanged) {
+            $request->user()->update(['name' => $name]);
+        }
+        return response()->json(['success' => true, 'data' => $profile->fresh(), 'message' => 'Profile updated.']);
     }
 
     public function dashboard(Request $request): JsonResponse

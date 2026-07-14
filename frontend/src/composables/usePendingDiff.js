@@ -101,7 +101,7 @@ export function buildDiff(item) {
     })
   }
 
-  for (const { key, label } of [{ key: 'bio', label: 'Bio' }, { key: 'status', label: 'Status' }]) {
+  for (const { key, label } of [{ key: 'bio', label: 'Bio' }, { key: 'status', label: 'Status' }, { key: 'name', label: 'Full Name' }]) {
     if (pending[key] === undefined) continue
     if (norm(live[key]) === norm(pending[key])) continue
     rows.push({ key, label, old: display(live[key]), new: display(pending[key]) })

@@ -57,6 +57,7 @@ class PendingProfileChangePresenter
             'pending'      => $changes,
             'live'         => [
                 'bio'               => $profile->bio,
+                'name'              => $profile->user->name,
                 'avatar_url'        => $profile->user->avatar_url,
                 'preferences'       => $profile->tuitionPreference,
                 'education'         => $profile->educationEntries,
@@ -135,7 +136,7 @@ class PendingProfileChangePresenter
 
         $rows = [];
 
-        foreach (['bio', 'status'] as $field) {
+        foreach (['bio', 'status', 'name'] as $field) {
             if (!empty($pending[$field])) {
                 $rows[] = ['field' => $labels[$field], 'value' => (string) $pending[$field]];
             }

@@ -64,6 +64,13 @@ class PendingProfileChangeApplier
             }
         }
 
+        if (isset($changes['name'])) {
+            $user = $profile->user;
+            $user->name         = $user->pending_name ?? $changes['name'];
+            $user->pending_name = null;
+            $user->save();
+        }
+
         return $toDelete;
     }
 

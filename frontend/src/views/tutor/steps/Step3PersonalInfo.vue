@@ -15,6 +15,10 @@
 
         <div class="grid sm:grid-cols-2 gap-5">
           <div>
+            <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Full name</label>
+            <input v-model="fullName" type="text" class="input text-sm" placeholder="Your full name" maxlength="255" />
+          </div>
+          <div>
             <label class="block text-xs font-semibold font-display text-navy-700 mb-1">Email address</label>
             <input :value="auth.user?.email" type="email" class="input text-sm bg-paper-100 text-paper-500 cursor-not-allowed" readonly />
             <p class="text-xs text-paper-400 font-body mt-1">Registered email — contact admin to change.</p>
@@ -164,6 +168,8 @@ const savingSection  = ref(null)
 const pendingSaveSection = ref(null) // 'personal' | 'guardian' | 'emergency'
 const bio = ref('')
 const initialBio = ref('')
+const fullName = ref('')
+const initialFullName = ref('')
 const initialForm = ref(null)
 const initialEmergency = ref(null)
 
@@ -244,6 +250,8 @@ onMounted(async () => {
     ])
     bio.value = profileRes.data.data?.bio || ''
     initialBio.value = bio.value
+    fullName.value = auth.user?.name || ''
+    initialFullName.value = fullName.value
     const info = infoRes.data.data
     if (info) {
       Object.assign(form, {
@@ -288,15 +296,32 @@ function doSectionSave() {
 async function savePersonalSection() {
   const payload = changedPayload(form, personalKeys, initialForm.value)
   const requests = []
+  const nameChanged = fullName.value.trim() !== initialFullName.value.trim()
+  const bioChanged  = bio.value !== initialBio.value
 
-  if (bio.value !== initialBio.value) {
-    requests.push(tutorApi.updateProfile({ bio: bio.value }))
+  // Name and bio both go through the tutor-specific endpoint so an already-verified
+  // profile's name change is staged for admin review, same as bio/status already are —
+  // the generic /user/profile endpoint applies instantly with no review, which would
+  // let a verified tutor rename themselves with no oversight.
+  if (nameChanged || bioChanged) {
+    const profilePayload = {}
+    if (bioChanged) profilePayload.bio = bio.value
+    if (nameChanged) profilePayload.name = fullName.value.trim()
+    requests.push(tutorApi.updateProfile(profilePayload))
   }
   if (Object.keys(payload).length) {
     requests.push(tutorApi.savePersonalInfo(payload))
   }
 
-  await runSectionSave('personal', requests, () => {
+  await runSectionSave('personal', requests, (isPending) => {
+    // Only reflect the new name immediately if it actually went live — while pending
+    // admin review, the dashboard should keep showing the current (still-live) name.
+    if (nameChanged && !isPending) {
+      auth.user.name = fullName.value.trim()
+    }
+    if (nameChanged) {
+      initialFullName.value = fullName.value.trim()
+    }
     initialBio.value = bio.value
     updateInitialFormKeys(personalKeys)
   })
@@ -339,8 +364,8 @@ async function runSectionSave(section, requests, onSuccess) {
   savingSection.value = section
   try {
     const responses = await Promise.all(requests)
-    onSuccess()
     const isPending = responses.some(res => !!res.data?.pending)
+    onSuccess(isPending)
     emit('saved', isPending, false)
   } catch (e) {
     const msg = e.response?.data?.message

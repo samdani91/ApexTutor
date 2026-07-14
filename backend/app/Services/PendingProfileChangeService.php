@@ -101,6 +101,22 @@ class PendingProfileChangeService
         ]);
     }
 
+    // ── Name staging ──────────────────────────────────────────────────────────
+
+    /**
+     * Stage a full-name change for a verified tutor — mirrors stageAvatar():
+     *  - writes pending_name on the User
+     *  - merges name into TutorProfile.pending_changes so it appears in the admin review queue
+     */
+    public function stageName(TutorProfile $profile, string $name): void
+    {
+        $user = $profile->user;
+        $user->pending_name = $name;
+        $user->save();
+
+        $this->mergeTopLevel($profile, ['name' => $name]);
+    }
+
     // ── Document staging ──────────────────────────────────────────────────────
 
     public function stageDocumentUpsert(TutorProfile $profile, string $type, array $payload): void

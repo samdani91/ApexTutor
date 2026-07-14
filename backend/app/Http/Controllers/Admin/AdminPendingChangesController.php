@@ -117,6 +117,13 @@ class AdminPendingChangesController extends Controller
             $user->save();
         }
 
+        // Discard pending name change if one was staged
+        if (isset($pending['name'])) {
+            $user = $profile->user;
+            $user->pending_name = null;
+            $user->save();
+        }
+
         // Discard pending document files that were uploaded but never applied
         foreach ($pending['documents']['upsert'] ?? [] as $docData) {
             if (!empty($docData['file_path'])) {

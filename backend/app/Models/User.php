@@ -15,7 +15,7 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
-    protected $fillable = ['name', 'email', 'pending_email', 'pending_email_token', 'phone', 'address', 'password', 'role', 'is_active', 'avatar', 'pending_avatar', 'referred_by'];
+    protected $fillable = ['name', 'pending_name', 'email', 'pending_email', 'pending_email_token', 'phone', 'address', 'password', 'role', 'is_active', 'avatar', 'pending_avatar', 'referred_by'];
     protected $hidden   = ['password', 'remember_token', 'pending_email_token'];
     protected $appends  = ['avatar_url', 'pending_avatar_url'];
     protected $casts = [

@@ -24,6 +24,7 @@ final class PendingChangesSchema
     // ── Top-level fields ──────────────────────────────────────────────────────
     public readonly ?string $bio;
     public readonly ?string $status;
+    public readonly ?string $name;
     public readonly ?string $submittedAt;
 
     /** @var array{path:string,url:string}|null */
@@ -47,7 +48,7 @@ final class PendingChangesSchema
 
     // ── Known section keys ────────────────────────────────────────────────────
     public const SECTIONS = [
-        'bio', 'status', 'preferences', 'personal_info',
+        'bio', 'status', 'name', 'preferences', 'personal_info',
         'emergency_contact', 'education', 'documents',
     ];
 
@@ -55,6 +56,7 @@ final class PendingChangesSchema
     {
         $this->bio              = $raw['bio']               ?? null;
         $this->status           = $raw['status']            ?? null;
+        $this->name              = $raw['name']              ?? null;
         $this->submittedAt      = $raw['submitted_at']      ?? null;
         $this->avatar           = isset($raw['avatar']['url']) ? $raw['avatar'] : null;
         $this->preferences      = $raw['preferences']       ?? null;
@@ -75,6 +77,7 @@ final class PendingChangesSchema
         return array_values(array_filter(self::SECTIONS, fn($s) =>
             ($s === 'bio'               && $this->bio               !== null) ||
             ($s === 'status'            && $this->status            !== null) ||
+            ($s === 'name'              && $this->name              !== null) ||
             ($s === 'preferences'       && $this->preferences       !== null) ||
             ($s === 'personal_info'     && $this->personalInfo      !== null) ||
             ($s === 'emergency_contact' && $this->emergencyContact  !== null) ||
@@ -87,6 +90,7 @@ final class PendingChangesSchema
     {
         return $this->bio === null
             && $this->status === null
+            && $this->name === null
             && $this->avatar === null
             && $this->preferences === null
             && $this->personalInfo === null
@@ -100,6 +104,7 @@ final class PendingChangesSchema
         return array_filter([
             'bio'               => $this->bio,
             'status'            => $this->status,
+            'name'              => $this->name,
             'submitted_at'      => $this->submittedAt,
             'avatar'            => $this->avatar,
             'preferences'       => $this->preferences,
