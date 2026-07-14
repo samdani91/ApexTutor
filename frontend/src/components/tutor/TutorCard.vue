@@ -1,8 +1,13 @@
 <template>
   <div @click="handleNav"
     class="group relative block h-full cursor-pointer rounded-md border border-paper-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-navy-200 hover:shadow-lg md:p-5">
-    <img v-if="topUniversityLogo" :src="topUniversityLogo" alt=""
-      class="absolute top-3 right-3 h-14 w-14 rounded object-contain bg-white" />
+    <div v-if="topUniversity" class="absolute top-3 right-3 flex flex-col items-center gap-1">
+      <img :src="topUniversity.logo_url" alt="" class="h-14 w-14 rounded object-contain bg-white" />
+      <span v-if="topUniversity.short_name"
+        class="max-w-[3.75rem] truncate text-center font-display text-[10px] font-bold text-navy-700">
+        {{ topUniversity.short_name }}
+      </span>
+    </div>
     <div class="flex h-full flex-col gap-4">
       <div class="flex items-start gap-3">
         <div
@@ -152,12 +157,12 @@ function handleNav() {
 const initials = computed(() => getInitials(props.tutor.user?.name))
 
 const LEVEL_ORDER = { phd: 3, masters: 2, bachelor: 1 }
-const topUniversityLogo = computed(() => {
+const topUniversity = computed(() => {
   const entries = props.tutor.education_entries || []
   return entries
     .filter(e => e.university?.logo_url)
     .sort((a, b) => (LEVEL_ORDER[b.level] || 0) - (LEVEL_ORDER[a.level] || 0))[0]
-    ?.university?.logo_url || null
+    ?.university || null
 })
 
 const allSubjects = computed(() => {

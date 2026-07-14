@@ -168,8 +168,9 @@
       <!-- Add form -->
       <div class="card mb-5">
         <p class="font-display font-semibold text-navy-900 mb-3">Add university</p>
-        <div class="grid gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_140px_auto] lg:items-end">
+        <div class="grid gap-3 lg:grid-cols-[minmax(0,2fr)_100px_minmax(0,1fr)_140px_auto] lg:items-end">
           <input v-model="newUniversity.name" type="text" placeholder="University name" class="input text-sm" />
+          <input v-model="newUniversity.short_name" type="text" placeholder="Short name" maxlength="20" class="input text-sm" />
           <input v-model="newUniversity.district" type="text" placeholder="District" class="input text-sm" />
           <DropSelect v-model="newUniversity.type" :options="uniTypeOptions" placeholder="Type" />
           <button @click="addUniversity" :disabled="!newUniversity.name || !newUniversity.district || !newUniversity.type || uniAdding"
@@ -208,6 +209,7 @@
           <thead>
             <tr class="border-b border-paper-200 bg-paper-50">
               <th class="text-left px-4 py-2.5 text-xs font-semibold font-display text-paper-400 uppercase tracking-wide">Name</th>
+              <th class="text-left px-4 py-2.5 text-xs font-semibold font-display text-paper-400 uppercase tracking-wide">Short name</th>
               <th class="text-left px-4 py-2.5 text-xs font-semibold font-display text-paper-400 uppercase tracking-wide">District</th>
               <th class="text-left px-4 py-2.5 text-xs font-semibold font-display text-paper-400 uppercase tracking-wide">Type</th>
               <th class="text-left px-4 py-2.5 text-xs font-semibold font-display text-paper-400 uppercase tracking-wide">Logo</th>
@@ -219,6 +221,10 @@
               <td class="px-4 py-2.5">
                 <input v-if="editingUni === u.id" v-model="editBuf.name" class="input text-sm w-full" />
                 <span v-else class="font-semibold text-navy-900">{{ u.name }}</span>
+              </td>
+              <td class="px-4 py-2.5">
+                <input v-if="editingUni === u.id" v-model="editBuf.short_name" maxlength="20" class="input text-sm w-24" />
+                <span v-else class="text-paper-600">{{ u.short_name || '—' }}</span>
               </td>
               <td class="px-4 py-2.5">
                 <input v-if="editingUni === u.id" v-model="editBuf.district" class="input text-sm w-28" />
@@ -471,7 +477,7 @@ const uniDistrictFilter = ref('')
 const uniTypeFilter   = ref('')
 const uniAdding       = ref(false)
 const editingUni      = ref(null)
-const newUniversity   = reactive({ name: '', district: '', type: '' })
+const newUniversity   = reactive({ name: '', short_name: '', district: '', type: '' })
 const uniMeta         = ref({ current_page: 1, last_page: 1, total: 0, from: 0, to: 0 })
 const uniTypeOptions  = [
   { value: 'public', label: 'Public' },
@@ -509,14 +515,14 @@ async function addUniversity() {
   uniAdding.value = true
   try {
     await adminApi.createUniversity({ ...newUniversity })
-    Object.assign(newUniversity, { name: '', district: '', type: '' })
+    Object.assign(newUniversity, { name: '', short_name: '', district: '', type: '' })
     await fetchUniversities()
     toast.success('University added.')
   } catch { toast.error('Could not add university.') }
   finally { uniAdding.value = false }
 }
 
-function startEditUni(u) { editingUni.value = u.id; Object.assign(editBuf, { name: u.name, district: u.district, type: u.type }) }
+function startEditUni(u) { editingUni.value = u.id; Object.assign(editBuf, { name: u.name, short_name: u.short_name, district: u.district, type: u.type }) }
 
 async function saveUniversity(u) {
   try {

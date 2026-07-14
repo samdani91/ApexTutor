@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Storage;
 class University extends Model
 {
     public $timestamps = false;
-    protected $fillable = ['name', 'district', 'type', 'logo'];
+    protected $fillable = ['name', 'short_name', 'district', 'type', 'logo'];
     protected $appends  = ['logo_url'];
 
     public function getLogoUrlAttribute(): ?string

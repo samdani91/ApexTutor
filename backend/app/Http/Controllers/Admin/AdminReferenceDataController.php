@@ -132,9 +132,10 @@ class AdminReferenceDataController extends Controller
     public function storeUniversity(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name'     => 'required|string|max:255|unique:universities,name',
-            'district' => 'required|string|max:100',
-            'type'     => 'required|in:public,private',
+            'name'       => 'required|string|max:255|unique:universities,name',
+            'short_name' => 'nullable|string|max:20',
+            'district'   => 'required|string|max:100',
+            'type'       => 'required|in:public,private',
         ]);
         $university = University::create($data);
         return response()->json(['success' => true, 'data' => $university, 'message' => 'University added.'], 201);
@@ -143,9 +144,10 @@ class AdminReferenceDataController extends Controller
     public function updateUniversity(Request $request, int $id): JsonResponse
     {
         $data = $request->validate([
-            'name'     => 'sometimes|string|max:255|unique:universities,name,' . $id,
-            'district' => 'sometimes|string|max:100',
-            'type'     => 'sometimes|in:public,private',
+            'name'       => 'sometimes|string|max:255|unique:universities,name,' . $id,
+            'short_name' => 'nullable|string|max:20',
+            'district'   => 'sometimes|string|max:100',
+            'type'       => 'sometimes|in:public,private',
         ]);
         University::findOrFail($id)->update($data);
         return response()->json(['success' => true, 'message' => 'University updated.']);

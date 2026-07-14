@@ -72,7 +72,7 @@ class TutorSearchController extends Controller
                     ->where('open_to_tuitions', true)
                     ->where('to_date', '>=', now()->toDateString()),
                 'personalInfo:id,tutor_profile_id,gender',
-                'educationEntries' => fn($q) => $q->with('university:id,name,logo')
+                'educationEntries' => fn($q) => $q->with('university:id,name,short_name,logo')
                     ->whereNotNull('university_id')
                     ->whereIn('level', ['phd', 'masters', 'bachelor']),
             ])
