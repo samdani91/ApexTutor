@@ -9,7 +9,9 @@ use App\Models\ReferralEarning;
 use App\Models\TutorProfile;
 use App\Models\User;
 use App\Notifications\AdminNewUserRegisteredNotification;
+use App\Notifications\AdminReferralCodeUsedNotification;
 use App\Notifications\ReferralBonusEarnedNotification;
+use App\Services\BulkSmsBdService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -407,21 +409,50 @@ class AuthController extends Controller
 
     private function awardReferralBonus(User $user): void
     {
-        DB::transaction(function () use ($user) {
+        $earning = DB::transaction(function () use ($user) {
             $earning = ReferralEarning::firstOrCreate(
                 ['referred_user_id' => $user->id],
                 ['referrer_id' => $user->referred_by, 'points' => (int) config('referral.signup_bonus_points', 5)]
             );
 
-            if (!$earning->wasRecentlyCreated) {
-                return;
+            if ($earning->wasRecentlyCreated) {
+                User::where('id', $earning->referrer_id)->increment('referral_points', $earning->points);
             }
 
-            User::where('id', $earning->referrer_id)->increment('referral_points', $earning->points);
-
-            $referrer = User::find($earning->referrer_id);
-            $referrer?->notify(new ReferralBonusEarnedNotification($earning->points, $user->name));
+            return $earning;
         });
+
+        if (!$earning->wasRecentlyCreated) {
+            return;
+        }
+
+        // Notifications and SMS run after the transaction commits
+        $referrer = User::find($earning->referrer_id);
+        if (!$referrer) {
+            return;
+        }
+
+        $referrer->notify(new ReferralBonusEarnedNotification($earning->points, $user->name));
+        $this->smsReferralBonus($referrer, $user->name, $earning->points);
+
+        $adminNotification = new AdminReferralCodeUsedNotification(
+            referrerName:     $referrer->name,
+            referredUserName: $user->name,
+            referralCode:     $referrer->referral_code ?? '',
+        );
+        User::where('role', 'super_admin')->get()->each(fn ($admin) => $admin->notify($adminNotification));
+    }
+
+    private function smsReferralBonus(User $referrer, string $referredUserName, int $points): void
+    {
+        try {
+            if (!$referrer->phone) return;
+
+            $message = "Good news! {$referredUserName} joined Apex Tutor using your referral code. You earned {$points} points.";
+            app(BulkSmsBdService::class)->send($referrer->phone, $message);
+        } catch (\Exception $e) {
+            Log::error('Referral bonus SMS failed', ['referrer_id' => $referrer->id, 'error' => $e->getMessage()]);
+        }
     }
 
     private function maskEmail(string $email): string
