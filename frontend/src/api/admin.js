@@ -19,6 +19,9 @@ export const adminApi = {
   updateTutorVideo: (id, videoId, data) => http.put(`/admin/tutors/${id}/videos/${videoId}`, data),
   reviewTutorVideo: (id, videoId, data) => http.put(`/admin/tutors/${id}/videos/${videoId}/review`, data),
   deleteTutorVideo: (id, videoId) => http.delete(`/admin/tutors/${id}/videos/${videoId}`),
+  addTutorEducation: (id, data) => http.post(`/admin/tutors/${id}/education`, data),
+  updateTutorEducation: (id, eduId, data) => http.put(`/admin/tutors/${id}/education/${eduId}`, data),
+  deleteTutorEducation: (id, eduId) => http.delete(`/admin/tutors/${id}/education/${eduId}`),
 
   // Guardians
   getGuardians: (params) => http.get('/admin/guardians', { params }),

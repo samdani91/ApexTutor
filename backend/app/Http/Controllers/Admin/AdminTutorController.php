@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TeachingVideo;
 use App\Models\TutorDocument;
 use App\Models\TutorProfile;
+use App\Models\University;
 use App\Notifications\AccountReactivatedNotification;
 use App\Notifications\AccountSuspendedNotification;
 use App\Notifications\TutorProfileEditedByAdminNotification;
@@ -42,7 +43,7 @@ class AdminTutorController extends Controller
     {
         $tutor = TutorProfile::with([
             'user',
-            'educationEntries',
+            'educationEntries.university:id,name,short_name,logo',
             'tuitionPreference.subjects',
             'tuitionPreference.days',
             'tuitionPreference.locations.area',
@@ -242,6 +243,65 @@ class AdminTutorController extends Controller
         $doc->delete();
 
         return response()->json(['success' => true, 'message' => 'Document deleted.']);
+    }
+
+    // ── Education management ──────────────────────────────────────────────────
+
+    public function storeEducation(Request $request, string $tutorId): JsonResponse
+    {
+        $tutor = TutorProfile::where('tutor_id', $tutorId)->firstOrFail();
+
+        $data = $this->validateEducation($request, required: true);
+        $data = $this->resolveInstituteName($data);
+
+        $entry = $tutor->educationEntries()->create($data);
+        $entry->load('university:id,name,short_name,logo');
+
+        return response()->json(['success' => true, 'data' => $entry, 'message' => 'Education entry added.'], 201);
+    }
+
+    public function updateEducation(Request $request, string $tutorId, int $educationId): JsonResponse
+    {
+        $tutor = TutorProfile::where('tutor_id', $tutorId)->firstOrFail();
+        $entry = $tutor->educationEntries()->findOrFail($educationId);
+
+        $data = $this->validateEducation($request, required: false);
+        $data = $this->resolveInstituteName($data);
+
+        $entry->update($data);
+        $entry->load('university:id,name,short_name,logo');
+
+        return response()->json(['success' => true, 'data' => $entry, 'message' => 'Education entry updated.']);
+    }
+
+    public function deleteEducation(string $tutorId, int $educationId): JsonResponse
+    {
+        $tutor = TutorProfile::where('tutor_id', $tutorId)->firstOrFail();
+        $tutor->educationEntries()->findOrFail($educationId)->delete();
+
+        return response()->json(['success' => true, 'message' => 'Education entry deleted.']);
+    }
+
+    private function validateEducation(Request $request, bool $required): array
+    {
+        return $request->validate([
+            'level'           => ($required ? 'required' : 'sometimes') . '|in:phd,masters,bachelor,hsc,ssc,o_level,a_level,other',
+            'university_id'   => 'nullable|integer|exists:universities,id',
+            'institute_name'  => 'nullable|string|max:255',
+            'degree_title'    => 'nullable|string|max:150',
+            'major_group'     => 'nullable|string|max:150',
+            'result'          => 'nullable|string|max:100',
+            'year_of_passing' => 'nullable|integer|min:1970|max:' . date('Y'),
+        ]);
+    }
+
+    /** Fill institute_name from the selected university when it's blank. */
+    private function resolveInstituteName(array $data): array
+    {
+        if (!empty($data['university_id']) && empty($data['institute_name'])) {
+            $data['institute_name'] = University::find($data['university_id'])?->name;
+        }
+        return $data;
     }
 
     // ── Teaching video management ─────────────────────────────────────────────

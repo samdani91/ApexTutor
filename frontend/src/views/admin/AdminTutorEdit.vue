@@ -86,12 +86,7 @@
         <h2 class="section-title">Personal information</h2>
         <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <field label="Gender">
-            <select v-model="form.personal_info.gender" class="input text-sm w-full">
-              <option value="">Not specified</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
+            <DropSelect v-model="form.personal_info.gender" :options="GENDER_OPTIONS" placeholder="Not specified" />
           </field>
           <field label="Date of birth"><input v-model="form.personal_info.date_of_birth" type="date" class="input text-sm w-full" /></field>
           <field label="Nationality"><input v-model="form.personal_info.nationality" class="input text-sm w-full" /></field>
@@ -106,6 +101,69 @@
           <field label="Father's phone"><input v-model="form.personal_info.fathers_phone" class="input text-sm w-full" /></field>
           <field label="Mother's name"><input v-model="form.personal_info.mothers_name" class="input text-sm w-full" /></field>
           <field label="Mother's phone"><input v-model="form.personal_info.mothers_phone" class="input text-sm w-full" /></field>
+        </div>
+      </section>
+
+      <!-- ── Education ────────────────────────────────────────── -->
+      <section class="card mt-4">
+        <div class="flex items-center justify-between mb-4 pb-2 border-b border-paper-100">
+          <h2 class="font-display font-semibold text-navy-800 text-base">Education</h2>
+          <button @click="addEduEntry"
+            class="text-xs font-semibold font-display px-3 py-1.5 rounded-sm border border-navy-200 text-navy-700 hover:bg-navy-50 transition-colors">
+            + Add education
+          </button>
+        </div>
+
+        <p v-if="eduUniLoading" class="text-sm text-paper-400 font-body italic">Loading universities…</p>
+        <p v-else-if="!eduEntries.length" class="text-sm text-paper-400 font-body italic">No education entries.</p>
+
+        <div v-else class="space-y-4">
+          <div v-for="(entry, i) in eduEntries" :key="entry.id ?? `new-${i}`"
+            class="rounded-sm border border-paper-200 bg-paper-50 p-4">
+            <div class="grid sm:grid-cols-2 gap-3">
+              <field label="Degree">
+                <DropSelect v-model="entry.level" :options="EDU_LEVELS" placeholder="Select degree"
+                  @update:modelValue="onEduLevelChange(entry)" />
+              </field>
+
+              <field v-if="isUniLevel(entry.level)" label="Degree type">
+                <DropSelect v-model="entry.degree_title" :options="degreeTypeOptions(entry.level)"
+                  placeholder="Select degree type" />
+              </field>
+
+              <field label="Institute" :class="isUniLevel(entry.level) ? 'sm:col-span-2' : ''">
+                <DropSelect v-if="isUniLevel(entry.level)" v-model="entry.university_id" :options="eduUniversityOptions"
+                  placeholder="Select university" @update:modelValue="onEduUniversityChange(entry)" />
+                <input v-else v-model="entry.institute_name" type="text" class="input text-sm w-full"
+                  placeholder="School / College / Institute name" />
+              </field>
+
+              <field v-if="isUniLevel(entry.level)" label="Subject / Major">
+                <input v-model="entry.major_group" type="text" class="input text-sm w-full"
+                  placeholder="e.g. Software Engineering" />
+              </field>
+
+              <field label="Year of passing">
+                <input v-model.number="entry.year_of_passing" type="number" min="1970" :max="currentYear"
+                  class="input text-sm w-full" placeholder="2020" />
+              </field>
+
+              <field label="Result / GPA">
+                <input v-model="entry.result" type="text" class="input text-sm w-full" placeholder="3.75 / CGPA 4.0" />
+              </field>
+            </div>
+
+            <div class="flex gap-2 mt-3">
+              <button @click="saveEduEntry(entry, i)" :disabled="!entry.level || entry._saving"
+                class="text-xs font-semibold font-display bg-navy-700 text-white px-3 py-1.5 rounded-sm hover:bg-navy-900 disabled:opacity-50 transition-colors">
+                {{ entry._saving ? 'Saving…' : 'Save' }}
+              </button>
+              <button @click="confirmDeleteEdu(entry, i)" :disabled="entry._saving"
+                class="text-xs font-semibold font-display bg-red-600 text-white px-3 py-1.5 rounded-sm hover:bg-red-700 disabled:opacity-50 transition-colors">
+                Remove
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -173,13 +231,7 @@
           <div class="grid sm:grid-cols-3 gap-3 items-end">
             <div>
               <label class="block text-xs font-semibold font-display text-paper-500 mb-1">Document type</label>
-              <select v-model="docUpload.type" class="input text-sm w-full">
-                <option value="">Select type…</option>
-                <option value="nid">National ID (NID)</option>
-                <option value="ssc_marksheet">SSC / O Level Marksheet</option>
-                <option value="hsc_marksheet">HSC / A Level Marksheet</option>
-                <option value="emergency_contact_nid">Emergency Contact NID</option>
-              </select>
+              <DropSelect v-model="docUpload.type" :options="DOC_TYPE_OPTIONS" placeholder="Select type…" />
             </div>
             <div>
               <label class="block text-xs font-semibold font-display text-paper-500 mb-1">File (PDF / JPG / PNG, max 5 MB)</label>
@@ -310,6 +362,16 @@
       />
 
       <AdminConfirmDialog
+        :show="!!deleteEduTarget"
+        title="Delete education entry?"
+        message="Permanently delete this education entry? This cannot be undone."
+        confirm-label="Delete"
+        danger
+        @confirm="doDeleteEdu"
+        @cancel="deleteEduTarget = null"
+      />
+
+      <AdminConfirmDialog
         :show="!!avatarReplaceFile"
         title="Replace Profile Photo?"
         :message="`Replace ${tutor?.user?.name}'s current photo? Any pending avatar will also be cleared.`"
@@ -332,7 +394,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, defineComponent, h } from 'vue'
+import { ref, reactive, computed, onMounted, defineComponent, h } from 'vue'
 
 const field = defineComponent({
   props: ['label'],
@@ -345,8 +407,10 @@ const field = defineComponent({
 })
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { adminApi } from '@/api/admin.js'
+import { searchApi } from '@/api/search.js'
 import { toast } from 'vue-sonner'
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog.vue'
+import DropSelect from '@/components/search/DropSelect.vue'
 
 const route  = useRoute()
 const router = useRouter()
@@ -423,6 +487,134 @@ const DOC_LABELS = {
 function docLabel(type) {
   return DOC_LABELS[type] ?? String(type || 'Document').replace(/_/g, ' ')
 }
+const DOC_TYPE_OPTIONS = Object.entries(DOC_LABELS).map(([value, label]) => ({ value, label }))
+
+const GENDER_OPTIONS = [
+  { value: '',       label: 'Not specified' },
+  { value: 'male',   label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'other',  label: 'Other' },
+]
+
+// ── Education ─────────────────────────────────────────────
+const eduEntries      = ref([])
+const eduUniversities = ref([])
+const eduUniLoading   = ref(false)
+const deleteEduTarget = ref(null)   // { entry, index }
+const currentYear     = new Date().getFullYear()
+
+const eduUniversityOptions = computed(() =>
+  eduUniversities.value.map(u => ({ value: u.id, label: u.name }))
+)
+
+const UNIVERSITY_LEVELS = ['phd', 'masters', 'bachelor']
+const EDU_LEVELS = [
+  { value: 'bachelor', label: 'Bachelor / Honours' },
+  { value: 'masters',  label: 'Masters' },
+  { value: 'phd',      label: 'PhD' },
+  { value: 'hsc',      label: 'HSC' },
+  { value: 'ssc',      label: 'SSC' },
+  { value: 'o_level',  label: 'O Level' },
+  { value: 'a_level',  label: 'A Level' },
+  { value: 'other',    label: 'Other' },
+]
+const DEGREE_TYPES = {
+  bachelor: [
+    { value: 'BSc', label: 'BSc (Bachelor of Science)' },
+    { value: 'BA', label: 'BA (Bachelor of Arts)' },
+    { value: 'Hons', label: 'Hons (Honours)' },
+    { value: 'BBA', label: 'BBA (Business Administration)' },
+    { value: 'BEng', label: 'BEng (Engineering)' },
+    { value: 'LLB', label: 'LLB (Law)' },
+    { value: 'BPharm', label: 'BPharm (Pharmacy)' },
+    { value: 'MBBS', label: 'MBBS' },
+    { value: 'BArch', label: 'BArch (Architecture)' },
+    { value: 'Other', label: 'Other' },
+  ],
+  masters: [
+    { value: 'MSc', label: 'MSc (Master of Science)' },
+    { value: 'MA', label: 'MA (Master of Arts)' },
+    { value: 'MBA', label: 'MBA (Business Administration)' },
+    { value: 'MEng', label: 'MEng (Engineering)' },
+    { value: 'MPhil', label: 'MPhil' },
+    { value: 'LLM', label: 'LLM (Law)' },
+    { value: 'MPH', label: 'MPH (Public Health)' },
+    { value: 'Other', label: 'Other' },
+  ],
+  phd: [
+    { value: 'PhD', label: 'PhD (Doctor of Philosophy)' },
+  ],
+}
+
+function isUniLevel(level) {
+  return UNIVERSITY_LEVELS.includes(level)
+}
+function degreeTypeOptions(level) {
+  return DEGREE_TYPES[level] || []
+}
+function emptyEduEntry() {
+  return { id: null, level: '', university_id: null, institute_name: '', degree_title: '', major_group: '', year_of_passing: '', result: '', _saving: false }
+}
+function onEduLevelChange(entry) {
+  entry.degree_title = ''
+  entry.major_group  = ''
+  if (!isUniLevel(entry.level)) entry.university_id = null
+}
+function onEduUniversityChange(entry) {
+  const uni = eduUniversities.value.find(u => u.id === entry.university_id)
+  entry.institute_name = uni?.name || ''
+}
+function addEduEntry() {
+  eduEntries.value.push(emptyEduEntry())
+}
+
+async function saveEduEntry(entry, index) {
+  if (!entry.level) return
+  entry._saving = true
+  try {
+    const payload = {
+      level:           entry.level,
+      university_id:   entry.university_id || null,
+      institute_name:  entry.institute_name || null,
+      degree_title:    entry.degree_title || null,
+      major_group:     entry.major_group || null,
+      result:          entry.result || null,
+      year_of_passing: entry.year_of_passing || null,
+    }
+    const { data } = entry.id
+      ? await adminApi.updateTutorEducation(route.params.tutorId, entry.id, payload)
+      : await adminApi.addTutorEducation(route.params.tutorId, payload)
+    // Merge the persisted entry back (id, resolved institute_name, etc.) while keeping the UI flag.
+    eduEntries.value[index] = { ...emptyEduEntry(), ...data.data, _saving: false }
+    toast.success(entry.id ? 'Education entry updated.' : 'Education entry added.')
+  } catch (e) {
+    entry._saving = false
+    toast.error(e.response?.data?.message ?? 'Could not save education entry.')
+  }
+}
+
+function confirmDeleteEdu(entry, index) {
+  // A brand-new unsaved row can just be removed locally.
+  if (!entry.id) {
+    eduEntries.value.splice(index, 1)
+    return
+  }
+  deleteEduTarget.value = { entry, index }
+}
+
+async function doDeleteEdu() {
+  const target = deleteEduTarget.value
+  deleteEduTarget.value = null
+  if (!target) return
+  const { entry, index } = target
+  try {
+    await adminApi.deleteTutorEducation(route.params.tutorId, entry.id)
+    eduEntries.value.splice(index, 1)
+    toast.success('Education entry deleted.')
+  } catch (e) {
+    toast.error(e.response?.data?.message ?? 'Could not delete education entry.')
+  }
+}
 
 const form = reactive({
   user:              { name: '', email: '', phone: '', address: '' },
@@ -433,6 +625,7 @@ const form = reactive({
 })
 
 onMounted(async () => {
+  loadEduUniversities()
   try {
     const { data } = await adminApi.getTutor(route.params.tutorId)
     tutor.value = data.data
@@ -441,6 +634,16 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+async function loadEduUniversities() {
+  eduUniLoading.value = true
+  try {
+    const { data } = await searchApi.universities()
+    eduUniversities.value = data.data ?? []
+  } finally {
+    eduUniLoading.value = false
+  }
+}
 
 function populate(t) {
   Object.assign(form.user, { name: t.user?.name ?? '', email: t.user?.email ?? '', phone: t.user?.phone ?? '', address: t.user?.address ?? '' })
@@ -457,6 +660,19 @@ function populate(t) {
 
   documents.value = t.documents ?? []
   videos.value    = t.teaching_videos ?? t.teachingVideos ?? []
+
+  const edu = t.education_entries ?? t.educationEntries ?? []
+  eduEntries.value = edu.map(e => ({
+    id:              e.id,
+    level:           e.level ?? '',
+    university_id:   e.university_id ?? null,
+    institute_name:  e.institute_name ?? '',
+    degree_title:    e.degree_title ?? '',
+    major_group:     e.major_group ?? '',
+    year_of_passing: e.year_of_passing ?? '',
+    result:          e.result ?? '',
+    _saving:         false,
+  }))
 }
 
 // ── Document handlers ─────────────────────────────────────

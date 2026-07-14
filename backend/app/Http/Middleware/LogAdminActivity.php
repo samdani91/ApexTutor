@@ -42,6 +42,9 @@ class LogAdminActivity
         'AdminTutorController@updateVideo'      => ['update_tutor_video',  'tutor_profile',  'Updated a teaching video for tutor :label'],
         'AdminTutorController@deleteVideo'      => ['delete_tutor_video',  'tutor_profile',  'Deleted a teaching video from tutor :label'],
         'AdminTutorController@reviewVideo'      => ['review_tutor_video',  'tutor_profile',  'Reviewed a teaching video for tutor :label'],
+        'AdminTutorController@storeEducation'   => ['create_tutor_education','tutor_profile', 'Added an education entry for tutor :label'],
+        'AdminTutorController@updateEducation'  => ['update_tutor_education','tutor_profile', 'Updated an education entry for tutor :label'],
+        'AdminTutorController@deleteEducation'  => ['delete_tutor_education','tutor_profile', 'Deleted an education entry from tutor :label'],
 
         'AdminGuardianController@update'        => ['update_guardian',        'guardian_profile', 'Edited guardian profile: :label'],
         'AdminGuardianController@updateStatus'  => ['update_guardian_status', 'guardian_profile', 'Changed guardian account status: :label'],

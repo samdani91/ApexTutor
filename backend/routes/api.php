@@ -235,6 +235,9 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:super_admin', 'log.admin
     Route::put('tutors/{tutorId}/status',                      [AdminTutorController::class, 'updateStatus']);
     Route::post('tutors/{tutorId}/documents',                  [AdminTutorController::class, 'uploadDocument']);
     Route::delete('tutors/{tutorId}/documents/{docId}',        [AdminTutorController::class, 'deleteDocument']);
+    Route::post('tutors/{tutorId}/education',                   [AdminTutorController::class, 'storeEducation']);
+    Route::put('tutors/{tutorId}/education/{educationId}',      [AdminTutorController::class, 'updateEducation']);
+    Route::delete('tutors/{tutorId}/education/{educationId}',   [AdminTutorController::class, 'deleteEducation']);
     Route::put('tutors/{tutorId}/videos/{videoId}',            [AdminTutorController::class, 'updateVideo']);
     Route::put('tutors/{tutorId}/videos/{videoId}/review',     [AdminTutorController::class, 'reviewVideo']);
     Route::delete('tutors/{tutorId}/videos/{videoId}',         [AdminTutorController::class, 'deleteVideo']);
