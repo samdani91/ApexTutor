@@ -123,54 +123,89 @@ class AdminTutorController extends Controller
         // any pending changes — the avatar is no longer in a reviewable state.
         $pendingAvatarPath = $tutor->pending_changes['avatar']['path'] ?? null;
 
-        DB::transaction(function () use ($validated, $tutor) {
+        // Track whether the edit actually mutated anything so a no-op "Save" doesn't
+        // fire a profile-edited notification or claim changes were made.
+        $changed = false;
+
+        DB::transaction(function () use ($validated, $tutor, &$changed) {
             if ($userData = $validated['user'] ?? null) {
-                $tutor->user->update(array_filter($userData, fn($v, $k) => $v !== null || in_array($k, ['phone', 'address']), ARRAY_FILTER_USE_BOTH));
+                $tutor->user->fill(array_filter($userData, fn($v, $k) => $v !== null || in_array($k, ['phone', 'address']), ARRAY_FILTER_USE_BOTH));
+                if ($tutor->user->isDirty()) {
+                    $tutor->user->save();
+                    $changed = true;
+                }
             }
 
             if ($profileData = $validated['profile'] ?? null) {
-                $update = array_filter($profileData, fn($v) => $v !== null);
-                $update['pending_changes'] = null;
-                $update['pending_note']    = null;
-                if (!empty($update)) $tutor->update($update);
-            } else {
-                // Always clear pending changes on any admin edit
-                $tutor->update(['pending_changes' => null, 'pending_note' => null]);
+                $tutor->fill(array_filter($profileData, fn($v) => $v !== null));
+            }
+            // Admin edit supersedes any pending review — clear staged changes.
+            $tutor->pending_changes = null;
+            $tutor->pending_note    = null;
+            if ($tutor->isDirty()) {
+                $tutor->save();
+                $changed = true;
             }
 
-            // Clear dangling pending_avatar when pending_changes is wiped
+            // Clear dangling pending_avatar when pending changes are wiped
             if ($tutor->user->pending_avatar) {
                 $tutor->user->pending_avatar = null;
                 $tutor->user->save();
+                $changed = true;
             }
 
             if ($prefData = $validated['preference'] ?? null) {
                 $prefData = array_filter($prefData, fn($v) => $v !== null);
                 if (!empty($prefData)) {
-                    $tutor->tuitionPreference
-                        ? $tutor->tuitionPreference->update($prefData)
-                        : $tutor->tuitionPreference()->create(array_merge(['tutor_profile_id' => $tutor->id], $prefData));
+                    if ($tutor->tuitionPreference) {
+                        $tutor->tuitionPreference->fill($prefData);
+                        if ($tutor->tuitionPreference->isDirty()) {
+                            $tutor->tuitionPreference->save();
+                            $changed = true;
+                        }
+                    } else {
+                        $tutor->tuitionPreference()->create(array_merge(['tutor_profile_id' => $tutor->id], $prefData));
+                        $changed = true;
+                    }
                 }
             }
 
             if ($piData = $validated['personal_info'] ?? null) {
                 $piData = array_filter($piData, fn($v) => $v !== null);
                 if (!empty($piData)) {
-                    $tutor->personalInfo
-                        ? $tutor->personalInfo->update($piData)
-                        : $tutor->personalInfo()->create(array_merge(['tutor_profile_id' => $tutor->id], $piData));
+                    if ($tutor->personalInfo) {
+                        $tutor->personalInfo->fill($piData);
+                        if ($tutor->personalInfo->isDirty()) {
+                            $tutor->personalInfo->save();
+                            $changed = true;
+                        }
+                    } else {
+                        $tutor->personalInfo()->create(array_merge(['tutor_profile_id' => $tutor->id], $piData));
+                        $changed = true;
+                    }
                 }
             }
 
             if ($ecData = $validated['emergency_contact'] ?? null) {
                 $ecData = array_filter($ecData, fn($v) => $v !== null);
                 if (!empty($ecData)) {
-                    $tutor->emergencyContact
-                        ? $tutor->emergencyContact->update($ecData)
-                        : $tutor->emergencyContact()->create(array_merge(['tutor_profile_id' => $tutor->id], $ecData));
+                    if ($tutor->emergencyContact) {
+                        $tutor->emergencyContact->fill($ecData);
+                        if ($tutor->emergencyContact->isDirty()) {
+                            $tutor->emergencyContact->save();
+                            $changed = true;
+                        }
+                    } else {
+                        $tutor->emergencyContact()->create(array_merge(['tutor_profile_id' => $tutor->id], $ecData));
+                        $changed = true;
+                    }
                 }
             }
         });
+
+        if (!$changed) {
+            return response()->json(['success' => true, 'changed' => false, 'message' => 'No changes to save.']);
+        }
 
         // Delete the staged avatar file outside the transaction so a storage failure
         // cannot roll back the profile update.
@@ -182,15 +217,21 @@ class AdminTutorController extends Controller
             }
         }
 
+        $this->notifyProfileEdited($tutor);
+
+        return response()->json(['success' => true, 'changed' => true, 'message' => 'Tutor profile updated.']);
+    }
+
+    /** Notify the tutor (platform + email) that an admin edited their profile. */
+    private function notifyProfileEdited(TutorProfile $tutor): void
+    {
         try {
             if ($tutor->user) {
                 $tutor->user->notify(new TutorProfileEditedByAdminNotification());
             }
         } catch (\Exception $e) {
-            Log::error('Admin profile edit notification failed', ['error' => $e->getMessage(), 'tutor' => $tutorId]);
+            Log::error('Admin profile edit notification failed', ['error' => $e->getMessage(), 'tutor' => $tutor->tutor_id]);
         }
-
-        return response()->json(['success' => true, 'message' => 'Tutor profile updated.']);
     }
 
     // ── Document management ───────────────────────────────────────────────────
@@ -257,6 +298,8 @@ class AdminTutorController extends Controller
         $entry = $tutor->educationEntries()->create($data);
         $entry->load('university:id,name,short_name,logo');
 
+        $this->notifyProfileEdited($tutor);
+
         return response()->json(['success' => true, 'data' => $entry, 'message' => 'Education entry added.'], 201);
     }
 
@@ -271,6 +314,8 @@ class AdminTutorController extends Controller
         $entry->update($data);
         $entry->load('university:id,name,short_name,logo');
 
+        $this->notifyProfileEdited($tutor);
+
         return response()->json(['success' => true, 'data' => $entry, 'message' => 'Education entry updated.']);
     }
 
@@ -278,6 +323,8 @@ class AdminTutorController extends Controller
     {
         $tutor = TutorProfile::where('tutor_id', $tutorId)->firstOrFail();
         $tutor->educationEntries()->findOrFail($educationId)->delete();
+
+        $this->notifyProfileEdited($tutor);
 
         return response()->json(['success' => true, 'message' => 'Education entry deleted.']);
     }

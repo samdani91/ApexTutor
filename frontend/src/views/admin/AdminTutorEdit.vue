@@ -154,7 +154,7 @@
             </div>
 
             <div class="flex gap-2 mt-3">
-              <button @click="saveEduEntry(entry, i)" :disabled="!entry.level || entry._saving"
+              <button @click="confirmSaveEdu(entry, i)" :disabled="!entry.level || entry._saving"
                 class="text-xs font-semibold font-display bg-navy-700 text-white px-3 py-1.5 rounded-sm hover:bg-navy-900 disabled:opacity-50 transition-colors">
                 {{ entry._saving ? 'Saving…' : 'Save' }}
               </button>
@@ -362,6 +362,17 @@
       />
 
       <AdminConfirmDialog
+        :show="!!saveEduTarget"
+        title="Save education entry?"
+        :message="saveEduTarget?.entry?.id
+          ? 'Save the changes to this education entry?'
+          : 'Add this education entry to the tutor profile?'"
+        confirm-label="Save"
+        @confirm="doSaveEdu"
+        @cancel="saveEduTarget = null"
+      />
+
+      <AdminConfirmDialog
         :show="!!deleteEduTarget"
         title="Delete education entry?"
         message="Permanently delete this education entry? This cannot be undone."
@@ -501,6 +512,7 @@ const eduEntries      = ref([])
 const eduUniversities = ref([])
 const eduUniLoading   = ref(false)
 const deleteEduTarget = ref(null)   // { entry, index }
+const saveEduTarget   = ref(null)   // { entry, index }
 const currentYear     = new Date().getFullYear()
 
 const eduUniversityOptions = computed(() =>
@@ -566,6 +578,17 @@ function onEduUniversityChange(entry) {
 }
 function addEduEntry() {
   eduEntries.value.push(emptyEduEntry())
+}
+
+function confirmSaveEdu(entry, index) {
+  if (!entry.level) return
+  saveEduTarget.value = { entry, index }
+}
+
+function doSaveEdu() {
+  const target = saveEduTarget.value
+  saveEduTarget.value = null
+  if (target) saveEduEntry(target.entry, target.index)
 }
 
 async function saveEduEntry(entry, index) {
@@ -776,7 +799,12 @@ async function save() {
   saveConfirmOpen.value = false
   saving.value = true
   try {
-    await adminApi.updateTutor(route.params.tutorId, { ...form })
+    const { data } = await adminApi.updateTutor(route.params.tutorId, { ...form })
+    if (data.changed === false) {
+      // Nothing actually differed — no notification was sent; stay on the page.
+      toast.info(data.message || 'No changes to save.')
+      return
+    }
     toast.success('Profile updated successfully.')
     router.push({ name: 'admin-tutor-detail', params: { tutorId: route.params.tutorId } })
   } catch (e) {
