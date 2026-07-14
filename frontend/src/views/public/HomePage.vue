@@ -2,8 +2,8 @@
   <DefaultLayout>
     <main class="landing-page bg-white text-navy-900">
       <section class="hero-screen relative bg-white">
-        <div class="content-wrap grid min-h-[calc(100svh-4rem)] items-center gap-10 pb-40 pt-3 md:grid-cols-2 md:pb-[26rem] md:pt-4 lg:pb-52">
-          <div>
+        <div class="content-wrap grid min-h-[calc(100svh-4rem)] items-center gap-8 pb-40 pt-3 md:grid-cols-2 md:gap-10 md:pb-[26rem] md:pt-4 lg:pb-52">
+          <div class="order-2 md:order-1">
             <h1 class="hero-title font-display text-4xl font-bold leading-tight text-navy-900 sm:text-5xl md:text-6xl">
               <template v-for="(wordObj, wi) in heroWordGroups" :key="wi">
                 <span class="inline-block whitespace-nowrap">
@@ -21,18 +21,29 @@
               </template>
             </h1>
             <p class="reveal mt-5 max-w-xl font-body text-lg leading-relaxed text-paper-600">
-              Compare verified tutor profiles by class, subject, location, salary and teaching style before you shortlist.
+              {{ heroSubtitle }}
             </p>
             <div class="reveal mt-8 flex flex-wrap items-center gap-4">
-              <RouterLink to="/search" class="btn-primary rounded-sm px-8 py-3.5 text-sm font-bold">
-                Hire a Tutor
-              </RouterLink>
-              <p class="font-body text-sm text-paper-600">
-                Want to become a tutor?
-                <RouterLink to="/register" class="font-display font-bold text-navy-700 hover:underline">
-                  Sign Up
+              <template v-if="!auth.isAuthenticated">
+                <RouterLink to="/search" class="btn-primary rounded-sm px-8 py-3.5 text-sm font-bold">
+                  Hire a Tutor
                 </RouterLink>
-              </p>
+                <p class="font-body text-sm text-paper-600">
+                  Want to become a tutor?
+                  <RouterLink to="/register" class="font-display font-bold text-navy-700 hover:underline">
+                    Sign Up
+                  </RouterLink>
+                </p>
+              </template>
+              <RouterLink v-else-if="auth.isTutor" to="/jobs" class="btn-primary rounded-sm px-8 py-3.5 text-sm font-bold">
+                Find Tuitions
+              </RouterLink>
+              <RouterLink v-else-if="auth.isGuardian" to="/search" class="btn-primary rounded-sm px-8 py-3.5 text-sm font-bold">
+                Find Tutors
+              </RouterLink>
+              <RouterLink v-else to="/admin/dashboard" class="btn-primary rounded-sm px-8 py-3.5 text-sm font-bold">
+                Go to Dashboard
+              </RouterLink>
             </div>
 
             <div class="reveal mt-7 max-w-xl rounded-md border border-paper-200 bg-white p-2 shadow-lg">
@@ -66,14 +77,131 @@
             </div>
           </div>
 
-          <div class="hero-collage grid grid-cols-2 gap-3">
-            <div
-              v-for="(image, index) in heroImages"
-              :key="image"
-              class="hero-img overflow-hidden rounded-lg shadow-lg"
-              :class="index % 2 === 1 ? 'translate-y-8' : ''"
-            >
-              <img :src="image" alt="Tutoring session" class="h-44 w-full object-cover sm:h-52" loading="lazy" />
+          <div class="hero-demo-card reveal relative order-1 mx-auto max-w-md md:order-2">
+            <div class="float-card absolute -left-4 top-8 hidden rounded-md border border-paper-200 bg-white px-4 py-3 shadow-md transition-opacity duration-300 sm:block"
+              :class="cardSwapping ? 'opacity-0' : 'opacity-100'">
+              <Transition name="hero-stat" mode="out-in">
+                <div :key="heroMetric.label" class="min-w-[8.5rem]">
+                  <p class="font-display text-2xl font-bold text-navy-900">
+                    {{ heroMetric.value }}<span v-if="heroMetric.suffix">{{ heroMetric.suffix }}</span>
+                  </p>
+                  <p class="font-body text-xs text-paper-600">{{ heroMetric.label }}</p>
+                </div>
+              </Transition>
+            </div>
+
+            <Transition name="hero-card" mode="out-in" appear @before-leave="cardSwapping = true" @after-enter="onCardShown">
+              <div v-if="activeDemoCard === 0" key="tutor" class="rounded-lg border border-paper-200 bg-white p-4 shadow-xl">
+                <div class="flex items-center justify-between gap-3 border-b border-paper-100 pb-4">
+                  <div>
+                    <p class="font-display text-sm font-bold text-navy-900">Tutor match preview</p>
+                    <p class="mt-1 font-body text-xs text-paper-500">Based on class, subject, location and budget</p>
+                  </div>
+                  <span class="rounded-pill bg-emerald-50 px-2.5 py-1 font-display text-xs font-bold text-emerald-700">Verified</span>
+                </div>
+
+                <div class="mt-4 flex items-start gap-3">
+                  <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-navy-700 font-display text-lg font-bold text-white">
+                    AT
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <h2 class="font-display text-lg font-bold text-navy-900">Top Mathematics Tutor</h2>
+                      <span class="rounded-pill bg-gold-50 px-2 py-0.5 font-display text-xs font-bold text-gold-700">98% match</span>
+                    </div>
+                    <p class="mt-1 font-body text-sm text-paper-600">Class 9-10, SSC, HSC</p>
+                  </div>
+                </div>
+
+                <div class="mt-5 grid grid-cols-2 gap-3">
+                  <div v-for="metric in previewMetrics" :key="metric.label" class="rounded-sm border border-paper-200 bg-paper-50 p-3">
+                    <p class="font-display text-sm font-bold text-navy-900">{{ metric.value }}</p>
+                    <p class="mt-1 font-body text-xs text-paper-500">{{ metric.label }}</p>
+                  </div>
+                </div>
+
+                <div class="mt-5 space-y-3">
+                  <div v-for="item in heroChecks" :key="item" class="flex items-center gap-2 text-sm text-paper-700">
+                    <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+                      <component :is="IconCheck" class="h-3.5 w-3.5" />
+                    </span>
+                    <span>{{ item }}</span>
+                  </div>
+                </div>
+
+                <div class="mt-5 rounded-md bg-navy-700 p-4 text-white">
+                  <div class="flex items-center justify-between gap-3">
+                    <div>
+                      <p class="font-display text-sm font-bold">Admin-assisted connection</p>
+                      <p class="mt-1 font-body text-xs text-navy-100">Shortlist first, confirm with support.</p>
+                    </div>
+                    <div class="flex h-10 w-10 items-center justify-center rounded-sm bg-white/12">
+                      <component :is="IconCheck" class="h-5 w-5 text-gold-300" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else key="job" class="rounded-lg border border-paper-200 bg-white p-4 shadow-xl">
+                <div class="flex items-center justify-between gap-3 border-b border-paper-100 pb-4">
+                  <div>
+                    <p class="font-display text-sm font-bold text-navy-900">New tuition job posted</p>
+                    <p class="mt-1 font-body text-xs text-paper-500">Posted by verified guardians</p>
+                  </div>
+                  <span class="rounded-pill bg-emerald-50 px-2.5 py-1 font-display text-xs font-bold text-emerald-700">Open</span>
+                </div>
+
+                <div class="mt-4 flex items-start gap-3">
+                  <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-gold-500 text-white">
+                    <component :is="IconBriefcase" class="h-6 w-6" />
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <h2 class="font-display text-lg font-bold text-navy-900">Physics &amp; Chemistry Tutor</h2>
+                      <span class="rounded-pill bg-gold-50 px-2 py-0.5 font-display text-xs font-bold text-gold-700">12 Applicants</span>
+                    </div>
+                    <p class="mt-1 font-body text-sm text-paper-600">Class 9-10 · Dhanmondi, Dhaka</p>
+                  </div>
+                </div>
+
+                <div class="mt-5 grid grid-cols-2 gap-3">
+                  <div v-for="metric in jobPreviewMetrics" :key="metric.label" class="rounded-sm border border-paper-200 bg-paper-50 p-3">
+                    <p class="font-display text-sm font-bold text-navy-900">{{ metric.value }}</p>
+                    <p class="mt-1 font-body text-xs text-paper-500">{{ metric.label }}</p>
+                  </div>
+                </div>
+
+                <div class="mt-5 space-y-3">
+                  <div v-for="item in jobHeroChecks" :key="item" class="flex items-center gap-2 text-sm text-paper-700">
+                    <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+                      <component :is="IconCheck" class="h-3.5 w-3.5" />
+                    </span>
+                    <span>{{ item }}</span>
+                  </div>
+                </div>
+
+                <div class="mt-5 rounded-md bg-navy-700 p-4 text-white">
+                  <div class="flex items-center justify-between gap-3">
+                    <div>
+                      <p class="font-display text-sm font-bold">Apply to open tuition jobs</p>
+                      <p class="mt-1 font-body text-xs text-navy-100">Browse jobs and apply directly.</p>
+                    </div>
+                    <div class="flex h-10 w-10 items-center justify-center rounded-sm bg-white/12">
+                      <component :is="IconCheck" class="h-5 w-5 text-gold-300" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Transition>
+
+            <div class="float-card-delayed absolute -bottom-5 right-3 hidden rounded-md border border-paper-200 bg-white px-4 py-3 shadow-md transition-opacity duration-300 sm:block"
+              :class="cardSwapping ? 'opacity-0' : 'opacity-100'">
+              <Transition name="hero-stat" mode="out-in">
+                <div :key="heroFeature.title" class="min-w-[11.25rem] max-w-[13rem]">
+                  <p class="font-display text-sm font-bold text-navy-900">{{ heroFeature.title }}</p>
+                  <p class="mt-1 font-body text-xs leading-snug text-paper-600">{{ heroFeature.description }}</p>
+                </div>
+              </Transition>
             </div>
           </div>
         </div>
@@ -85,7 +213,10 @@
               v-for="(stat, index) in statsCards"
               :key="stat.label"
               class="text-center"
-              :class="index < statsCards.length - 1 ? 'lg:border-r lg:border-white/20' : ''"
+              :class="[
+                index < statsCards.length - 1 ? 'lg:border-r lg:border-white/20' : '',
+                index === statsCards.length - 1 ? 'col-span-2 md:col-span-1' : '',
+              ]"
             >
               <component :is="stat.icon" class="mx-auto mb-2 h-10 w-10 text-white/80" />
               <div class="font-display text-3xl font-bold text-white md:text-4xl">
@@ -316,11 +447,8 @@ import { RouterLink, useRouter } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import { useLandingStats } from '@/composables/useLandingStats.js'
 import { searchApi } from '@/api/search.js'
+import { useAuthStore } from '@/stores/auth.js'
 
-import hero1 from '@/assets/landing-ref/hero-1.jpg'
-import hero2 from '@/assets/landing-ref/hero-2.jpg'
-import hero3 from '@/assets/landing-ref/hero-3.jpg'
-import hero4 from '@/assets/landing-ref/hero-4.jpg'
 import catLanguage from '@/assets/landing-ref/cat-language.jpg'
 import catTestPrep from '@/assets/landing-ref/cat-test-prep.jpg'
 import catUni from '@/assets/landing-ref/cat-uni.jpg'
@@ -328,19 +456,24 @@ import catBangla from '@/assets/landing-ref/cat-bangla.jpg'
 import catEnglish from '@/assets/landing-ref/cat-english-med.jpg'
 
 const router = useRouter()
+const auth   = useAuthStore()
 const query = ref('')
 const statsRef = ref(null)
 const countersStarted = ref(false)
-const heroText = 'Find the right tutor with less searching and more clarity'
+const heroText = computed(() => auth.isTutor
+  ? 'Find the right tuition with less searching and more clarity'
+  : 'Find the right tutor with less searching and more clarity')
+const heroSubtitle = computed(() => auth.isTutor
+  ? 'Browse open tuition jobs by class, subject, location, salary and teaching mode before you apply.'
+  : 'Compare verified tutor profiles by class, subject, location, salary and teaching style before you shortlist.')
 const heroWordGroups = computed(() => {
   let idx = 0
-  return heroText.split(' ').map((word, wi, arr) => {
+  return heroText.value.split(' ').map((word, wi, arr) => {
     const chars = word.split('').map(c => ({ c, idx: idx++ }))
     const spaceIdx = wi < arr.length - 1 ? idx++ : -1
     return { chars, spaceIdx }
   })
 })
-const heroImages = [hero1, hero2, hero3, hero4]
 
 function iconComponent(path) {
   return {
@@ -379,8 +512,49 @@ const quickChips = [
   { label: 'Online', query: { place_of_tutoring: 'online' } },
 ]
 
+const previewMetrics = [
+  { label: 'Experience', value: '5 years' },
+  { label: 'Expected salary', value: '৳8k-12k' },
+  { label: 'Preferred area', value: 'Dhanmondi' },
+  { label: 'Teaching mode', value: 'Offline' },
+]
+
+const heroChecks = [
+  'Verified education and document details',
+  'Area, class, subject and salary filters',
+  'Profile review before connection',
+]
+
+const heroFeatures = [
+  { title: 'Fast Shortlist', description: 'Compare profiles side by side' },
+  { title: 'Smart Filters', description: 'Narrow by class, subject and area' },
+  { title: 'Profile Review', description: 'Admin review before connection' },
+  { title: 'Clear Tutor Info', description: 'See salary, subjects and documents' },
+]
+
+const jobPreviewMetrics = [
+  { label: 'Budget', value: '৳10k-15k' },
+  { label: 'Class', value: '9-10' },
+  { label: 'Area', value: 'Dhanmondi' },
+  { label: 'Medium', value: 'Bangla' },
+]
+
+const jobHeroChecks = [
+  'Verified guardian profile',
+  'Fixed schedule and budget',
+  'Reviewed by admin before hiring',
+]
+
+const activeHeroMetric  = ref(0)
+const activeHeroFeature = ref(0)
+const activeDemoCard    = ref(0)
+const cardSwapping      = ref(false)
+
 const counterValues = reactive({ tutors: 0, districts: 0, confirmedTotal: 0, rating: 0, openJobs: 0 })
-const { statTargets, loadLandingStats: fetchLandingStats } = useLandingStats()
+const { statTargets, authStats, loadLandingStats: fetchLandingStats } = useLandingStats()
+
+const heroMetric  = computed(() => authStats.value[activeHeroMetric.value] ?? authStats.value[0])
+const heroFeature = computed(() => heroFeatures[activeHeroFeature.value] ?? heroFeatures[0])
 
 const statsCards = computed(() => [
   { icon: IconUsers,      display: Math.round(counterValues.tutors).toLocaleString(),          suffix: '+',  label: 'Verified Tutors' },
@@ -541,8 +715,18 @@ const TestimonialsSection = defineComponent({
 
 let statsObserver
 let revealObserver
+let heroMetricTimer
+let heroFeatureTimer
+let demoCardTimer
 
 onMounted(async () => {
+  heroMetricTimer = window.setInterval(() => {
+    activeHeroMetric.value = (activeHeroMetric.value + 1) % authStats.value.length
+  }, 2600)
+  heroFeatureTimer = window.setInterval(() => {
+    activeHeroFeature.value = (activeHeroFeature.value + 1) % heroFeatures.length
+  }, 3400)
+
   // Fetch real stats and testimonials in parallel before starting counters
   await Promise.all([
     fetchLandingStats(),
@@ -573,7 +757,21 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   statsObserver?.disconnect()
   revealObserver?.disconnect()
+  if (heroMetricTimer) window.clearInterval(heroMetricTimer)
+  if (heroFeatureTimer) window.clearInterval(heroFeatureTimer)
+  if (demoCardTimer) window.clearTimeout(demoCardTimer)
 })
+
+// Only queue the next swap once the current card has fully finished appearing
+// (Transition's @after-enter), so it's never cut off mid-transition. The
+// floating chips fade out at @before-leave and back in here once settled.
+function onCardShown() {
+  cardSwapping.value = false
+  if (demoCardTimer) window.clearTimeout(demoCardTimer)
+  demoCardTimer = window.setTimeout(() => {
+    activeDemoCard.value = activeDemoCard.value === 0 ? 1 : 0
+  }, 5000)
+}
 
 function startCounters() {
   if (countersStarted.value) return
@@ -669,9 +867,51 @@ function quickSearch(item) {
   width: 0.28em;
 }
 
-.reveal,
-.hero-img {
+.reveal {
   animation: reveal-up 0.65s ease both;
+}
+
+.float-card {
+  animation: float-soft 4.5s ease-in-out infinite;
+}
+
+.float-card-delayed {
+  animation: float-soft 4.5s ease-in-out 0.8s infinite;
+}
+
+.hero-stat-enter-active,
+.hero-stat-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.hero-stat-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.hero-stat-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.hero-card-enter-active,
+.hero-card-leave-active {
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+  transform-style: preserve-3d;
+}
+
+.hero-card-enter-from {
+  opacity: 0;
+  transform: rotateY(90deg);
+}
+
+.hero-card-leave-to {
+  opacity: 0;
+  transform: rotateY(-90deg);
+}
+
+.hero-demo-card {
+  perspective: 1400px;
 }
 
 :deep(.scroll-reveal) {
@@ -688,18 +928,6 @@ function quickSearch(item) {
 :deep(.scroll-reveal.is-visible) {
   opacity: 1;
   transform: translateY(0) scale(1);
-}
-
-.hero-img:nth-child(2) {
-  animation-delay: 120ms;
-}
-
-.hero-img:nth-child(3) {
-  animation-delay: 220ms;
-}
-
-.hero-img:nth-child(4) {
-  animation-delay: 340ms;
 }
 
 .section-title {
@@ -1003,6 +1231,15 @@ function quickSearch(item) {
   }
 }
 
+@keyframes float-soft {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
 @keyframes marquee-left {
   from {
     transform: translateX(0);
@@ -1042,10 +1279,6 @@ function quickSearch(item) {
 
   .hero-title {
     font-size: clamp(2.25rem, 11vw, 3.35rem);
-  }
-
-  .hero-collage img {
-    height: 9.5rem;
   }
 
   .hero-stats {
@@ -1152,7 +1385,12 @@ function quickSearch(item) {
 @media (prefers-reduced-motion: reduce) {
   .hero-char,
   .reveal,
-  .hero-img,
+  .float-card,
+  .float-card-delayed,
+  .hero-stat-enter-active,
+  .hero-stat-leave-active,
+  .hero-card-enter-active,
+  .hero-card-leave-active,
   :deep(.scroll-reveal),
   :deep(.animate-marquee),
   :deep(.animate-marquee-reverse) {

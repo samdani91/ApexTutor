@@ -6,7 +6,7 @@ const routes = [
   { path: '/search', component: () => import('@/views/public/SearchPage.vue'), name: 'search' },
   { path: '/tutors/:publicId', component: () => import('@/views/public/TutorProfilePage.vue'), name: 'tutor-profile', meta: { requiresAuth: true } },
   { path: '/login', component: () => import('@/views/auth/LoginPage.vue'), name: 'login' },
-  { path: '/register', component: () => import('@/views/auth/RegisterPage.vue'), name: 'register' },
+  { path: '/register', component: () => import('@/views/auth/RegisterPage.vue'), name: 'register', meta: { requiresGuest: true } },
   { path: '/forgot-password', component: () => import('@/views/auth/ForgotPassword.vue'), name: 'forgot-password' },
   {
     path: '/tutor',
@@ -85,6 +85,12 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
+
+  if (to.meta.requiresGuest && authStore.isAuthenticated) {
+    if (authStore.isTutor) return next({ path: '/tutor/dashboard' })
+    if (authStore.isAdmin) return next({ path: '/admin/dashboard' })
+    return next({ path: '/guardian/dashboard' })
+  }
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     return next({ name: 'login', query: { redirect: to.fullPath } })
