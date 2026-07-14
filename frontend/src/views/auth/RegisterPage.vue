@@ -56,8 +56,8 @@
         <div class="w-12 lg:hidden" />
       </div>
 
-      <div class="relative flex-1 flex items-center justify-center px-6 py-8">
-        <div class="w-full max-w-md rounded-lg border border-paper-200 bg-white p-6 shadow-xl sm:p-8">
+      <div class="relative flex-1 flex items-center justify-center px-6 py-5">
+        <div class="w-full max-w-2xl rounded-lg border border-paper-200 bg-white p-6 shadow-xl sm:p-7">
 
           <!-- ── Step: OTP verification ── -->
           <template v-if="step === 'otp'">
@@ -104,13 +104,13 @@
 
           <!-- ── Step: Registration form ── -->
           <template v-else>
-            <div class="mb-7">
+            <div class="mb-5">
               <p class="font-display text-xs font-bold uppercase text-gold-600">Create Account</p>
               <h1 class="font-display font-bold text-2xl text-navy-900">Create your account</h1>
               <p class="text-paper-400 text-sm mt-1.5 font-body">Free forever — no credit card required</p>
             </div>
 
-            <form @submit.prevent="handleRegister" class="space-y-4">
+            <form @submit.prevent="handleRegister" class="space-y-3.5">
               <div class="space-y-1.5">
                 <label class="block text-sm font-semibold font-display text-navy-700">I am a</label>
                 <div class="grid grid-cols-2 gap-2.5">
@@ -129,70 +129,76 @@
                 </div>
               </div>
 
-              <div class="space-y-1.5">
-                <label class="block text-sm font-semibold font-display text-navy-700">Full name</label>
-                <input v-model="form.name" type="text" autocomplete="name" placeholder="Your full name"
-                  class="input" required maxlength="150" pattern="^[A-Za-z\s.]+$"
-                  title="Name can only contain letters, spaces, and dots"
-                  @input="form.name = form.name.replace(/[^A-Za-z\s.]/g, '')" />
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div class="space-y-1.5">
+                  <label class="block text-sm font-semibold font-display text-navy-700">Full name</label>
+                  <input v-model="form.name" type="text" autocomplete="name" placeholder="Your full name"
+                    class="input" required maxlength="150" pattern="^[A-Za-z\s.]+$"
+                    title="Name can only contain letters, spaces, and dots"
+                    @input="form.name = form.name.replace(/[^A-Za-z\s.]/g, '')" />
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="block text-sm font-semibold font-display text-navy-700">Phone number</label>
+                  <input v-model="form.phone" type="tel" autocomplete="tel" placeholder="017xxxxxxxx"
+                    class="input" required maxlength="11" pattern="^[0-9]{11}$"
+                    title="Phone must be exactly 11 digits"
+                    @input="form.phone = form.phone.replace(/\D/g, '').slice(0, 11)" />
+                </div>
               </div>
 
-              <div class="space-y-1.5">
-                <label class="block text-sm font-semibold font-display text-navy-700">Email address</label>
-                <input v-model="form.email" type="email" autocomplete="email" placeholder="you@example.com" class="input" required />
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div class="space-y-1.5">
+                  <label class="block text-sm font-semibold font-display text-navy-700">Email address</label>
+                  <input v-model="form.email" type="email" autocomplete="email" placeholder="you@example.com" class="input" required />
+                </div>
+
+                <div class="space-y-1.5">
+                  <label class="block text-sm font-semibold font-display text-navy-700">Referral code</label>
+                  <input v-model="form.referral_code" type="text" placeholder="Optional, e.g. 482913" class="input"
+                    maxlength="10" @input="form.referral_code = form.referral_code.replace(/\D/g, '')" />
+                </div>
               </div>
 
-              <div class="space-y-1.5">
-                <label class="block text-sm font-semibold font-display text-navy-700">Phone number</label>
-                <input v-model="form.phone" type="tel" autocomplete="tel" placeholder="017xxxxxxxx"
-                  class="input" required maxlength="11" pattern="^[0-9]{11}$"
-                  title="Phone must be exactly 11 digits"
-                  @input="form.phone = form.phone.replace(/\D/g, '').slice(0, 11)" />
-              </div>
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div class="space-y-1.5">
+                  <label class="block text-sm font-semibold font-display text-navy-700">Password</label>
+                  <div class="relative">
+                    <input v-model="form.password" :type="showPassword ? 'text' : 'password'"
+                      autocomplete="new-password" placeholder="Min. 6 characters" class="input pr-10" required minlength="6" />
+                    <button type="button" @click="showPassword = !showPassword"
+                      class="absolute inset-y-0 right-0 flex items-center px-3 text-paper-400 hover:text-navy-700 transition-colors">
+                      <svg v-if="showPassword" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/>
+                      </svg>
+                      <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
 
-              <div class="space-y-1.5">
-                <label class="block text-sm font-semibold font-display text-navy-700">Referral code <span class="font-normal text-paper-400">(optional)</span></label>
-                <input v-model="form.referral_code" type="text" placeholder="e.g. 482913" class="input"
-                  maxlength="10" @input="form.referral_code = form.referral_code.replace(/\D/g, '')" />
-              </div>
-
-              <div class="space-y-1.5">
-                <label class="block text-sm font-semibold font-display text-navy-700">Password</label>
-                <div class="relative">
-                  <input v-model="form.password" :type="showPassword ? 'text' : 'password'"
-                    autocomplete="new-password" placeholder="Min. 6 characters" class="input pr-10" required minlength="6" />
-                  <button type="button" @click="showPassword = !showPassword"
-                    class="absolute inset-y-0 right-0 flex items-center px-3 text-paper-400 hover:text-navy-700 transition-colors">
-                    <svg v-if="showPassword" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/>
-                    </svg>
-                    <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    </svg>
-                  </button>
+                <div class="space-y-1.5">
+                  <label class="block text-sm font-semibold font-display text-navy-700">Confirm password</label>
+                  <div class="relative">
+                    <input v-model="form.password_confirmation" :type="showConfirmPassword ? 'text' : 'password'"
+                      autocomplete="new-password" placeholder="Repeat password" class="input pr-10" required />
+                    <button type="button" @click="showConfirmPassword = !showConfirmPassword"
+                      class="absolute inset-y-0 right-0 flex items-center px-3 text-paper-400 hover:text-navy-700 transition-colors">
+                      <svg v-if="showConfirmPassword" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/>
+                      </svg>
+                      <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
 
               <PasswordRequirements v-if="form.password" :password="form.password" />
-
-              <div class="space-y-1.5">
-                <label class="block text-sm font-semibold font-display text-navy-700">Confirm password</label>
-                <div class="relative">
-                  <input v-model="form.password_confirmation" :type="showConfirmPassword ? 'text' : 'password'"
-                    autocomplete="new-password" placeholder="Repeat password" class="input pr-10" required />
-                  <button type="button" @click="showConfirmPassword = !showConfirmPassword"
-                    class="absolute inset-y-0 right-0 flex items-center px-3 text-paper-400 hover:text-navy-700 transition-colors">
-                    <svg v-if="showConfirmPassword" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/>
-                    </svg>
-                    <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
 
               <button type="submit" :disabled="auth.loading" class="btn-primary w-full rounded-sm py-3 text-sm mt-1">
                 <svg v-if="auth.loading" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -203,7 +209,7 @@
               </button>
             </form>
 
-            <div class="mt-7 pt-5 border-t border-paper-100 text-center">
+            <div class="mt-5 pt-4 border-t border-paper-100 text-center">
               <p class="text-sm text-paper-400 font-body">
                 Already have an account?
                 <RouterLink to="/login" class="text-navy-700 font-semibold hover:text-navy-900 transition-colors">
