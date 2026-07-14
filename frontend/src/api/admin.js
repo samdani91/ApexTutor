@@ -104,4 +104,8 @@ export const adminApi = {
   getBroadcastPreview: (params = {}) => http.get('/admin/sms/broadcast-preview', { params }),
   sendSms:             (data)        => http.post('/admin/sms/send', data),
   broadcastSms:        (data)        => http.post('/admin/sms/broadcast', data),
+
+  // Referrals
+  getReferrals:       (params = {}) => http.get('/admin/referrals', { params }),
+  getReferralDetail:  (userId)      => http.get(`/admin/referrals/${userId}`),
 }

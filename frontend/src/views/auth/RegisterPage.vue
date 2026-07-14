@@ -151,6 +151,12 @@
               </div>
 
               <div class="space-y-1.5">
+                <label class="block text-sm font-semibold font-display text-navy-700">Referral code <span class="font-normal text-paper-400">(optional)</span></label>
+                <input v-model="form.referral_code" type="text" placeholder="e.g. 482913" class="input"
+                  maxlength="10" @input="form.referral_code = form.referral_code.replace(/\D/g, '')" />
+              </div>
+
+              <div class="space-y-1.5">
                 <label class="block text-sm font-semibold font-display text-navy-700">Password</label>
                 <div class="relative">
                   <input v-model="form.password" :type="showPassword ? 'text' : 'password'"
@@ -245,7 +251,7 @@ const perks = [
   'Browse verified tutor profiles',
 ]
 const form = reactive({
-  name: '', email: '', phone: '', role: 'guardian', password: '', password_confirmation: '',
+  name: '', email: '', phone: '', role: 'guardian', password: '', password_confirmation: '', referral_code: '',
 })
 
 onMounted(() => {

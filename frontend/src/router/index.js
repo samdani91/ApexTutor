@@ -71,6 +71,7 @@ const routes = [
       { path: 'tuition-jobs/:publicId', component: () => import('@/views/admin/AdminTuitionJobDetail.vue'), name: 'admin-tuition-job-detail' },
       { path: 'settings', component: () => import('@/views/admin/AdminSettings.vue'), name: 'admin-settings' },
       { path: 'send-sms', component: () => import('@/views/admin/AdminSendSms.vue'), name: 'admin-send-sms' },
+      { path: 'referrals', component: () => import('@/views/admin/AdminReferrals.vue'), name: 'admin-referrals' },
     ]
   },
   { path: '/:pathMatch(.*)*', redirect: '/' }

@@ -15,4 +15,5 @@ export const authApi = {
   resetPassword:         (data) => http.post('/auth/reset-password', data),
   requestPasswordChange: (data) => http.post('/user/password/request-change', data),
   changePassword:        (data) => http.put('/user/password', data),
+  getReferral:           ()     => http.get('/user/referral'),
 }

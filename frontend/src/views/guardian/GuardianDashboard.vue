@@ -81,6 +81,8 @@
       </ol>
     </div>
 
+    <ReferralCard class="reveal" />
+
     <PlatformFeedbackWidget class="reveal" />
   </div>
 </template>
@@ -91,6 +93,7 @@ import { RouterLink } from 'vue-router'
 import { guardianApi } from '@/api/guardian.js'
 import { guardianJobsApi } from '@/api/jobs.js'
 import PlatformFeedbackWidget from '@/components/common/PlatformFeedbackWidget.vue'
+import ReferralCard from '@/components/common/ReferralCard.vue'
 
 const shortlistCount  = ref(0)
 const confirmedCount  = ref(0)

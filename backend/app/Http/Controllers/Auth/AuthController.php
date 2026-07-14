@@ -5,9 +5,11 @@ use App\Http\Controllers\Controller;
 use App\Mail\OtpMail;
 use App\Models\GuardianProfile;
 use App\Models\OtpCode;
+use App\Models\ReferralEarning;
 use App\Models\TutorProfile;
 use App\Models\User;
 use App\Notifications\AdminNewUserRegisteredNotification;
+use App\Notifications\ReferralBonusEarnedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,10 +29,19 @@ class AuthController extends Controller
             'phone'           => ['required', 'digits:11'],
             'password'        => ['required', 'confirmed', 'min:6'],
             'role'            => 'required|in:tutor,guardian,student',
+            'referral_code'   => 'nullable|string|max:20',
         ], [
             'name.regex'  => 'Name can only contain letters, spaces, and dots.',
             'phone.digits' => 'Phone number must be exactly 11 digits.',
         ]);
+
+        $referrer = null;
+        if ($request->filled('referral_code')) {
+            $referrer = $this->resolveReferrer($request->referral_code);
+            if (!$referrer) {
+                throw ValidationException::withMessages(['referral_code' => ['Invalid referral code.']]);
+            }
+        }
 
         // Clean up stale unverified accounts older than 7 days so the user can re-register
         User::whereNull('email_verified_at')
@@ -62,13 +73,17 @@ class AuthController extends Controller
 
             $previousRole = $existingUnverified->role;
 
-            DB::transaction(function () use ($request, $existingUnverified, $previousRole) {
+            DB::transaction(function () use ($request, $existingUnverified, $previousRole, $referrer) {
                 $existingUnverified->update([
                     'name'     => $request->name,
                     'phone'    => $request->phone,
                     'password' => Hash::make($request->password),
                     'role'     => $request->role,
                 ]);
+
+                if ($referrer && !$existingUnverified->referred_by) {
+                    $existingUnverified->update(['referred_by' => $referrer->id]);
+                }
 
                 // Swap the profile record when the user changes role on retry.
                 if ($previousRole !== $request->role) {
@@ -104,13 +119,14 @@ class AuthController extends Controller
             'phone' => 'unique:users,phone',
         ]);
 
-        $user = DB::transaction(function () use ($request) {
+        $user = DB::transaction(function () use ($request, $referrer) {
             $user = User::create([
-                'name'     => $request->name,
-                'email'    => $request->email,
-                'phone'    => $request->phone,
-                'password' => Hash::make($request->password),
-                'role'     => $request->role,
+                'name'        => $request->name,
+                'email'       => $request->email,
+                'phone'       => $request->phone,
+                'password'    => Hash::make($request->password),
+                'role'        => $request->role,
+                'referred_by' => $referrer?->id,
             ]);
 
             if ($user->isTutor()) {
@@ -206,6 +222,10 @@ class AuthController extends Controller
 
         $user->email_verified_at = now();
         $user->save();
+
+        if ($user->referred_by) {
+            $this->awardReferralBonus($user);
+        }
 
         // Notify all admins — email + platform notification
         $admins = User::where('role', 'super_admin')->get();
@@ -373,6 +393,35 @@ class AuthController extends Controller
             \Illuminate\Support\Facades\Log::error('OTP mail failed', ['email' => $email, 'error' => $e->getMessage()]);
             throw new \RuntimeException('Failed to send verification email. Please try again.');
         }
+    }
+
+    private function resolveReferrer(string $code): ?User
+    {
+        $code = strtoupper(trim($code));
+
+        return User::where(function ($q) use ($code) {
+            $q->whereHas('tutorProfile', fn ($tp) => $tp->where('tutor_id', 'TUT-' . $code))
+              ->orWhereHas('guardianProfile', fn ($gp) => $gp->where('guardian_id', 'GRD-' . $code));
+        })->whereNotNull('email_verified_at')->where('is_active', true)->first();
+    }
+
+    private function awardReferralBonus(User $user): void
+    {
+        DB::transaction(function () use ($user) {
+            $earning = ReferralEarning::firstOrCreate(
+                ['referred_user_id' => $user->id],
+                ['referrer_id' => $user->referred_by, 'points' => (int) config('referral.signup_bonus_points', 5)]
+            );
+
+            if (!$earning->wasRecentlyCreated) {
+                return;
+            }
+
+            User::where('id', $earning->referrer_id)->increment('referral_points', $earning->points);
+
+            $referrer = User::find($earning->referrer_id);
+            $referrer?->notify(new ReferralBonusEarnedNotification($earning->points, $user->name));
+        });
     }
 
     private function maskEmail(string $email): string

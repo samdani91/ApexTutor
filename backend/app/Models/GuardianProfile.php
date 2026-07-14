@@ -30,7 +30,10 @@ class GuardianProfile extends Model
         static::created(function (GuardianProfile $profile) {
             do {
                 $num = random_int(100000, 999999);
-            } while (self::where('guardian_id', 'GRD-' . $num)->exists());
+            } while (
+                self::where('guardian_id', 'GRD-' . $num)->exists()
+                || TutorProfile::where('tutor_id', 'TUT-' . $num)->exists()
+            );
 
             $profile->updateQuietly(['guardian_id' => 'GRD-' . $num]);
         });

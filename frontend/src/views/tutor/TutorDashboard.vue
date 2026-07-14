@@ -144,6 +144,8 @@
       </RouterLink>
     </div>
 
+    <ReferralCard class="reveal" />
+
     <PlatformFeedbackWidget class="reveal" />
   </div>
 </template>
@@ -152,6 +154,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { tutorApi } from '@/api/tutor.js'
+import ReferralCard from '@/components/common/ReferralCard.vue'
 import { useAuthStore } from '@/stores/auth.js'
 import { getInitials } from '@/utils/helpers.js'
 import { toast } from 'vue-sonner'

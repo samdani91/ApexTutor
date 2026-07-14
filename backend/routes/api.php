@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AdminPendingChangesController;
 use App\Http\Controllers\Admin\AdminTicketController;
 use App\Http\Controllers\Admin\AdminUserAvatarController;
 use App\Http\Controllers\Admin\AdminReferenceDataController;
+use App\Http\Controllers\Admin\AdminReferralController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminConnectionController;
 use App\Http\Controllers\Admin\AdminDashboardController;
@@ -28,6 +29,7 @@ use App\Http\Controllers\Tutor\TuitionJobController as TutorTuitionJobController
 use App\Http\Controllers\Public\TutorPublicProfileController;
 use App\Http\Controllers\Public\TutorSearchController;
 use App\Http\Controllers\PlatformFeedbackController;
+use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\Tutor\DocumentController;
 use App\Http\Controllers\Tutor\EducationController;
@@ -108,6 +110,9 @@ Route::middleware(['auth:sanctum', 'active.user'])->group(function () {
         ->middleware('throttle:3,1');
     Route::put('user/email/confirm', [UserProfileController::class, 'confirmEmailChange'])
         ->middleware('throttle:5,1');
+
+    // Referral code + points (tutors & guardians)
+    Route::get('user/referral', [ReferralController::class, 'show']);
 
     // Notifications (tutors & guardians)
     Route::get('notifications',             [UserNotificationController::class, 'index']);
@@ -322,4 +327,7 @@ Route::middleware(['auth:sanctum', 'active.user', 'role:super_admin', 'log.admin
     Route::get('sms/broadcast-preview', [AdminSmsController::class, 'broadcastPreview']);
     Route::post('sms/send',           [AdminSmsController::class, 'send']);
     Route::post('sms/broadcast',      [AdminSmsController::class, 'broadcast']);
+
+    Route::get('referrals',           [AdminReferralController::class, 'index']);
+    Route::get('referrals/{userId}',  [AdminReferralController::class, 'show']);
 });
