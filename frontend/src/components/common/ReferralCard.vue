@@ -11,7 +11,7 @@
 
     <template v-else-if="data">
       <p class="text-sm text-paper-500 font-body mb-3">
-        Share your referral code with friends. When they sign up and verify their account, you earn points.
+        Share your referral code with friends. You earn points once a tutor you referred is approved by our team.
       </p>
 
       <div class="flex items-center gap-2 mb-4">
@@ -29,8 +29,8 @@
         <ul class="divide-y divide-paper-100 rounded-lg border border-paper-200 overflow-hidden">
           <li v-for="(r, i) in data.referrals" :key="i" class="flex items-center justify-between px-4 py-2.5 text-sm">
             <span class="font-body text-navy-700">{{ r.name }}</span>
-            <span :class="r.verified ? 'text-emerald-600' : 'text-paper-400'" class="text-xs font-semibold font-display">
-              {{ r.verified ? 'Verified' : 'Pending' }}
+            <span :class="r.earned ? 'text-emerald-600' : 'text-paper-400'" class="text-xs font-semibold font-display">
+              {{ r.earned ? 'Earned' : 'Pending approval' }}
             </span>
           </li>
         </ul>

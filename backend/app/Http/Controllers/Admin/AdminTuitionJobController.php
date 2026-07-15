@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendSmsJob;
 use App\Models\TuitionJob;
 use App\Models\TuitionJobApplication;
 use App\Notifications\TuitionJobApplicationStatusNotification;
 use App\Notifications\TuitionJobGuardianNotification;
-use App\Services\BulkSmsBdService;
 use App\Traits\LogsAdminActivity;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -313,9 +313,9 @@ class AdminTuitionJobController extends Controller
                 return;
             }
 
-            app(BulkSmsBdService::class)->send($tutorPhone, $message);
+            SendSmsJob::dispatch($tutorPhone, $message);
         } catch (\Exception $e) {
-            Log::error('TuitionJob tutor SMS failed', [
+            Log::error('TuitionJob tutor SMS dispatch failed', [
                 'error'          => $e->getMessage(),
                 'application_id' => $app->id,
                 'event'          => $event,

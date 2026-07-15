@@ -5,18 +5,13 @@ use App\Http\Controllers\Controller;
 use App\Mail\OtpMail;
 use App\Models\GuardianProfile;
 use App\Models\OtpCode;
-use App\Models\ReferralEarning;
 use App\Models\TutorProfile;
 use App\Models\User;
 use App\Notifications\AdminNewUserRegisteredNotification;
-use App\Notifications\AdminReferralCodeUsedNotification;
-use App\Notifications\ReferralBonusEarnedNotification;
-use App\Services\BulkSmsBdService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
@@ -225,9 +220,9 @@ class AuthController extends Controller
         $user->email_verified_at = now();
         $user->save();
 
-        if ($user->referred_by) {
-            $this->awardReferralBonus($user);
-        }
+        // Referral bonuses are intentionally NOT awarded here — see
+        // ReferralBonusService: they fire on admin verification instead, so a
+        // verified email alone can't be farmed for points.
 
         // Notify all admins — email + platform notification
         $admins = User::where('role', 'super_admin')->get();
@@ -405,54 +400,6 @@ class AuthController extends Controller
             $q->whereHas('tutorProfile', fn ($tp) => $tp->where('tutor_id', 'TUT-' . $code))
               ->orWhereHas('guardianProfile', fn ($gp) => $gp->where('guardian_id', 'GRD-' . $code));
         })->whereNotNull('email_verified_at')->where('is_active', true)->first();
-    }
-
-    private function awardReferralBonus(User $user): void
-    {
-        $earning = DB::transaction(function () use ($user) {
-            $earning = ReferralEarning::firstOrCreate(
-                ['referred_user_id' => $user->id],
-                ['referrer_id' => $user->referred_by, 'points' => (int) config('referral.signup_bonus_points', 5)]
-            );
-
-            if ($earning->wasRecentlyCreated) {
-                User::where('id', $earning->referrer_id)->increment('referral_points', $earning->points);
-            }
-
-            return $earning;
-        });
-
-        if (!$earning->wasRecentlyCreated) {
-            return;
-        }
-
-        // Notifications and SMS run after the transaction commits
-        $referrer = User::find($earning->referrer_id);
-        if (!$referrer) {
-            return;
-        }
-
-        $referrer->notify(new ReferralBonusEarnedNotification($earning->points, $user->name));
-        $this->smsReferralBonus($referrer, $user->name, $earning->points);
-
-        $adminNotification = new AdminReferralCodeUsedNotification(
-            referrerName:     $referrer->name,
-            referredUserName: $user->name,
-            referralCode:     $referrer->referral_code ?? '',
-        );
-        User::where('role', 'super_admin')->get()->each(fn ($admin) => $admin->notify($adminNotification));
-    }
-
-    private function smsReferralBonus(User $referrer, string $referredUserName, int $points): void
-    {
-        try {
-            if (!$referrer->phone) return;
-
-            $message = "Good news! {$referredUserName} joined Apex Tutor using your referral code. You earned {$points} points.";
-            app(BulkSmsBdService::class)->send($referrer->phone, $message);
-        } catch (\Exception $e) {
-            Log::error('Referral bonus SMS failed', ['referrer_id' => $referrer->id, 'error' => $e->getMessage()]);
-        }
     }
 
     private function maskEmail(string $email): string

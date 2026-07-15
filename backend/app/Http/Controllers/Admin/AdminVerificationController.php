@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TutorProfile;
 use App\Notifications\TutorVerificationApprovedNotification;
 use App\Notifications\TutorVerificationRejectedNotification;
+use App\Services\ReferralBonusService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\Log;
 
 class AdminVerificationController extends Controller
 {
+    public function __construct(private readonly ReferralBonusService $referralBonus) {}
+
     public function queue(Request $request): JsonResponse
     {
         $request->validate([
@@ -79,6 +82,11 @@ class AdminVerificationController extends Controller
             }
         } catch (\Exception $e) {
             Log::error('Tutor verification approved notification failed', ['error' => $e->getMessage(), 'tutor' => $id]);
+        }
+
+        // Award the referral bonus only now that a human has vetted this account.
+        if ($tutor->user) {
+            $this->referralBonus->awardForSignup($tutor->user);
         }
 
         return response()->json(['success' => true, 'message' => 'Tutor approved.']);

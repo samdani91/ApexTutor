@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\BroadcastSmsJob;
 use App\Models\GuardianProfile;
 use App\Models\TutorProfile;
 use App\Models\University;
@@ -117,7 +118,7 @@ class AdminSmsController extends Controller
         ]);
     }
 
-    public function broadcast(Request $request, BulkSmsBdService $sms): JsonResponse
+    public function broadcast(Request $request): JsonResponse
     {
         $data = $request->validate([
             'message'       => 'required|string|min:3|max:1000',
@@ -142,20 +143,11 @@ class AdminSmsController extends Controller
             ], 422);
         }
 
-        $result = $sms->broadcast($phones, $data['message']);
-
-        if (!$result['success']) {
-            Log::warning('Admin broadcast SMS failed', [
-                'admin_id'   => $request->user()->id,
-                'target'     => $target,
-                'recipients' => count($phones),
-                'response'   => $result['response'],
-            ]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Broadcast SMS failed. Please check the SMS balance and try again.',
-            ], 502);
-        }
+        // Queued rather than sent inline: a large broadcast is chunked into many
+        // sequential BulkSMSBD calls and would otherwise block the admin's request
+        // past PHP's max_execution_time. Delivery failures surface in the log and
+        // the failed_jobs table rather than in this response.
+        BroadcastSmsJob::dispatch($phones, $data['message']);
 
         $count = count($phones);
         $label = $this->targetLabel($target, $universityId);
@@ -163,7 +155,7 @@ class AdminSmsController extends Controller
         return response()->json([
             'success' => true,
             'data'    => ['id' => $count],
-            'message' => "Broadcast SMS sent to {$count} {$label}.",
+            'message' => "Broadcast queued for {$count} {$label}. Delivery may take a few minutes.",
         ]);
     }
 

@@ -717,7 +717,7 @@ async function confirmBroadcast() {
     const { data } = await adminApi.broadcastSms(payload)
     showBroadcastModal.value = false
     broadcastConfirmText.value = ''
-    showFeedback(true, data.message || 'Broadcast SMS sent.')
+    showFeedback(true, data.message || 'Broadcast queued. Delivery may take a few minutes.')
     message.value = ''
   } catch (err) {
     showBroadcastModal.value = false

@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Models\ReferralEarning;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -10,15 +11,22 @@ class ReferralController extends Controller
     {
         $user = $request->user();
 
+        // "Earned" tracks whether the bonus actually paid out (i.e. the referred
+        // tutor cleared admin verification) — email-verified alone no longer
+        // means the referrer got points, so reporting that would mislead.
+        $earnedIds = ReferralEarning::where('referrer_id', $user->id)
+            ->pluck('referred_user_id')
+            ->flip();
+
         $referrals = $user->referrals()
-            ->select('id', 'name', 'role', 'email_verified_at', 'created_at')
+            ->select('id', 'name', 'role', 'created_at')
             ->latest()
             ->get()
             ->map(fn ($u) => [
-                'name'       => $u->name,
-                'role'       => $u->role,
-                'verified'   => (bool) $u->email_verified_at,
-                'joined_at'  => $u->created_at,
+                'name'      => $u->name,
+                'role'      => $u->role,
+                'earned'    => $earnedIds->has($u->id),
+                'joined_at' => $u->created_at,
             ]);
 
         return response()->json([
