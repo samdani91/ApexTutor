@@ -16,6 +16,8 @@
       </div>
     </div>
 
+    <DashboardNewsCard />
+
     <!-- Stats -->
     <div class="grid gap-4 sm:grid-cols-3">
       <RouterLink to="/guardian/shortlist" class="metric-card reveal block transition-all hover:-translate-y-1 hover:shadow-lg">
@@ -94,6 +96,7 @@ import { guardianApi } from '@/api/guardian.js'
 import { guardianJobsApi } from '@/api/jobs.js'
 import PlatformFeedbackWidget from '@/components/common/PlatformFeedbackWidget.vue'
 import ReferralCard from '@/components/common/ReferralCard.vue'
+import DashboardNewsCard from '@/components/common/DashboardNewsCard.vue'
 
 const shortlistCount  = ref(0)
 const confirmedCount  = ref(0)

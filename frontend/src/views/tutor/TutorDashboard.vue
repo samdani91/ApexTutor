@@ -39,6 +39,8 @@
       </div>
     </div>
 
+    <DashboardNewsCard />
+
     <!-- Stats grid -->
     <div v-if="loading" class="text-paper-500 font-body text-sm">Loading…</div>
     <div v-else class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
@@ -155,6 +157,7 @@ import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { tutorApi } from '@/api/tutor.js'
 import ReferralCard from '@/components/common/ReferralCard.vue'
+import DashboardNewsCard from '@/components/common/DashboardNewsCard.vue'
 import { useAuthStore } from '@/stores/auth.js'
 import { getInitials } from '@/utils/helpers.js'
 import { toast } from 'vue-sonner'

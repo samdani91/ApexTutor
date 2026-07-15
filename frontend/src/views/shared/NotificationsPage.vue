@@ -481,6 +481,7 @@ async function markOne(n) {
   await notificationApi.markRead(n.id)
   n.read_at = new Date().toISOString()
   notifStore.decrement()
+  notifStore.markItemRead(n.id)
 }
 
 async function markAll() {
@@ -490,6 +491,7 @@ async function markAll() {
     await notificationApi.markAllRead()
     items.value.forEach(n => { if (!n.read_at) n.read_at = new Date().toISOString() })
     notifStore.clearUnread()
+    notifStore.markAllItemsRead()
   } finally {
     marking.value = false
   }

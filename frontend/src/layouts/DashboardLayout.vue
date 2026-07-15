@@ -193,6 +193,9 @@ onMounted(async () => {
       ticketApi.getCounts(),
     ])
     notifStore.setUnread(notifRes.data.unread)
+    // Keep the fetched list too — the dashboard news card renders from it,
+    // so it costs no extra request.
+    notifStore.setItems(notifRes.data.data)
     activeTicketCount.value = ticketRes.data.data?.active ?? 0
   } catch {}
 })
