@@ -2,7 +2,7 @@
   <DefaultLayout>
   <main class="public-grid-page relative isolate overflow-hidden bg-paper-50">
     <div class="pointer-events-none absolute inset-0 -z-10 public-grid"></div>
-    <div class="mx-auto max-w-6xl px-4 py-6 md:py-10 space-y-5">
+    <div class="mx-auto max-w-[84rem] px-4 py-6 md:py-10 space-y-5">
     <RouterLink to="/jobs"
       class="inline-flex items-center gap-1.5 rounded-sm border border-paper-300 bg-white px-3.5 py-2 text-sm font-semibold font-display text-navy-700 shadow-sm hover:bg-paper-100 transition-colors">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -126,10 +126,20 @@
                 Application {{ statusLabel(job.my_application.status) }}
               </span>
             </div>
-            <button v-else-if="job.status === 'open'" @click="showApplyDialog = true"
+            <!-- Apply is tutor-only (the API enforces role:tutor with a 403 —
+                 this keeps non-tutors from ever hitting that wall). -->
+            <button v-else-if="job.status === 'open' && auth.isTutor" @click="showApplyDialog = true"
               class="btn-primary w-full py-3 text-sm">
               Apply Now
             </button>
+            <div v-else-if="job.status === 'open'"
+              class="rounded-md border border-paper-200 bg-paper-50 px-4 py-3 text-sm text-paper-500 font-body">
+              Only tutors can apply to tuition jobs.
+              <RouterLink v-if="auth.isGuardian" to="/guardian/jobs/post"
+                class="mt-1 block font-display font-semibold text-navy-700 hover:underline">
+                Post your own tuition job →
+              </RouterLink>
+            </div>
             <span v-else class="block rounded-md border border-paper-200 bg-paper-50 px-4 py-3 text-sm text-paper-500 font-body">
               This job is closed.
             </span>
@@ -151,11 +161,15 @@
                 </svg>
               </button>
             </div>
-            <div class="rounded-sm overflow-hidden border border-paper-200">
+            <div class="relative rounded-sm overflow-hidden border border-paper-200">
               <iframe :src="mapEmbedUrl" width="100%" height="300" style="border:0" allowfullscreen loading="lazy"></iframe>
+              <!-- The embed always centers the searched area, so a fixed overlay
+                   ring around the center marks the approximate zone without
+                   needing a map library or exact coordinates. -->
+              <div class="pointer-events-none absolute left-1/2 top-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-red-500 bg-red-500/10"></div>
             </div>
             <p class="text-xs text-paper-400 font-body mt-3">
-              Note: The exact location of this tuition job is most probably inside this area.
+              Note: The exact location of this tuition job is most probably inside the circled area.
             </p>
           </div>
         </div>
@@ -208,11 +222,13 @@ import { ref, computed, onMounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { tutorJobsApi } from '@/api/jobs.js'
 import { tutorApi } from '@/api/tutor.js'
+import { useAuthStore } from '@/stores/auth.js'
 import { toast } from 'vue-sonner'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import { mediumLabel } from '@/utils/constants.js'
 
 const route   = useRoute()
+const auth    = useAuthStore()
 const publicId = route.params.publicId
 
 const ICON_PATHS = {
@@ -248,8 +264,9 @@ const directionsUrl = computed(() => {
 
 const mapEmbedUrl = computed(() => {
   if (!job.value) return ''
+  // Area + district only — exact address is never sent to tutors.
   const q = encodeURIComponent(locationStr.value)
-  return `https://maps.google.com/maps?q=${q}&output=embed`
+  return `https://maps.google.com/maps?q=${q}&z=15&output=embed`
 })
 
 const genderMismatch = computed(() => {

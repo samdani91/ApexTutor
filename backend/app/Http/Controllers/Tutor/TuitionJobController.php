@@ -65,6 +65,9 @@ class TuitionJobController extends Controller
         $request->validate(['per_page' => 'nullable|integer|min:1|max:50']);
         $jobs = $query->paginate($request->integer('per_page', 12));
 
+        // Privacy: this endpoint is public — never expose exact addresses here.
+        $jobs->getCollection()->each->makeHidden('address_details');
+
         return response()->json(['success' => true, 'data' => $jobs]);
     }
 
@@ -83,7 +86,9 @@ class TuitionJobController extends Controller
                 ->first(['id', 'status', 'applied_at'])
             : null;
 
-        $data = $job->toArray();
+        // Privacy: the guardian's exact address is only for admins, the guardian
+        // themselves, and (via SMS) the tutor who actually gets appointed.
+        $data = $job->makeHidden('address_details')->toArray();
         $data['my_application'] = $myApplication;
 
         return response()->json(['success' => true, 'data' => $data]);
