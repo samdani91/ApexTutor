@@ -29,7 +29,8 @@ class AdminReferenceDataController extends Controller
             'name'        => 'required|string|max:100',
             'name_bn'     => 'nullable|string|max:100',
             'class_level' => 'required|string|max:50',
-            'medium'      => 'nullable|string|max:20',
+            'medium'      => 'nullable|in:bangla_medium,english_medium,english_version,madrasha',
+            'group'       => 'nullable|in:science,business_studies,humanities',
         ]);
         $subject = Subject::create($data);
         return response()->json(['success' => true, 'data' => $subject, 'message' => 'Subject created.'], 201);
@@ -41,7 +42,8 @@ class AdminReferenceDataController extends Controller
             'name'        => 'sometimes|string|max:100',
             'name_bn'     => 'nullable|string|max:100',
             'class_level' => 'sometimes|string|max:50',
-            'medium'      => 'nullable|string|max:20',
+            'medium'      => 'nullable|in:bangla_medium,english_medium,english_version,madrasha',
+            'group'       => 'nullable|in:science,business_studies,humanities',
         ]);
         Subject::findOrFail($id)->update($data);
         return response()->json(['success' => true, 'message' => 'Subject updated.']);

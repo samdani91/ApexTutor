@@ -26,9 +26,13 @@ class AdminPendingChangesController extends Controller
         $profiles = TutorProfile::whereNotNull('pending_changes')
             ->with([
                 'user:id,name,email,avatar,pending_avatar',
-                'tuitionPreference:id,tutor_profile_id,district_id,expected_salary_min,expected_salary_max,total_experience_years,days_per_week,hours_per_day,tutoring_methods,preferred_classes,preferred_time,place_of_tutoring',
+                // Full model on purpose: a column list here silently drops any
+                // newly added preference field from the admin diff (bit us with
+                // preferred_groups — the third allowlist bug of this kind).
+                'tuitionPreference',
                 'tuitionPreference.subjects:id,name',
                 'tuitionPreference.district:id,name',
+                'tuitionPreference.days',
                 'tuitionPreference.locations.area:id,name',
                 'educationEntries',
                 'documents',

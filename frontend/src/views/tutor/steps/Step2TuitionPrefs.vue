@@ -100,6 +100,45 @@
       </div>
     </div>
 
+    <!-- Preferred curricula -->
+    <div class="mt-5">
+      <label class="block text-sm font-semibold font-display text-navy-800 mb-2">Preferred Curriculum</label>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" v-for="m in MEDIUMS" :key="m.value"
+          @click="toggleArray(form.preferred_curricula, m.value)"
+          class="choice-btn"
+          :class="form.preferred_curricula.includes(m.value) ? 'choice-btn-active' : 'choice-btn-idle'">
+          {{ m.label }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Preferred groups -->
+    <div class="mt-5">
+      <label class="block text-sm font-semibold font-display text-navy-800 mb-2">Preferred Groups</label>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" v-for="g in GROUPS" :key="g.value"
+          @click="toggleArray(form.preferred_groups, g.value)"
+          class="choice-btn"
+          :class="form.preferred_groups.includes(g.value) ? 'choice-btn-active' : 'choice-btn-idle'">
+          {{ g.label }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Preferred classes -->
+    <div class="mt-5">
+      <label class="block text-sm font-semibold font-display text-navy-800 mb-2">Preferred Classes</label>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" v-for="c in availableClasses" :key="c.value"
+          @click="toggleArray(form.preferred_classes, c.value)"
+          class="choice-btn"
+          :class="form.preferred_classes.includes(c.value) ? 'choice-btn-active' : 'choice-btn-idle'">
+          {{ c.label }}
+        </button>
+      </div>
+    </div>
+
     <!-- Preferred subjects -->
     <div class="mt-5">
       <label class="block text-sm font-semibold font-display text-navy-800 mb-2">Preferred subjects</label>
@@ -135,32 +174,6 @@
         </button>
       </div>
       <p class="text-xs text-paper-400 font-body mt-1.5">Pick all the areas you're willing to travel to</p>
-    </div>
-
-    <!-- Preferred curricula -->
-    <div class="mt-5">
-      <label class="block text-sm font-semibold font-display text-navy-800 mb-2">Preferred Curriculum</label>
-      <div class="flex flex-wrap gap-2">
-        <button type="button" v-for="m in MEDIUMS" :key="m.value"
-          @click="toggleArray(form.preferred_curricula, m.value)"
-          class="choice-btn"
-          :class="form.preferred_curricula.includes(m.value) ? 'choice-btn-active' : 'choice-btn-idle'">
-          {{ m.label }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Preferred classes -->
-    <div class="mt-5">
-      <label class="block text-sm font-semibold font-display text-navy-800 mb-2">Preferred Classes</label>
-      <div class="flex flex-wrap gap-2">
-        <button type="button" v-for="c in CLASS_LEVELS" :key="c.value"
-          @click="toggleArray(form.preferred_classes, c.value)"
-          class="choice-btn"
-          :class="form.preferred_classes.includes(c.value) ? 'choice-btn-active' : 'choice-btn-idle'">
-          {{ c.label }}
-        </button>
-      </div>
     </div>
 
     <!-- Tutoring method description -->
@@ -299,11 +312,11 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed, onMounted } from 'vue'
+import { reactive, ref, computed, watch, onMounted } from 'vue'
 import { tutorApi } from '@/api/tutor.js'
 import { searchApi } from '@/api/search.js'
 import { toast } from 'vue-sonner'
-import { MEDIUMS, CLASS_LEVELS, PLACE_OF_TUTORING, TUTORING_STYLES, DAYS, PREFERRED_TIMES } from '@/utils/constants.js'
+import { MEDIUMS, classLevelsFor, GROUPS, PLACE_OF_TUTORING, TUTORING_STYLES, DAYS, PREFERRED_TIMES } from '@/utils/constants.js'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import DropSelect from '@/components/search/DropSelect.vue'
 
@@ -354,6 +367,7 @@ const form = reactive({
   tutoring_styles: [],
   preferred_curricula: [],
   preferred_classes: [],
+  preferred_groups: [],
   tutoring_method_description: '',
   preferred_time: [],
   selectedDays: [],
@@ -404,6 +418,7 @@ onMounted(async () => {
         tutoring_styles:            d.tutoring_styles || [],
         preferred_curricula:        d.preferred_curricula || [],
         preferred_classes:          d.preferred_classes || [],
+        preferred_groups:           d.preferred_groups || [],
         tutoring_method_description: d.tutoring_method_description || '',
         preferred_time:              d.preferred_time || [],
         selectedDays:               (d.days || []).map(x => x.day),
@@ -432,6 +447,18 @@ onMounted(async () => {
   } catch { /* silently ignore */ }
   finally { travelLoading.value = false }
 })
+
+// A tutor can teach several curricula, so the classes on offer are the union
+// across everything selected. No curricula picked means no narrowing.
+const availableClasses = computed(() => classLevelsFor(form.preferred_curricula))
+
+// Prune classes the current curricula no longer offer. Without this a class
+// dropped from availableClasses keeps its button unrendered while staying in
+// preferred_classes — invisible to the tutor but still saved, and unremovable.
+watch(() => form.preferred_curricula, () => {
+  const allowed = new Set(availableClasses.value.map(level => level.value))
+  form.preferred_classes = form.preferred_classes.filter(value => allowed.has(value))
+}, { deep: true })
 
 function toggleNum(key, val) {
   form[key] = form[key] === val ? null : val
@@ -567,6 +594,7 @@ async function save() {
       tutoring_styles:             form.tutoring_styles,
       preferred_curricula:         form.preferred_curricula,
       preferred_classes:           form.preferred_classes,
+      preferred_groups:            form.preferred_groups,
       tutoring_method_description: nullIfEmpty(form.tutoring_method_description),
       days:                        form.selectedDays.map(d => ({ day: d })),
       subject_ids:                 form.subject_ids,

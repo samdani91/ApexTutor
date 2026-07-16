@@ -11,7 +11,7 @@ class StoreTuitionJobRequest extends FormRequest
     {
         return [
             'tuition_type'           => 'required|in:student_home,tutor_home,online',
-            'medium'                 => 'required|in:bangla_medium,english_medium,english_version',
+            'medium'                 => 'required|in:bangla_medium,english_medium,english_version,madrasha',
             'tutoring_style'         => 'required|in:one_to_one,group,online',
             'district_id'            => 'required|exists:districts,id',
             'area_id'                => 'required|exists:areas,id',

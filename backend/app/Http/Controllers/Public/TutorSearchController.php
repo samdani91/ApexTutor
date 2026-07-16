@@ -39,8 +39,9 @@ class TutorSearchController extends Controller
     public function search(Request $request): JsonResponse
     {
         $filters = $request->validate([
-            'medium'       => 'nullable|in:bangla_medium,english_medium,english_version',
+            'medium'       => 'nullable|in:bangla_medium,english_medium,english_version,madrasha',
             'class_level'  => 'nullable|string',
+            'group'        => 'nullable|in:science,business_studies,humanities',
             'subject_ids'  => 'nullable|string',
             'district_id'  => 'nullable|integer',
             'area_id'      => 'nullable|integer|exists:areas,id',
@@ -65,7 +66,7 @@ class TutorSearchController extends Controller
         $query = TutorProfile::query()
             ->with([
                 'user:id,name,avatar',
-                'tuitionPreference:id,tutor_profile_id,district_id,preferred_curricula,preferred_classes,expected_salary_min,expected_salary_max,tutoring_methods,tutoring_styles,total_experience_years,place_of_tutoring,days_per_week',
+                'tuitionPreference:id,tutor_profile_id,district_id,preferred_curricula,preferred_classes,preferred_groups,expected_salary_min,expected_salary_max,tutoring_methods,tutoring_styles,total_experience_years,place_of_tutoring,days_per_week',
                 'tuitionPreference.subjects:id,name',
                 'tuitionPreference.locations.area:id,name',
                 'travelAvailabilities' => fn($q) => $q->with(['district:id,name', 'areas:id,name'])
@@ -84,6 +85,9 @@ class TutorSearchController extends Controller
         }
         if (!empty($filters['class_level'])) {
             $query->whereHas('tuitionPreference', fn($q) => $q->whereJsonContains('preferred_classes', $filters['class_level']));
+        }
+        if (!empty($filters['group'])) {
+            $query->whereHas('tuitionPreference', fn($q) => $q->whereJsonContains('preferred_groups', $filters['group']));
         }
         if (!empty($filters['subject_ids'])) {
             $ids = $filters['subject_ids'];
@@ -172,6 +176,7 @@ class TutorSearchController extends Controller
             'english_version' => ['english version'],
             'english_medium'  => ['english medium'],
             'bangla_medium'   => ['bangla medium', 'bengali medium'],
+            'madrasha'        => ['madrasha', 'madrasa', 'madrassa'],
         ];
         foreach ($mediumAliases as $value => $aliases) {
             foreach ($aliases as $alias) {
@@ -189,6 +194,8 @@ class TutorSearchController extends Controller
             'hsc'            => ['hsc', 'higher secondary', 'intermediate'],
             'admission_test' => ['admission test', 'admission'],
             'ssc'            => ['ssc'],
+            'dakhil'         => ['dakhil'],
+            'alim'           => ['alim'],
             'a_level'        => ['a level', 'a-level', 'alevel'],
             'o_level'        => ['o level', 'o-level', 'olevel'],
             'class_10' => ['class 10', 'class-10', 'grade 10'],
@@ -290,9 +297,26 @@ class TutorSearchController extends Controller
 
     public function subjects(Request $request): JsonResponse
     {
-        $subjects = Subject::when($request->class_level, fn($q) => $q->where('class_level', $request->class_level))
-            ->orderBy('name')
-            ->get();
+        $query = Subject::when($request->class_level, fn($q) => $q->where('class_level', $request->class_level));
+
+        // A class level (e.g. Class 1) can carry both national-curriculum rows
+        // (medium NULL) and medium-specific ones (e.g. English Medium). When a
+        // medium is given, prefer its own subjects and fall back to the shared
+        // NULL set only if it has none — so the two never bleed together.
+        if ($request->filled('medium') && $request->class_level) {
+            $hasOwn = (clone $query)->where('medium', $request->medium)->exists();
+            $hasOwn
+                ? $query->where('medium', $request->medium)
+                : $query->whereNull('medium');
+        }
+
+        // Science / Business Studies / Humanities. NULL-group subjects are
+        // compulsory or cross-group, so they stay visible under any group.
+        if ($request->filled('group')) {
+            $query->where(fn ($q) => $q->where('group', $request->group)->orWhereNull('group'));
+        }
+
+        $subjects = $query->orderBy('name')->get();
         return response()->json(['success' => true, 'data' => $subjects]);
     }
 

@@ -49,6 +49,7 @@ class PublicTutorResource extends JsonResource
                     'tutoring_methods'         => $this->tuitionPreference->tutoring_methods,
                     'tutoring_styles'          => $this->tuitionPreference->tutoring_styles,
                     'preferred_curricula'      => $this->tuitionPreference->preferred_curricula,
+                    'preferred_groups'         => $this->tuitionPreference->preferred_groups,
                     'experience_details'       => $this->tuitionPreference->experience_details,
                     'tutoring_method_description' => $this->tuitionPreference->tutoring_method_description,
                 ]

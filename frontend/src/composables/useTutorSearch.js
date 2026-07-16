@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { useSearchStore } from '@/stores/search.js'
-import { MEDIUMS, CLASS_LEVELS } from '@/utils/constants.js'
+import { MEDIUMS, CLASS_LEVELS, GROUPS } from '@/utils/constants.js'
 
 const PER_PAGE = 9
 
@@ -52,6 +52,7 @@ export function useTutorSearch() {
     const chips = []
     if (f.medium)        chips.push({ key: 'medium',      label: MEDIUMS.find(m => m.value === f.medium)?.label || f.medium })
     if (f.class_level)   chips.push({ key: 'class_level', label: CLASS_LEVELS.find(c => c.value === f.class_level)?.label || f.class_level })
+    if (f.group)         chips.push({ key: 'group',       label: GROUPS.find(g => g.value === f.group)?.label || f.group })
     if (f.subject_ids?.length) {
       const ids   = normalizeSubjectIds(f.subject_ids)
       const names = (filtersRef?.allSubjects || mobileFiltersRef?.allSubjects || [])

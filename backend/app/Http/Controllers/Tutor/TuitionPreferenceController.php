@@ -27,6 +27,8 @@ class TuitionPreferenceController extends Controller
             'tutoring_styles'             => 'nullable|array',
             'preferred_curricula'         => 'nullable|array',
             'preferred_classes'           => 'nullable|array',
+            'preferred_groups'            => 'nullable|array',
+            'preferred_groups.*'          => 'in:science,business_studies,humanities',
             'district_id'                 => 'nullable|integer|exists:districts,id',
             'expected_salary_min'         => 'nullable|integer|min:0',
             'expected_salary_max'         => 'nullable|integer|min:0',

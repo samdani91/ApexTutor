@@ -15,12 +15,18 @@ export const PREF_FIELDS = [
   { key: 'expected_salary_min',    label: 'Min salary (BDT)'   },
   { key: 'expected_salary_max',    label: 'Max salary (BDT)'   },
   { key: 'total_experience_years', label: 'Experience (years)' },
+  { key: 'experience_details',     label: 'Experience details' },
   { key: 'days_per_week',          label: 'Days per week'      },
   { key: 'hours_per_day',          label: 'Hours per day'      },
+  { key: 'days',                   label: 'Available days'     },
+  { key: 'preferred_curricula',    label: 'Preferred curriculum' },
+  { key: 'preferred_groups',       label: 'Preferred groups'   },
   { key: 'preferred_classes',      label: 'Preferred classes'  },
   { key: 'tutoring_methods',       label: 'Tutoring methods'   },
+  { key: 'tutoring_styles',        label: 'Tutoring styles'    },
   { key: 'place_of_tutoring',      label: 'Place of tutoring'  },
   { key: 'preferred_time',         label: 'Preferred time'     },
+  { key: 'tutoring_method_description', label: 'Tutoring method' },
 ]
 
 export const PERSONAL_FIELDS = [

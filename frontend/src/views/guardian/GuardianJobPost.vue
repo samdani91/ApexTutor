@@ -46,7 +46,7 @@
             <label class="field-label">Medium <span class="req">*</span></label>
             <div class="choice-group mt-2">
               <button type="button" v-for="m in mediumOptions" :key="m.value"
-                @click="form.medium = form.medium === m.value ? '' : m.value"
+                @click="onMediumToggle(m.value)"
                 class="choice-btn" :class="form.medium === m.value ? 'choice-btn-active' : 'choice-btn-idle'">
                 {{ m.label }}
               </button>
@@ -181,12 +181,19 @@
             </div>
           </div>
 
+          <div v-if="hasGroups(form.class_level)">
+            <label class="field-label">Group</label>
+            <DropSelect v-model="form.group" :options="groupOpts" placeholder="All groups"
+              class="mt-1" @update:modelValue="onGroupChange" />
+            <p class="text-xs text-paper-400 font-body mt-1">Narrows the subjects to a group. Optional.</p>
+          </div>
+
           <div>
             <label class="field-label">Subjects <span class="req">*</span></label>
             <p v-if="!form.class_level" class="text-xs text-paper-400 font-body mt-1">Select a class first.</p>
-            <p v-else-if="!subjects.length" class="text-xs text-paper-400 font-body mt-1">No subjects found for this class.</p>
+            <p v-else-if="!visibleSubjects.length" class="text-xs text-paper-400 font-body mt-1">No subjects found for this class.</p>
             <div v-else class="choice-group mt-2">
-              <button type="button" v-for="s in subjects" :key="s.id"
+              <button type="button" v-for="s in visibleSubjects" :key="s.id"
                 @click="toggleSubject(s.id)"
                 class="choice-btn" :class="form.subject_ids.includes(s.id) ? 'choice-btn-active' : 'choice-btn-idle'">
                 {{ s.name }}
@@ -267,7 +274,7 @@ import { guardianJobsApi } from '@/api/jobs.js'
 import { searchApi } from '@/api/search.js'
 import { toast } from 'vue-sonner'
 import DropSelect from '@/components/search/DropSelect.vue'
-import { MEDIUMS, PLACE_OF_TUTORING, TUTORING_STYLES } from '@/utils/constants.js'
+import { classLevelsFor, hasGroups, GROUPS, MEDIUMS, PLACE_OF_TUTORING, TUTORING_STYLES } from '@/utils/constants.js'
 
 const router = useRouter()
 
@@ -279,6 +286,7 @@ const form = ref({
   area_id:                null,
   address_details:        '',
   class_level:            '',
+  group:                  '',
   subject_ids:            [],
   student_gender:         'male',
   num_students:           1,
@@ -308,16 +316,6 @@ const salaryPresets = [3000, 5000, 8000, 12000, 15000]
 const placeOptions    = PLACE_OF_TUTORING
 const mediumOptions   = MEDIUMS
 const styleOptions    = TUTORING_STYLES
-const classOptions = [
-  { value: 'class_1', label: 'Class 1' }, { value: 'class_2', label: 'Class 2' },
-  { value: 'class_3', label: 'Class 3' }, { value: 'class_4', label: 'Class 4' },
-  { value: 'class_5', label: 'Class 5' }, { value: 'class_6', label: 'Class 6' },
-  { value: 'class_7', label: 'Class 7' }, { value: 'class_8', label: 'Class 8' },
-  { value: 'class_9', label: 'Class 9' }, { value: 'class_10', label: 'Class 10' },
-  { value: 'ssc', label: 'SSC' }, { value: 'hsc', label: 'HSC' },
-  { value: 'o_level', label: 'O Level' }, { value: 'a_level', label: 'A Level' },
-  { value: 'admission_test', label: 'Admission Test' },
-]
 const genderOptions      = [{ value:'male',label:'Male'},{value:'female',label:'Female'}]
 const tutorGenderOptions = [{ value:'male',label:'Male'},{value:'female',label:'Female'},{value:'any',label:'Any'}]
 
@@ -329,17 +327,23 @@ const areaOpts = computed(() => [
   { value: '', label: 'Select area' },
   ...areas.value.map(a => ({ value: a.id, label: a.name })),
 ])
-const classOpts = [
+// Sourced from the shared constant rather than a local copy — this list had
+// already drifted out of sync with CLASS_LEVELS once. Narrowed by medium, since
+// each one only offers certain classes (Madrasha has no O Level, and so on).
+const classOpts = computed(() => [
   { value: '', label: 'Select class' },
-  { value: 'class_1', label: 'Class 1' }, { value: 'class_2', label: 'Class 2' },
-  { value: 'class_3', label: 'Class 3' }, { value: 'class_4', label: 'Class 4' },
-  { value: 'class_5', label: 'Class 5' }, { value: 'class_6', label: 'Class 6' },
-  { value: 'class_7', label: 'Class 7' }, { value: 'class_8', label: 'Class 8' },
-  { value: 'class_9', label: 'Class 9' }, { value: 'class_10', label: 'Class 10' },
-  { value: 'ssc', label: 'SSC' }, { value: 'hsc', label: 'HSC' },
-  { value: 'o_level', label: 'O Level' }, { value: 'a_level', label: 'A Level' },
-  { value: 'admission_test', label: 'Admission Test' },
-]
+  ...classLevelsFor(form.value.medium),
+])
+
+function onMediumToggle(value) {
+  form.value.medium = form.value.medium === value ? '' : value
+  if (!form.value.class_level) return
+  // Drop a class the new medium doesn't offer; otherwise keep it but reload its
+  // subjects, since the set is medium-specific (e.g. English Medium Class 1).
+  // Both routes go through onClassChange, which also clears the picked subjects.
+  const stillValid = classLevelsFor(form.value.medium).some(level => level.value === form.value.class_level)
+  onClassChange(stillValid ? form.value.class_level : '')
+}
 
 async function onDistrictChange(id) {
   form.value.district_id = id
@@ -353,13 +357,32 @@ async function onDistrictChange(id) {
   } finally { areasLoading.value = false }
 }
 
+const groupOpts = [{ value: '', label: 'All groups' }, ...GROUPS]
+
+// Group narrowing is client-side: the class's full subject list is loaded once
+// (each row carries its group) and the buttons render from this — no reload.
+const visibleSubjects = computed(() =>
+  subjects.value.filter(s => !form.value.group || !s.group || s.group === form.value.group)
+)
+
 async function onClassChange(cls) {
   form.value.class_level = cls
   form.value.subject_ids = []
   subjects.value = []
+  // The group filter only applies to some classes; clear a stale pick otherwise.
+  if (!hasGroups(cls)) form.value.group = ''
   if (!cls) return
-  const { data } = await searchApi.subjects({ class_level: cls })
+  const { data } = await searchApi.subjects({
+    class_level: cls,
+    medium: form.value.medium || undefined,
+  })
   subjects.value = data.data || []
+}
+
+function onGroupChange() {
+  // Narrowing is handled by visibleSubjects; just drop picks the group hides.
+  const visible = new Set(visibleSubjects.value.map(s => s.id))
+  form.value.subject_ids = form.value.subject_ids.filter(id => visible.has(id))
 }
 
 async function loadAreas() {
@@ -371,7 +394,10 @@ async function loadAreas() {
 async function loadSubjects() {
   subjects.value = []
   if (!form.value.class_level) return
-  const { data } = await searchApi.subjects({ class_level: form.value.class_level })
+  const { data } = await searchApi.subjects({
+    class_level: form.value.class_level,
+    medium: form.value.medium || undefined,
+  })
   subjects.value = data.data || []
 }
 function toggleSubject(id) {
@@ -381,7 +407,8 @@ function toggleSubject(id) {
 }
 
 function buildPayload() {
-  const payload = { ...form.value }
+  // `group` only narrows the subject picker; it isn't stored on the job.
+  const { group, ...payload } = form.value
   if (timeHour.value) {
     let h = parseInt(timeHour.value)
     if (timePeriod.value === 'PM' && h !== 12) h += 12

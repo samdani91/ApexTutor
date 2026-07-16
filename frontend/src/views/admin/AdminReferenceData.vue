@@ -16,11 +16,12 @@
       <!-- Add form -->
       <div class="card mb-5">
         <p class="font-display font-semibold text-navy-900 mb-3">Add subject</p>
-        <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_160px_140px_auto] lg:items-end">
+        <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_160px_140px_150px_auto] lg:items-end">
           <input v-model="newSubject.name" type="text" placeholder="Name (English)" class="input text-sm flex-1 min-w-[140px]" />
           <input v-model="newSubject.name_bn" type="text" placeholder="Name (Bangla)" class="input text-sm flex-1 min-w-[140px]" />
-          <input v-model="newSubject.class_level" type="text" placeholder="Class level" class="input text-sm w-36" />
+          <DropSelect v-model="newSubject.class_level" :options="classLevelOptions" placeholder="Class level" />
           <DropSelect v-model="newSubject.medium" :options="mediumOptions" placeholder="Medium" />
+          <DropSelect v-model="newSubject.group" :options="groupOptions" placeholder="Group" />
           <button @click="addSubject" :disabled="!newSubject.name || !newSubject.class_level || subjectAdding"
             class="btn-primary text-sm px-4 py-2 disabled:opacity-50">
             {{ subjectAdding ? 'Adding…' : 'Add' }}
@@ -37,7 +38,8 @@
           </div>
           <div>
             <span class="mb-1 block text-xs font-semibold font-display text-navy-700">Class level</span>
-            <input v-model="subjectClassFilter" @input="loadSubjects" type="text" placeholder="Class level" class="input text-sm" />
+            <DropSelect v-model="subjectClassFilter" :options="classLevelFilterOptions" placeholder="All classes"
+              @update:modelValue="loadSubjects" />
           </div>
           <button v-if="subjectSearch || subjectClassFilter" @click="clearSubjectFilters"
             class="min-h-[44px] rounded-sm bg-red-600 px-4 text-sm font-semibold font-display text-white transition-colors hover:bg-red-700">
@@ -56,6 +58,7 @@
               <th class="text-left px-4 py-2.5 text-xs font-semibold font-display text-paper-400 uppercase tracking-wide">Name (BN)</th>
               <th class="text-left px-4 py-2.5 text-xs font-semibold font-display text-paper-400 uppercase tracking-wide">Class</th>
               <th class="text-left px-4 py-2.5 text-xs font-semibold font-display text-paper-400 uppercase tracking-wide">Medium</th>
+              <th class="text-left px-4 py-2.5 text-xs font-semibold font-display text-paper-400 uppercase tracking-wide">Group</th>
               <th class="px-4 py-2.5"></th>
             </tr>
           </thead>
@@ -70,12 +73,16 @@
                 <span v-else class="text-paper-600">{{ s.name_bn || '—' }}</span>
               </td>
               <td class="px-4 py-2.5">
-                <input v-if="editingSubject === s.id" v-model="editBuf.class_level" class="input text-sm w-28" />
-                <span v-else>{{ s.class_level }}</span>
+                <DropSelect v-if="editingSubject === s.id" v-model="editBuf.class_level" :options="classLevelOptions" placeholder="Class level" />
+                <span v-else>{{ classLabel(s.class_level) }}</span>
               </td>
               <td class="px-4 py-2.5">
                 <DropSelect v-if="editingSubject === s.id" v-model="editBuf.medium" :options="mediumOptions" placeholder="—" />
-                <span v-else>{{ s.medium || '—' }}</span>
+                <span v-else>{{ mediumLabel(s.medium) }}</span>
+              </td>
+              <td class="px-4 py-2.5">
+                <DropSelect v-if="editingSubject === s.id" v-model="editBuf.group" :options="groupOptions" placeholder="—" />
+                <span v-else>{{ groupLabel(s.group) }}</span>
               </td>
               <td class="px-4 py-2.5 text-right">
                 <template v-if="editingSubject === s.id">
@@ -286,6 +293,7 @@ import { toast } from 'vue-sonner'
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog.vue'
 import AdminPagination from '@/components/admin/AdminPagination.vue'
 import DropSelect from '@/components/search/DropSelect.vue'
+import { CLASS_LEVELS, MEDIUMS, GROUPS } from '@/utils/constants.js'
 
 const activeTab = ref('subjects')
 const tabs = [
@@ -305,12 +313,32 @@ const deleteDialogMessage = computed(() => {
   if (deleteTarget.value.type === 'district') return `Delete district '${name}' and all its areas? This cannot be undone.`
   return `Delete ${deleteTarget.value.type} '${name}'? This cannot be undone.`
 })
-const mediumOptions = [
-  { value: '', label: 'Medium' },
-  { value: 'English', label: 'English' },
-  { value: 'Bangla', label: 'Bangla' },
-  { value: 'Both', label: 'Both' },
-]
+// Same vocabulary as the tutor-search filters. This previously offered
+// 'English'/'Bangla'/'Both', which matched none of the values the rest of the
+// platform stores or filters on (bangla_medium, english_medium, …).
+const mediumOptions = [{ value: '', label: 'Any medium' }, ...MEDIUMS]
+
+// Fed from the shared constant so a subject can only be filed under a class the
+// rest of the app actually knows about — free text here silently created rows
+// that no dropdown offers and that search filters out.
+const classLevelOptions       = [{ value: '', label: 'Select class level' }, ...CLASS_LEVELS]
+const classLevelFilterOptions = [{ value: '', label: 'All classes' }, ...CLASS_LEVELS]
+
+// Falls back to the raw value so legacy rows filed under a retired class level
+// (e.g. the orphaned 'university' subjects) stay visible and fixable here.
+function classLabel(value) {
+  return CLASS_LEVELS.find(c => c.value === value)?.label ?? (value || '—')
+}
+
+function mediumLabel(value) {
+  return MEDIUMS.find(m => m.value === value)?.label ?? (value || '—')
+}
+
+// Science / Business Studies / Humanities, for Class 9 upward. Empty = no group.
+const groupOptions = [{ value: '', label: 'No group' }, ...GROUPS]
+function groupLabel(value) {
+  return GROUPS.find(g => g.value === value)?.label ?? (value || '—')
+}
 
 // ── Subjects ──────────────────────────────────────────────────────────────
 const subjects        = ref([])
@@ -320,7 +348,7 @@ const subjectClassFilter = ref('')
 const subjectAdding   = ref(false)
 const editingSubject  = ref(null)
 const editBuf         = reactive({})
-const newSubject      = reactive({ name: '', name_bn: '', class_level: '', medium: '' })
+const newSubject      = reactive({ name: '', name_bn: '', class_level: '', medium: '', group: '' })
 const subjectMeta     = ref({ current_page: 1, last_page: 1, total: 0, from: 0, to: 0 })
 
 let subjectTimer = null
@@ -350,14 +378,14 @@ async function addSubject() {
   subjectAdding.value = true
   try {
     await adminApi.createSubject({ ...newSubject })
-    Object.assign(newSubject, { name: '', name_bn: '', class_level: '', medium: '' })
+    Object.assign(newSubject, { name: '', name_bn: '', class_level: '', medium: '', group: '' })
     await fetchSubjects()
     toast.success('Subject added.')
   } catch { toast.error('Could not add subject.') }
   finally { subjectAdding.value = false }
 }
 
-function startEditSubject(s) { editingSubject.value = s.id; Object.assign(editBuf, { name: s.name, name_bn: s.name_bn, class_level: s.class_level, medium: s.medium }) }
+function startEditSubject(s) { editingSubject.value = s.id; Object.assign(editBuf, { name: s.name, name_bn: s.name_bn, class_level: s.class_level, medium: s.medium, group: s.group }) }
 
 async function saveSubject(s) {
   try {

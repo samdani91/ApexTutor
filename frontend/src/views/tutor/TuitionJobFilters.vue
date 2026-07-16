@@ -41,6 +41,12 @@
         @update:modelValue="onClassChange" />
     </FilterSection>
 
+    <!-- Group — only for class levels that split into groups -->
+    <FilterSection v-if="hasGroups(filters.class_level)" label="Group">
+      <DropSelect v-model="filters.group" :options="groupOpts" placeholder="Any group"
+        @update:modelValue="onGroupChange" />
+    </FilterSection>
+
     <!-- Subject -->
     <FilterSection v-if="filters.class_level" label="Subject">
       <div v-if="subjectsLoading" class="text-xs text-paper-400 font-body py-2">Loading subjects…</div>
@@ -105,7 +111,7 @@
 <script setup>
 import { reactive, ref, computed, watch } from 'vue'
 import { searchApi } from '@/api/search.js'
-import { MEDIUMS, CLASS_LEVELS, PLACE_OF_TUTORING } from '@/utils/constants.js'
+import { MEDIUMS, classLevelsFor, hasGroups, GROUPS, PLACE_OF_TUTORING } from '@/utils/constants.js'
 import FilterSection from '@/components/search/FilterSection.vue'
 import DropSelect from '@/components/search/DropSelect.vue'
 
@@ -137,20 +143,27 @@ const areaOpts = computed(() => [
   { value: '', label: 'Any area' },
   ...allAreas.value.map(a => ({ value: a.id, label: a.name })),
 ])
-const classOpts = [
+const classOpts = computed(() => [
   { value: '', label: 'Any class' },
-  ...CLASS_LEVELS.map(c => ({ value: c.value, label: c.label })),
-]
+  ...classLevelsFor(filters.medium).map(c => ({ value: c.value, label: c.label })),
+])
+// Group narrowing is client-side: the class's full subject list is loaded once
+// (each row carries its group) and the dropdown derives from it — no reload.
+const visibleSubjects = computed(() =>
+  allSubjects.value.filter(s => !filters.group || !s.group || s.group === filters.group)
+)
 const subjectOpts = computed(() => [
   { value: '', label: 'Any subject' },
-  ...allSubjects.value.map(s => ({ value: s.id, label: s.name })),
+  ...visibleSubjects.value.map(s => ({ value: s.id, label: s.name })),
 ])
+const groupOpts = [{ value: '', label: 'Any group' }, ...GROUPS]
 
 const filters = reactive({
   medium:            '',
   district_id:       '',
   area_ids:          [],
   class_level:       '',
+  group:             '',
   subject_id:        '',
   tuition_type:      '',
   tutor_gender_pref: '',
@@ -182,17 +195,26 @@ async function onClassChange(cls) {
   filters.class_level = cls
   filters.subject_id = ''
   allSubjects.value = []
+  // The group filter only applies to some classes; clear a stale pick otherwise.
+  if (!hasGroups(cls)) filters.group = ''
   if (!cls) return
   subjectsLoading.value = true
   try {
-    const { data } = await searchApi.subjects({ class_level: cls })
+    const { data } = await searchApi.subjects({ class_level: cls, medium: filters.medium || undefined })
     allSubjects.value = data.data || []
   } finally { subjectsLoading.value = false }
 }
 
+function onGroupChange() {
+  // Narrowing is handled by visibleSubjects; just drop a pick the group hides.
+  if (filters.subject_id && !visibleSubjects.value.some(s => s.id === filters.subject_id)) {
+    filters.subject_id = ''
+  }
+}
+
 function clearFilters() {
   Object.assign(filters, {
-    medium: '', district_id: '', area_ids: [], class_level: '', subject_id: '',
+    medium: '', district_id: '', area_ids: [], class_level: '', group: '', subject_id: '',
     tuition_type: '', tutor_gender_pref: '', salary_min: '', salary_max: '',
   })
   allAreas.value = []
@@ -203,11 +225,26 @@ function clearFilters() {
 function applyFilters() {
   const payload = {}
   Object.entries(filters).forEach(([k, v]) => {
+    // `group` stays in the payload so it survives the parent's round-trip back
+    // into modelValue (otherwise the dropdown clears). The backend ignores it —
+    // it only refines the subject picker; the chosen subject does the filtering.
     if (Array.isArray(v)) { if (v.length) payload[k] = v }
     else if (v !== '' && v != null) payload[k] = v
   })
   emit('search', payload)
 }
+
+// Each medium only offers certain classes, so drop a stale pick rather than
+// search for an impossible pair like madrasha + o_level. Routed through
+// onClassChange because that — not a watcher — is what clears the subject.
+watch(() => filters.medium, () => {
+  if (syncing.value) return
+  if (!filters.class_level) return
+  const stillValid = classLevelsFor(filters.medium).some(level => level.value === filters.class_level)
+  // Either way reload through onClassChange: drop an invalid class, or keep a
+  // valid one but refresh its now medium-specific subject list.
+  onClassChange(stillValid ? filters.class_level : '')
+})
 
 let searchTimer = null
 watch(filters, () => {
@@ -223,6 +260,7 @@ watch(() => props.modelValue, async (val) => {
     district_id:       val.district_id       ? Number(val.district_id) : '',
     area_ids:          Array.isArray(val.area_ids) ? val.area_ids.map(Number) : [],
     class_level:       val.class_level       || '',
+    group:             val.group             || '',
     subject_id:        val.subject_id        ? Number(val.subject_id)  : '',
     tuition_type:      val.tuition_type      || '',
     tutor_gender_pref: val.tutor_gender_pref || '',
@@ -236,7 +274,7 @@ watch(() => props.modelValue, async (val) => {
   }
   if (filters.class_level) {
     subjectsLoading.value = true
-    try { const { data } = await searchApi.subjects({ class_level: filters.class_level }); allSubjects.value = data.data || [] }
+    try { const { data } = await searchApi.subjects({ class_level: filters.class_level, medium: filters.medium || undefined }); allSubjects.value = data.data || [] }
     finally { subjectsLoading.value = false }
   }
   syncing.value = false

@@ -93,6 +93,8 @@ class AdminTutorController extends Controller
             'preference.tutoring_styles'             => 'nullable|array',
             'preference.preferred_classes'           => 'nullable|array',
             'preference.preferred_curricula'         => 'nullable|array',
+            'preference.preferred_groups'            => 'nullable|array',
+            'preference.preferred_groups.*'          => 'in:science,business_studies,humanities',
             'preference.preferred_time'              => 'nullable|array',
             'preference.tutoring_method_description' => 'nullable|string|max:1000',
             'preference.district_id'                 => 'nullable|exists:districts,id',

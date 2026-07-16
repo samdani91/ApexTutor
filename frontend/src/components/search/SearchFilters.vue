@@ -19,6 +19,11 @@
       <DropSelect v-model="filters.class_level" :options="classOpts" placeholder="Any class" />
     </FilterSection>
 
+    <!-- Group — only for class levels that split into groups -->
+    <FilterSection v-if="hasGroups(filters.class_level)" label="Group">
+      <DropSelect v-model="filters.group" :options="groupOpts" placeholder="Any group" />
+    </FilterSection>
+
     <!-- Subjects -->
     <FilterSection label="Subjects">
       <div v-if="!filters.class_level" class="text-xs text-paper-400 font-body py-2">
@@ -113,7 +118,7 @@
 import { reactive, ref, computed, watch } from 'vue'
 import { useSearchStore } from '@/stores/search.js'
 import { searchApi } from '@/api/search.js'
-import { MEDIUMS, CLASS_LEVELS, PLACE_OF_TUTORING, TUTORING_STYLES } from '@/utils/constants.js'
+import { MEDIUMS, classLevelsFor, hasGroups, GROUPS, PLACE_OF_TUTORING, TUTORING_STYLES } from '@/utils/constants.js'
 import FilterSection from './FilterSection.vue'
 import DropSelect from './DropSelect.vue'
 
@@ -141,7 +146,11 @@ const classLevelChanging = ref(false)
 
 // ── Option arrays for DropSelect ────────────────────────────────────────────
 const mediumOpts   = [{ value: '', label: 'Any medium' }, ...MEDIUMS.map(m => ({ value: m.value, label: m.label }))]
-const classOpts    = [{ value: '', label: 'Any class'  }, ...CLASS_LEVELS.map(c => ({ value: c.value, label: c.label }))]
+const classOpts    = computed(() => [
+  { value: '', label: 'Any class' },
+  ...classLevelsFor(filters.medium).map(c => ({ value: c.value, label: c.label })),
+])
+const groupOpts    = [{ value: '', label: 'Any group' }, ...GROUPS]
 const genderOpts   = [{ value: '', label: 'No preference' }, { value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }]
 const districtOpts = computed(() => [
   { value: '', label: 'Any district' },
@@ -151,7 +160,13 @@ const areaOpts = computed(() => [
   { value: null, label: 'Any area' },
   ...allAreas.value.map(a => ({ value: a.id, label: a.name })),
 ])
-const subjectOpts = computed(() => allSubjects.value.map(s => ({ value: s.id, label: s.name })))
+// Group narrowing happens client-side: the class's full subject list is loaded
+// once (each row carries its group) and the visible options are derived from it.
+// No extra HTTP round-trip, nothing to go stale.
+const visibleSubjects = computed(() =>
+  allSubjects.value.filter(s => !filters.group || !s.group || s.group === filters.group)
+)
+const subjectOpts = computed(() => visibleSubjects.value.map(s => ({ value: s.id, label: s.name })))
 
 const allUniversities = ref([])
 const uniLoading      = ref(false)
@@ -163,6 +178,7 @@ const universityOpts  = computed(() => [
 const filters = reactive({
   medium: '',
   class_level: '',
+  group: '',
   subject_ids: [],
   district_id: '',
   area_id: null,
@@ -199,10 +215,12 @@ async function loadSubjectsForClass(classLevel) {
   if (!classLevel) return
   subjectsLoading.value = true
   try {
-    const { data } = await searchApi.subjects({ class_level: classLevel })
+    const { data } = await searchApi.subjects({
+      class_level: classLevel,
+      medium: filters.medium || undefined,
+    })
     allSubjects.value = data.data || []
-    const validIds = new Set(allSubjects.value.map(subject => subject.id))
-    filters.subject_ids = filters.subject_ids.filter(id => validIds.has(Number(id)))
+    pruneHiddenSubjects()
   } finally {
     subjectsLoading.value = false
   }
@@ -210,12 +228,21 @@ async function loadSubjectsForClass(classLevel) {
 
 const activeCount = computed(() => {
   const singles = [
-    filters.medium, filters.class_level, filters.district_id, filters.area_id,
+    filters.medium, filters.class_level, filters.group, filters.district_id, filters.area_id,
     filters.university_id, filters.tutor_gender, filters.salary_max, filters.min_rating,
   ].filter(v => v !== '' && v !== null).length
   const arrays = filters.subject_ids.length + filters.place_of_tutoring.length + filters.tutoring_styles.length
   return singles + arrays
 })
+
+// Drop selected subjects no longer offered (class reload or group narrowing).
+// Reassigns only on a real change — a same-content reassignment would trip the
+// deep watcher and fire a needless search.
+function pruneHiddenSubjects() {
+  const visible = new Set(visibleSubjects.value.map(s => s.id))
+  const pruned = filters.subject_ids.filter(id => visible.has(Number(id)))
+  if (pruned.length !== filters.subject_ids.length) filters.subject_ids = pruned
+}
 
 function toggleNum(key, val) {
   filters[key] = filters[key] === val ? null : val
@@ -227,6 +254,23 @@ function toggleMulti(key, val) {
   else arr.splice(i, 1)
 }
 
+// Registered ahead of the class watcher so a pruned class cascades into it
+// (clearing subjects) before the deep watcher below gets a chance to fire.
+watch(() => filters.medium, () => {
+  if (syncingFromParent.value) return
+  if (!filters.class_level) return
+  // Each medium only offers certain classes, so drop a stale pick rather than
+  // search for an impossible pair like madrasha + o_level.
+  const stillValid = classLevelsFor(filters.medium).some(level => level.value === filters.class_level)
+  if (!stillValid) {
+    filters.class_level = ''   // cascades into the class watcher, which reloads subjects
+    return
+  }
+  // Class survives the medium switch, so the class watcher won't fire — but the
+  // subject set is medium-specific (e.g. English Medium Class 1), so reload here.
+  loadSubjectsForClass(filters.class_level)
+})
+
 // Class watcher registered first so the flag is set before the deep watcher fires
 watch(() => filters.class_level, async (classLevel, oldClassLevel) => {
   if (syncingFromParent.value) return
@@ -234,6 +278,9 @@ watch(() => filters.class_level, async (classLevel, oldClassLevel) => {
   if (classLevel !== oldClassLevel) {
     filters.subject_ids = []
   }
+  // The group filter only applies to some classes; drop a stale pick. This runs
+  // while classLevelChanging is true, so the group watcher below stays inert.
+  if (!hasGroups(classLevel)) filters.group = ''
   await loadSubjectsForClass(classLevel)
   classLevelChanging.value = false
   // The deep watcher below skips while classLevelChanging is true, and no further
@@ -241,6 +288,15 @@ watch(() => filters.class_level, async (classLevel, oldClassLevel) => {
   // (no subject picked) needs to trigger the search itself here.
   clearTimeout(searchTimer)
   searchTimer = setTimeout(applyFilters, 400)
+})
+
+// Group narrowing is synchronous (visibleSubjects handles the display); this
+// just drops picks the new group hides. Group is also a real tutor filter now
+// (preferred_groups), so the deep watcher firing a search on the change is the
+// desired behaviour, not a side effect.
+watch(() => filters.group, () => {
+  if (syncingFromParent.value) return
+  pruneHiddenSubjects()
 })
 
 // Auto-search: fire 400ms after the last filter change (class changes are excluded)
@@ -261,6 +317,7 @@ async function syncFilters(value) {
   Object.assign(filters, {
     medium: value.medium || '',
     class_level: value.class_level || '',
+    group: value.group || '',
     subject_ids: value.class_level ? normalizeIdArray(value.subject_ids) : [],
     district_id: value.district_id || '',
     area_id: value.area_id ?? null,
@@ -302,7 +359,7 @@ function normalizeIdArray(value) {
 
 function clearFilters() {
   Object.assign(filters, {
-    medium: '', class_level: '', subject_ids: [], district_id: '', area_id: null,
+    medium: '', class_level: '', group: '', subject_ids: [], district_id: '', area_id: null,
     university_id: null, tutor_gender: '', place_of_tutoring: [], tutoring_styles: [], salary_max: '',
     min_rating: null,
   })
@@ -317,6 +374,9 @@ function applyFilters() {
   Object.entries(filters).forEach(([k, v]) => {
     if (v === '' || v === null || v === false) return
     if (Array.isArray(v) && !v.length) return
+    // `group` is kept in the payload so it survives the parent's round-trip back
+    // into modelValue (otherwise the dropdown clears itself). The backend ignores
+    // it — it only refines the subject picker; the chosen subject_ids do the work.
     if (k === 'subject_ids') {
       payload[k] = v.join(',')
       return

@@ -72,7 +72,7 @@ class TuitionJob extends Model
             'hsc'            => 'HSC',
             'o_level'        => 'O Level',
             'a_level'        => 'A Level',
-            'admission_test' => 'Admission Test',
+            'admission_test' => 'University Admission Test',
             default          => ucfirst(str_replace('_', ' ', $level)),
         };
     }

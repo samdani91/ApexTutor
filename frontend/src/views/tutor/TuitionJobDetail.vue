@@ -262,7 +262,7 @@ const detailRows = computed(() => {
   if (!job.value) return []
   const j = job.value
   const typeMap   = { student_home:"Student's Home", tutor_home:"Tutor's Home", online:'Online', home:'Home Tutoring', group:'Group Tutoring', home_and_online:'Home & Online' }
-  const mediumMap = { bangla_medium:'Bangla Medium', english_medium:'English Medium', english_version:'English Version' }
+  const mediumMap = { bangla_medium:'Bangla Medium', english_medium:'English Medium', english_version:'English Version', madrasha:'Madrasha' }
   const styleMap  = { one_to_one:'One-to-one', group:'Group', online:'Online', in_person:'In-person' }
   const genderMap = { male:'Male', female:'Female', any:'Any' }
   const rows = [
