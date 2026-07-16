@@ -77,7 +77,9 @@
             </div>
           </div>
 
-          <div class="hero-demo-card reveal relative order-1 mx-auto max-w-md md:order-2">
+          <!-- Fills its grid column on md+ (flush to the container's right edge);
+               stays a centered max-w-md card on mobile. -->
+          <div class="hero-demo-card reveal relative order-1 mx-auto w-full max-w-md md:order-2 md:mx-0 md:ml-auto md:max-w-none">
             <div class="float-card absolute -left-4 top-8 hidden rounded-md border border-paper-200 bg-white px-4 py-3 shadow-md transition-opacity duration-300 sm:block"
               :class="cardSwapping ? 'opacity-0' : 'opacity-100'">
               <Transition name="hero-stat" mode="out-in">

@@ -8,6 +8,22 @@
  * imported directly into unit tests without a Vue context.
  */
 
+import { classLevelLabel, mediumLabel, groupLabel, PLACE_OF_TUTORING, TUTORING_STYLES } from '@/utils/constants.js'
+
+// Raw enum values (class_9, english_medium, not_selected) must never reach the
+// admin's screen — every enum-ish field carries a formatter applied at display
+// time only (change detection still compares raw values).
+const humanise  = (v) => String(v ?? '').replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
+const lookup    = (list) => (v) => list.find((o) => o.value === v)?.label ?? humanise(v)
+const eachValue = (fn) => (v) => (Array.isArray(v) ? v.map(fn) : (v === null || v === undefined || v === '' ? v : fn(v)))
+const dayName   = eachValue((d) => humanise(d?.day ?? d))
+
+const EDUCATION_LEVELS = {
+  phd: 'PhD', masters: 'Masters', bachelor: 'Bachelor',
+  hsc: 'HSC', ssc: 'SSC', o_level: 'O Level', a_level: 'A Level', other: 'Other',
+}
+const educationLevelLabel = (v) => EDUCATION_LEVELS[v] ?? humanise(v)
+
 export const PREF_FIELDS = [
   { key: '_subject_names',         label: 'Subjects'           },
   { key: '_district_name',         label: 'Preferred district' },
@@ -18,21 +34,21 @@ export const PREF_FIELDS = [
   { key: 'experience_details',     label: 'Experience details' },
   { key: 'days_per_week',          label: 'Days per week'      },
   { key: 'hours_per_day',          label: 'Hours per day'      },
-  { key: 'days',                   label: 'Available days'     },
-  { key: 'preferred_curricula',    label: 'Preferred curriculum' },
-  { key: 'preferred_groups',       label: 'Preferred groups'   },
-  { key: 'preferred_classes',      label: 'Preferred classes'  },
-  { key: 'tutoring_methods',       label: 'Tutoring methods'   },
-  { key: 'tutoring_styles',        label: 'Tutoring styles'    },
-  { key: 'place_of_tutoring',      label: 'Place of tutoring'  },
-  { key: 'preferred_time',         label: 'Preferred time'     },
+  { key: 'days',                   label: 'Available days',      format: dayName },
+  { key: 'preferred_curricula',    label: 'Preferred curriculum', format: eachValue(mediumLabel) },
+  { key: 'preferred_groups',       label: 'Preferred groups',    format: eachValue(groupLabel) },
+  { key: 'preferred_classes',      label: 'Preferred classes',   format: eachValue(classLevelLabel) },
+  { key: 'tutoring_methods',       label: 'Tutoring methods',    format: eachValue(humanise) },
+  { key: 'tutoring_styles',        label: 'Tutoring styles',     format: eachValue(lookup(TUTORING_STYLES)) },
+  { key: 'place_of_tutoring',      label: 'Place of tutoring',   format: eachValue(lookup(PLACE_OF_TUTORING)) },
+  { key: 'preferred_time',         label: 'Preferred time',      format: eachValue(humanise) },
   { key: 'tutoring_method_description', label: 'Tutoring method' },
 ]
 
 export const PERSONAL_FIELDS = [
-  { key: 'gender',            label: 'Gender'            },
+  { key: 'gender',            label: 'Gender',            format: eachValue(humanise) },
   { key: 'date_of_birth',     label: 'Date of birth'     },
-  { key: 'religion',          label: 'Religion'          },
+  { key: 'religion',          label: 'Religion',          format: eachValue(humanise) },
   { key: 'nationality',       label: 'Nationality'       },
   { key: 'present_address',   label: 'Present address'   },
   { key: 'permanent_address', label: 'Permanent address' },
@@ -115,7 +131,7 @@ export function buildDiff(item) {
 
   if (pending.preferences) {
     const livePrefs = live.preferences || {}
-    for (const { key, label } of PREF_FIELDS) {
+    for (const { key, label, format } of PREF_FIELDS) {
       if (key === '_subject_names') {
         const liveSubs    = uniqueSubjectNames((livePrefs.subjects || []).map(s => s.name))
         const pendingSubs = uniqueSubjectNames(pending.preferences._subject_names || [])
@@ -141,7 +157,8 @@ export function buildDiff(item) {
       const liveVal    = livePrefs[key]
       const pendingVal = pending.preferences[key]
       if (norm(liveVal) === norm(pendingVal)) continue
-      rows.push({ key: `preferences.${key}`, label, old: display(liveVal), new: display(pendingVal) })
+      const fmt = format ?? ((v) => v)
+      rows.push({ key: `preferences.${key}`, label, old: display(fmt(liveVal)), new: display(fmt(pendingVal)) })
     }
   }
 
@@ -151,12 +168,13 @@ export function buildDiff(item) {
   ]) {
     if (!pending[section]) continue
     const liveSection = live[liveKey] || {}
-    for (const { key, label } of fields) {
+    for (const { key, label, format } of fields) {
       if (!(key in pending[section])) continue
       const liveVal    = liveSection[key]
       const pendingVal = pending[section][key]
       if (norm(liveVal) === norm(pendingVal)) continue
-      rows.push({ key: `${section}.${key}`, label, old: display(liveVal), new: display(pendingVal) })
+      const fmt = format ?? ((v) => v)
+      rows.push({ key: `${section}.${key}`, label, old: display(fmt(liveVal)), new: display(fmt(pendingVal)) })
     }
   }
 
@@ -193,7 +211,8 @@ export function buildDiff(item) {
 
 export function educationSummary(entries) {
   return (entries || []).map(e =>
-    [e.level, e.degree_title, e.major_group, e.institute_name, e.year_of_passing].filter(Boolean).join(' - ')
+    [e.level ? educationLevelLabel(e.level) : null, e.degree_title, e.major_group, e.institute_name, e.year_of_passing]
+      .filter(Boolean).join(' - ')
   )
 }
 

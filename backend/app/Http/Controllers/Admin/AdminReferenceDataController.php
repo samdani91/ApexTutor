@@ -29,7 +29,7 @@ class AdminReferenceDataController extends Controller
             'name'        => 'required|string|max:100',
             'name_bn'     => 'nullable|string|max:100',
             'class_level' => 'required|string|max:50',
-            'medium'      => 'nullable|in:bangla_medium,english_medium,english_version,madrasha',
+            'medium'      => 'nullable|in:bangla_medium,english_medium,english_version,madrasha,test_preparation',
             'group'       => 'nullable|in:science,business_studies,humanities',
         ]);
         $subject = Subject::create($data);
@@ -42,7 +42,7 @@ class AdminReferenceDataController extends Controller
             'name'        => 'sometimes|string|max:100',
             'name_bn'     => 'nullable|string|max:100',
             'class_level' => 'sometimes|string|max:50',
-            'medium'      => 'nullable|in:bangla_medium,english_medium,english_version,madrasha',
+            'medium'      => 'nullable|in:bangla_medium,english_medium,english_version,madrasha,test_preparation',
             'group'       => 'nullable|in:science,business_studies,humanities',
         ]);
         Subject::findOrFail($id)->update($data);

@@ -210,6 +210,7 @@ import { tutorJobsApi } from '@/api/jobs.js'
 import { tutorApi } from '@/api/tutor.js'
 import { toast } from 'vue-sonner'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import { mediumLabel } from '@/utils/constants.js'
 
 const route   = useRoute()
 const publicId = route.params.publicId
@@ -262,7 +263,8 @@ const detailRows = computed(() => {
   if (!job.value) return []
   const j = job.value
   const typeMap   = { student_home:"Student's Home", tutor_home:"Tutor's Home", online:'Online', home:'Home Tutoring', group:'Group Tutoring', home_and_online:'Home & Online' }
-  const mediumMap = { bangla_medium:'Bangla Medium', english_medium:'English Medium', english_version:'English Version', madrasha:'Madrasha' }
+  // Shared label helper — a local map here drifted twice (missing madrasha,
+  // then test_preparation), so it now reads from constants.js.
   const styleMap  = { one_to_one:'One-to-one', group:'Group', online:'Online', in_person:'In-person' }
   const genderMap = { male:'Male', female:'Female', any:'Any' }
   const rows = [
@@ -273,7 +275,7 @@ const detailRows = computed(() => {
     { label: 'Preferred Tutor', value: genderMap[j.tutor_gender_pref] ?? j.tutor_gender_pref,          icon: 'user'      },
     { label: 'No. of Students', value: j.num_students ?? '—',                                          icon: 'users'     },
   ]
-  if (j.medium)                 rows.push({ label: 'Medium',            value: mediumMap[j.medium] ?? j.medium,                 icon: 'book'     })
+  if (j.medium)                 rows.push({ label: 'Medium',            value: mediumLabel(j.medium),                           icon: 'book'     })
   if (j.tutoring_style)         rows.push({ label: 'Tutoring Style',    value: styleMap[j.tutoring_style] ?? j.tutoring_style,  icon: 'briefcase'})
   if (j.tutoring_time)          rows.push({ label: 'Tutoring Time',     value: formatTime(j.tutoring_time),                     icon: 'clock'    })
   if (j.tutoring_days_per_week) rows.push({ label: 'Tutoring Days',     value: `${j.tutoring_days_per_week} Days / Week`,       icon: 'calendar' })

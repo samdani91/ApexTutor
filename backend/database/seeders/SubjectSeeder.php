@@ -16,11 +16,11 @@ class SubjectSeeder extends Seeder
             $this->admissionTestSubjects(),
             $this->olevelSubjects(),
             $this->alevelSubjects(),
-            $this->universitySubjects(),
             $this->dakhilSubjects(),
             $this->alimSubjects(),
             $this->englishMediumPrimarySubjects(),
             $this->madrashaBasicSubjects(),
+            $this->testPreparationSubjects(),
         );
         foreach ($subjects as $subject) {
             Subject::updateOrCreate(
@@ -418,19 +418,25 @@ class SubjectSeeder extends Seeder
             ->all();
     }
 
-    private function universitySubjects(): array
+    /**
+     * Test Preparation medium — one self-titled subject per test, which keeps
+     * the required-subject flows (job posting, teaching videos) working without
+     * special-casing. Admins can add section subjects from Reference Data.
+     */
+    private function testPreparationSubjects(): array
     {
-        $subjects = [
-            'IELTS',
-            'University Math',
-            'Admission Test Prep',
+        $tests = [
+            'ielts' => 'IELTS',
+            'toefl' => 'TOEFL',
+            'gre'   => 'GRE',
+            'sat'   => 'SAT',
         ];
 
-        return collect($subjects)->map(fn ($subject) => [
-            'name' => $subject,
+        return collect($tests)->map(fn ($name, $classLevel) => [
+            'name' => $name,
             'name_bn' => null,
-            'class_level' => 'university',
-            'medium' => null,
+            'class_level' => $classLevel,
+            'medium' => 'test_preparation',
         ])->values()->all();
     }
 }

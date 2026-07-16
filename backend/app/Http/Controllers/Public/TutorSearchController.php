@@ -39,7 +39,7 @@ class TutorSearchController extends Controller
     public function search(Request $request): JsonResponse
     {
         $filters = $request->validate([
-            'medium'       => 'nullable|in:bangla_medium,english_medium,english_version,madrasha',
+            'medium'       => 'nullable|in:bangla_medium,english_medium,english_version,madrasha,test_preparation',
             'class_level'  => 'nullable|string',
             'group'        => 'nullable|in:science,business_studies,humanities',
             'subject_ids'  => 'nullable|string',
@@ -173,10 +173,11 @@ class TutorSearchController extends Controller
         // 1. Medium — requires an explicit "medium"/"version" word so a bare
         //    "english" stays available as a subject match below.
         $mediumAliases = [
-            'english_version' => ['english version'],
-            'english_medium'  => ['english medium'],
-            'bangla_medium'   => ['bangla medium', 'bengali medium'],
-            'madrasha'        => ['madrasha', 'madrasa', 'madrassa'],
+            'english_version'  => ['english version'],
+            'english_medium'   => ['english medium'],
+            'bangla_medium'    => ['bangla medium', 'bengali medium'],
+            'madrasha'         => ['madrasha', 'madrasa', 'madrassa'],
+            'test_preparation' => ['test preparation', 'test prep'],
         ];
         foreach ($mediumAliases as $value => $aliases) {
             foreach ($aliases as $alias) {
@@ -196,6 +197,10 @@ class TutorSearchController extends Controller
             'ssc'            => ['ssc'],
             'dakhil'         => ['dakhil'],
             'alim'           => ['alim'],
+            'ielts'          => ['ielts'],
+            'toefl'          => ['toefl'],
+            'gre'            => ['gre'],
+            'sat'            => ['sat'],
             'a_level'        => ['a level', 'a-level', 'alevel'],
             'o_level'        => ['o level', 'o-level', 'olevel'],
             'class_10' => ['class 10', 'class-10', 'grade 10'],

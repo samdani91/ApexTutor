@@ -73,6 +73,10 @@ class TuitionJob extends Model
             'o_level'        => 'O Level',
             'a_level'        => 'A Level',
             'admission_test' => 'University Admission Test',
+            'ielts'          => 'IELTS',
+            'toefl'          => 'TOEFL',
+            'gre'            => 'GRE',
+            'sat'            => 'SAT',
             default          => ucfirst(str_replace('_', ' ', $level)),
         };
     }

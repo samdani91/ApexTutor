@@ -8,6 +8,8 @@ export const CLASS_LEVELS = [
   { value: 'admission_test', label: 'University Admission Test' },
   { value: 'o_level', label: 'O Level' }, { value: 'a_level', label: 'A Level' },
   { value: 'dakhil', label: 'Dakhil' }, { value: 'alim', label: 'Alim' },
+  { value: 'ielts', label: 'IELTS' }, { value: 'toefl', label: 'TOEFL' },
+  { value: 'gre', label: 'GRE' }, { value: 'sat', label: 'SAT' },
 ]
 
 export const MEDIUMS = [
@@ -15,6 +17,7 @@ export const MEDIUMS = [
   { value: 'english_medium', label: 'English Medium' },
   { value: 'english_version', label: 'English Version' },
   { value: 'madrasha', label: 'Madrasha' },
+  { value: 'test_preparation', label: 'Test Preparation' },
 ]
 
 // Bangla Medium and English Version both follow the national curriculum.
@@ -31,8 +34,12 @@ const ENGLISH_MEDIUM = [
   'o_level', 'a_level',
 ]
 
-// Offered under every medium, so it is unioned in rather than repeated below.
+// Offered under every medium EXCEPT the exempt ones, so it is unioned in
+// rather than repeated below. Test Preparation is exempt — it holds foreign
+// standardized tests only; University Admission Test is domestic and already
+// lives under the other four mediums.
 const MEDIUM_AGNOSTIC_CLASS_LEVELS = ['admission_test']
+const AGNOSTIC_EXEMPT_MEDIUMS = ['test_preparation']
 
 // Madrasha primary years (Class 1–8) plus its board-exam levels: Dakhil (SSC
 // equivalent) and Alim (HSC equivalent).
@@ -46,6 +53,7 @@ export const MEDIUM_CLASS_LEVELS = {
   english_version: NATIONAL_CURRICULUM,
   english_medium: ENGLISH_MEDIUM,
   madrasha: MADRASHA,
+  test_preparation: ['ielts', 'toefl', 'gre', 'sat'],
 }
 
 /**
@@ -58,9 +66,12 @@ export function classLevelsFor(mediums) {
   if (!known.length) return CLASS_LEVELS
 
   const mediumSpecific = new Set(known.flatMap((medium) => MEDIUM_CLASS_LEVELS[medium]))
-  const agnostic = new Set(MEDIUM_AGNOSTIC_CLASS_LEVELS)
+  // Agnostic levels only join when at least one selected medium isn't exempt —
+  // Test Preparation alone must not pull in University Admission Test.
+  const includeAgnostic = known.some((medium) => !AGNOSTIC_EXEMPT_MEDIUMS.includes(medium))
+  const agnostic = new Set(includeAgnostic ? MEDIUM_AGNOSTIC_CLASS_LEVELS : [])
   // Medium-specific levels keep CLASS_LEVELS order; the agnostic ones (Admission
-  // Test) are appended so they always sit at the end for every medium.
+  // Test) are appended so they always sit at the end.
   return [
     ...CLASS_LEVELS.filter((level) => mediumSpecific.has(level.value)),
     ...CLASS_LEVELS.filter((level) => agnostic.has(level.value)),

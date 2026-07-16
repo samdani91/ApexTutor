@@ -3,13 +3,13 @@
     <main class="profile-page relative isolate overflow-hidden bg-white">
       <div class="pointer-events-none absolute inset-0 -z-10 profile-grid"></div>
 
-    <div v-if="loading" class="mx-auto max-w-6xl px-4 py-16 md:py-24">
+    <div v-if="loading" class="mx-auto max-w-[84rem] px-4 py-16 md:py-24">
       <div class="reveal rounded-md border border-paper-200 bg-white/90 px-4 py-16 text-center font-body text-paper-500 shadow-sm backdrop-blur-sm">
         <div class="mx-auto mb-3 h-9 w-9 rounded-full border-4 border-navy-100 border-t-navy-700 animate-spin"></div>
         Loading…
       </div>
     </div>
-    <div v-else-if="tutor" class="max-w-6xl mx-auto px-4 py-6 md:py-10 space-y-5 md:space-y-6">
+    <div v-else-if="tutor" class="max-w-[84rem] mx-auto px-4 py-6 md:py-10 space-y-5 md:space-y-6">
 
       <!-- ── Header card ── -->
       <div class="profile-card reveal">
@@ -69,7 +69,7 @@
           <div v-for="edu in tutor.education_entries" :key="edu.id"
             class="info-card border-l-4 border-l-gold-400 relative">
             <img v-if="edu.university?.logo_url" :src="edu.university.logo_url" :alt="edu.university.name"
-              class="absolute top-3 right-3 h-14 w-14 rounded object-contain bg-white" />
+              class="absolute top-3 right-3 h-20 w-20 rounded object-contain bg-white" />
             <p class="text-xs font-semibold font-display text-blue-700 uppercase tracking-wide mb-1">
               {{ formatLevel(edu.level) }}
             </p>
@@ -366,7 +366,7 @@
       </div>
 
     </div>
-    <div v-else class="mx-auto max-w-6xl px-4 py-16 md:py-24">
+    <div v-else class="mx-auto max-w-[84rem] px-4 py-16 md:py-24">
       <div class="reveal rounded-md border border-paper-200 bg-white/90 px-4 py-16 text-center font-body text-paper-500 shadow-sm backdrop-blur-sm">
         Tutor not found.
       </div>
