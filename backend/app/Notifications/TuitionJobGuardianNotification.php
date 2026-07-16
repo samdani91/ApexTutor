@@ -30,6 +30,18 @@ class TuitionJobGuardianNotification extends Notification implements ShouldQueue
             'message'     => 'A tutor has been confirmed for your tuition job. A connection request has been created and the job is now closed. Our team will be in touch shortly.',
             'db_message'  => 'A tutor has been confirmed for your job. Connection request created.',
         ],
+        // Sent when admin reverses a confirmation. Must exist explicitly: an
+        // unknown event falls back to 'confirmed', which would tell the guardian
+        // a tutor WAS hired.
+        'unconfirmed' => [
+            'subject'     => 'Tutor confirmation reversed for your job — Apex Tutor',
+            'headline'    => 'Confirmation Reversed',
+            'subheadline' => 'Your job is open again',
+            'icon'        => '&#8634;',
+            'accent'      => '#D97706',
+            'message'     => 'The tutor confirmation for your tuition job has been reversed by our team. The job is open again and the other applicants have been restored. We apologise for any confusion.',
+            'db_message'  => 'The tutor confirmation for your job was reversed. Job reopened.',
+        ],
     ];
 
     public function __construct(

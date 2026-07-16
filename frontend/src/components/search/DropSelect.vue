@@ -114,16 +114,24 @@ function computePosition() {
   if (!el) return
   const rect = el.getBoundingClientRect()
   const vp   = window.innerHeight
-  const spaceBelow = vp - rect.bottom - 8
+  const searchH    = props.options.length > 8 ? 44 : 0
+  const spaceBelow = vp - rect.bottom - 12
+  const spaceAbove = rect.top - 12
 
-  // Always open downward; cap height to available space
-  maxListHeight.value = Math.min(220, Math.max(80, spaceBelow - (props.options.length > 8 ? 44 : 0)))
+  // Open downward by default; flip upward when the list would be cut off
+  // below and there's more room above (e.g. triggers near the screen bottom).
+  const desired = Math.min(220, props.options.length * 38 + 8) + searchH
+  const openUp  = spaceBelow < desired && spaceAbove > spaceBelow
+
+  maxListHeight.value = Math.min(220, Math.max(80, (openUp ? spaceAbove : spaceBelow) - searchH))
 
   panelStyle.value = {
-    top:      `${rect.bottom + 4}px`,
     left:     `${rect.left}px`,
     width:    `${rect.width}px`,
     minWidth: '160px',
+    ...(openUp
+      ? { bottom: `${vp - rect.top + 4}px` }   // anchored above the trigger, grows upward
+      : { top: `${rect.bottom + 4}px` }),
   }
 }
 

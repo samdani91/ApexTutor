@@ -162,9 +162,12 @@
                   class="inline-flex min-h-[38px] items-center justify-center rounded-md border border-paper-300 px-3 py-1.5 text-xs font-semibold font-display text-paper-700 transition-colors hover:bg-paper-100">
                   Profile
                 </RouterLink>
-                <DropSelect v-if="jobOpen && app.status === 'not_selected'"
+                <!-- Admin override: any status, any time — even on a closed job
+                     or a confirmed tutor. Quick-action buttons below stay the
+                     happy path while the job is open. -->
+                <DropSelect
                   :model-value="''"
-                  :options="restoreOptions"
+                  :options="statusOptions(app)"
                   placeholder="Change status…"
                   @update:modelValue="(val) => onPickStatus(app, val)"
                 />
@@ -276,8 +279,9 @@
     <ConfirmDialog
       :show="!!statusChangeTarget"
       title="Change Applicant Status"
-      :message="statusChangeTarget ? `Change ${statusChangeTarget.app.tutor_profile?.user?.name}'s status to ${statusLabel(statusChangeTarget.status)}?` : ''"
+      :message="statusChangeMessage"
       confirm-label="Change Status"
+      :danger="statusChangeIsMajor"
       @confirm="doChangeStatus"
       @cancel="statusChangeTarget = null"
     />
@@ -292,6 +296,7 @@ import { toast } from 'vue-sonner'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import VerifiedBadge from '@/components/common/VerifiedBadge.vue'
 import DropSelect from '@/components/search/DropSelect.vue'
+import { classLevelLabel, mediumLabel } from '@/utils/constants.js'
 
 const route = useRoute()
 const publicId = route.params.publicId
@@ -316,13 +321,11 @@ function hasWorkflowActions(app) {
   return jobOpen.value && ['applied', 'shortlisted', 'demo_requested', 'appointed', 'confirm_requested'].includes(app.status)
 }
 
-const restoreOptions = [
-  { value: 'applied',          label: 'Applied'           },
-  { value: 'shortlisted',      label: 'Shortlisted'       },
-  { value: 'demo_requested',   label: 'Demo Requested'    },
-  { value: 'appointed',        label: 'Appointed'         },
-  { value: 'confirm_requested',label: 'Confirm Requested' },
-]
+// All 7 statuses, minus the one the applicant already has. Reuses the tab
+// definitions so labels can't drift.
+function statusOptions(app) {
+  return appTabs.filter(t => t.value !== 'all' && t.value !== app.status)
+}
 
 const appTabs = [
   { value: 'all',              label: 'All'               },
@@ -335,11 +338,6 @@ const appTabs = [
   { value: 'not_selected',     label: 'Not Selected'      },
 ]
 
-const MEDIUM_MAP = {
-  bangla_medium:   'Bangla Medium',
-  english_medium:  'English Medium',
-  english_version: 'English Version',
-}
 const PLACE_MAP = {
   student_home: "Student's Home",
   tutor_home:   "Tutor's Home",
@@ -358,8 +356,8 @@ const details = computed(() => {
   return [
     { label: 'Location',     value: j.area ? `${j.area.name}, ${j.district?.name}` : j.district?.name },
     { label: 'Salary',       value: j.offered_salary ? `৳${j.offered_salary.toLocaleString()}/mo` : null },
-    { label: 'Class',        value: j.class_level },
-    { label: 'Medium',       value: MEDIUM_MAP[j.medium] ?? j.medium },
+    { label: 'Class',        value: j.class_level ? classLevelLabel(j.class_level) : null },
+    { label: 'Medium',       value: j.medium ? mediumLabel(j.medium) : null },
     { label: 'Place',        value: PLACE_MAP[j.tuition_type] ?? j.tuition_type },
     { label: 'Style',        value: STYLE_MAP[j.tutoring_style] ?? j.tutoring_style },
     { label: 'Days/Week',    value: j.tutoring_days_per_week ? `${j.tutoring_days_per_week} days` : null },
@@ -468,15 +466,36 @@ function onPickStatus(app, status) {
   statusChangeTarget.value = { app, status }
 }
 
+// Setting or unsetting Confirmed has side effects beyond this applicant —
+// the job closes/reopens and other applicants change — so warn accordingly.
+const statusChangeIsMajor = computed(() => {
+  const t = statusChangeTarget.value
+  return !!t && (t.status === 'connected' || t.app.status === 'connected')
+})
+
+const statusChangeMessage = computed(() => {
+  const t = statusChangeTarget.value
+  if (!t) return ''
+  const name = t.app.tutor_profile?.user?.name
+  let msg = `Change ${name}'s status to ${statusLabel(t.status)}?`
+  if (t.status === 'connected') {
+    msg += ' This confirms the tutor — the job will be CLOSED and every other active applicant will be marked Not Selected.'
+  } else if (t.app.status === 'connected') {
+    msg += ' This reverses the confirmation — the job will REOPEN and the other applicants will be restored to their previous statuses.'
+  }
+  return msg
+})
+
 async function doChangeStatus() {
   const { app, status } = statusChangeTarget.value
   statusChangeTarget.value = null
   acting.value = true
   try {
     await adminApi.changeApplicantStatus(publicId, app.id, status)
-    app.status = status
     toast.success('Applicant status updated.')
-    if (activeTab.value !== 'all') loadApplicants()
+    // Confirm/un-confirm ripples beyond this row (job status, other
+    // applicants), so refetch instead of patching one status locally.
+    await Promise.all([loadJob(), loadApplicants()])
   } catch (e) {
     toast.error(e?.response?.data?.message || 'Failed to change status.')
   } finally {

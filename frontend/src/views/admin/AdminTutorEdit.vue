@@ -286,7 +286,7 @@
                 <template v-else>
                   <p class="text-sm font-semibold font-display text-navy-900 truncate">{{ vid.title }}</p>
                   <p class="text-xs text-paper-500 font-body mt-0.5">
-                    {{ vid.subject }} · {{ vid.class_level }} · {{ vid.medium }}
+                    {{ vid.subject }} · {{ classLevelLabel(vid.class_level) }} · {{ mediumLabel(vid.medium) }}
                   </p>
                   <a v-if="vid.file_url" :href="vid.file_url" target="_blank"
                     class="text-xs font-semibold font-display text-navy-600 hover:underline mt-1 inline-block">
@@ -422,6 +422,7 @@ import { searchApi } from '@/api/search.js'
 import { toast } from 'vue-sonner'
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog.vue'
 import DropSelect from '@/components/search/DropSelect.vue'
+import { classLevelLabel, mediumLabel } from '@/utils/constants.js'
 
 const route  = useRoute()
 const router = useRouter()

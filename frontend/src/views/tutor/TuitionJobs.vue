@@ -300,6 +300,7 @@ import { tutorJobsApi } from '@/api/jobs.js'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import TuitionJobFilters from './TuitionJobFilters.vue'
 import { useAuthStore } from '@/stores/auth.js'
+import { classLevelLabel } from '@/utils/constants.js'
 
 const router         = useRouter()
 const auth           = useAuthStore()
@@ -327,7 +328,7 @@ const activeChips = computed(() => {
   if (f.q)                chips.push({ key: 'q',                label: `"${f.q}"` })
   if (f.district_id)      chips.push({ key: 'district_id',      label: 'District' })
   if (f.area_id)          chips.push({ key: 'area_id',          label: 'Area' })
-  if (f.class_level)      chips.push({ key: 'class_level',      label: f.class_level.replace('_', ' ').toUpperCase() })
+  if (f.class_level)      chips.push({ key: 'class_level',      label: classLevelLabel(f.class_level) })
   if (f.subject_id)       chips.push({ key: 'subject_id',       label: 'Subject' })
   if (f.tuition_type)     chips.push({ key: 'tuition_type',     label: typeLabel(f.tuition_type) })
   if (f.tutor_gender_pref) chips.push({ key: 'tutor_gender_pref', label: f.tutor_gender_pref === 'male' ? 'Male Pref' : 'Female Pref' })

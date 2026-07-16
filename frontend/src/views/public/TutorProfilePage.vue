@@ -113,7 +113,7 @@
           <div class="chip-list">
             <span v-for="cls in tutor.tuition_preference.preferred_classes" :key="cls"
               class="chip">
-              {{ cls.replace(/_/g,' ').replace(/\b\w/g, l => l.toUpperCase()) }}
+              {{ classLevelLabel(cls) }}
             </span>
           </div>
         </div>
@@ -123,8 +123,8 @@
           <p class="info-label">Curriculum</p>
           <div class="chip-list">
             <span v-for="c in asArray(tutor.tuition_preference.preferred_curricula)" :key="c"
-              class="chip capitalize">
-              {{ c.replace(/_/g,' ') }}
+              class="chip">
+              {{ mediumLabel(c) }}
             </span>
           </div>
         </div>
@@ -291,10 +291,10 @@
                   {{ vid.subject }}
                 </span>
                 <span v-if="vid.class_level" class="text-xs bg-navy-50 text-navy-700 border border-navy-100 px-2 py-0.5 rounded-pill font-body">
-                  Class {{ vid.class_level }}
+                  {{ classLevelLabel(vid.class_level) }}
                 </span>
-                <span v-if="vid.medium" class="text-xs bg-paper-100 text-paper-600 border border-paper-200 px-2 py-0.5 rounded-pill font-body capitalize">
-                  {{ vid.medium.replace('_', ' & ') }}
+                <span v-if="vid.medium" class="text-xs bg-paper-100 text-paper-600 border border-paper-200 px-2 py-0.5 rounded-pill font-body">
+                  {{ mediumLabel(vid.medium) }}
                 </span>
               </div>
             </div>
@@ -386,7 +386,7 @@ import { guardianApi } from '@/api/guardian.js'
 import { useAuthStore } from '@/stores/auth.js'
 import { toast } from 'vue-sonner'
 import { getInitials, formatSalaryRange } from '@/utils/helpers.js'
-import { PREFERRED_TIMES } from '@/utils/constants.js'
+import { PREFERRED_TIMES, classLevelLabel, mediumLabel } from '@/utils/constants.js'
 
 const TIME_MAP     = Object.fromEntries(PREFERRED_TIMES.map(t => [t.value, `${t.label} (${t.hint})`]))
 const PLACE_LABELS = { student_home: "Student's home", tutor_home: "Tutor's home", online: 'Online' }

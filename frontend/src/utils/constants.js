@@ -81,6 +81,24 @@ export function hasGroups(classLevel) {
   return GROUP_CLASS_LEVELS.includes(classLevel)
 }
 
+// ── Display labels ───────────────────────────────────────────────────────────
+// Raw enum values (class_9, english_medium, not_selected) must never reach the
+// screen. These fall back to a humanised form for unknown values rather than
+// leaking underscores.
+const humanise = (value) => String(value ?? '').replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
+
+export function classLevelLabel(value) {
+  return CLASS_LEVELS.find((c) => c.value === value)?.label ?? humanise(value)
+}
+
+export function mediumLabel(value) {
+  return MEDIUMS.find((m) => m.value === value)?.label ?? humanise(value)
+}
+
+export function groupLabel(value) {
+  return GROUPS.find((g) => g.value === value)?.label ?? humanise(value)
+}
+
 export const DAYS = [
   { value: 'sat', label: 'Sat' }, { value: 'sun', label: 'Sun' },
   { value: 'mon', label: 'Mon' }, { value: 'tue', label: 'Tue' },

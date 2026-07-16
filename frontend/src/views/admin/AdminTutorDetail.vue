@@ -168,12 +168,12 @@
 
             <div v-if="tutor.tuition_preference.preferred_curricula?.length" class="mt-3">
               <p class="chip-label">Curriculum</p>
-              <div class="chip-list"><span v-for="c in tutor.tuition_preference.preferred_curricula" :key="c" class="chip capitalize">{{ c.replace(/_/g,' ') }}</span></div>
+              <div class="chip-list"><span v-for="c in tutor.tuition_preference.preferred_curricula" :key="c" class="chip">{{ mediumLabel(c) }}</span></div>
             </div>
 
             <div v-if="tutor.tuition_preference.preferred_classes?.length" class="mt-3">
               <p class="chip-label">Preferred classes</p>
-              <div class="chip-list"><span v-for="cls in tutor.tuition_preference.preferred_classes" :key="cls" class="chip">{{ titleize(cls) }}</span></div>
+              <div class="chip-list"><span v-for="cls in tutor.tuition_preference.preferred_classes" :key="cls" class="chip">{{ classLevelLabel(cls) }}</span></div>
             </div>
 
             <div v-if="tutor.tuition_preference.tutoring_method_description" class="mt-3">
@@ -257,8 +257,8 @@
                 <p v-if="vid.title" class="font-display font-semibold text-sm text-navy-900 mb-1.5">{{ vid.title }}</p>
                 <div class="flex items-center flex-wrap gap-2 mb-2">
                   <span v-if="vid.subject" class="chip">{{ vid.subject }}</span>
-                  <span v-if="vid.class_level" class="chip">Class {{ vid.class_level }}</span>
-                  <span v-if="vid.medium" class="chip capitalize">{{ vid.medium.replace('_', ' & ') }}</span>
+                  <span v-if="vid.class_level" class="chip">{{ classLevelLabel(vid.class_level) }}</span>
+                  <span v-if="vid.medium" class="chip">{{ mediumLabel(vid.medium) }}</span>
                   <span class="status-chip capitalize"
                     :class="vid.review_status === 'approved' ? 'bg-emerald-50 text-emerald-700' : vid.review_status === 'rejected' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'">
                     {{ vid.review_status }}
@@ -443,7 +443,7 @@ import { adminApi } from '@/api/admin.js'
 import { feedbackApi } from '@/api/feedback.js'
 import { toast } from 'vue-sonner'
 import { getInitials } from '@/utils/helpers.js'
-import { PREFERRED_TIMES } from '@/utils/constants.js'
+import { PREFERRED_TIMES, classLevelLabel, mediumLabel } from '@/utils/constants.js'
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog.vue'
 import VerifiedBadge from '@/components/common/VerifiedBadge.vue'
 

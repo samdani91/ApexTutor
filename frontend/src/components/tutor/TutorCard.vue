@@ -151,6 +151,7 @@ import { useAuthStore } from '@/stores/auth.js'
 import StarRating from '@/components/common/StarRating.vue'
 import VerifiedBadge from '@/components/common/VerifiedBadge.vue'
 import { getInitials, formatSalaryRange } from '@/utils/helpers.js'
+import { classLevelLabel } from '@/utils/constants.js'
 
 const props = defineProps({ tutor: { type: Object, required: true } })
 const emit  = defineEmits(['needs-auth'])
@@ -194,7 +195,7 @@ const subjectTagsSm      = computed(() => allSubjects.value.slice(0, 4))
 const extraSubjectCountSm = computed(() => Math.max(0, allSubjects.value.length - 4))
 
 const allClasses = computed(() => (props.tutor.tuition_preference?.preferred_classes || [])
-  .map(c => c.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())))
+  .map(c => classLevelLabel(c)))
 const classTags        = computed(() => allClasses.value.slice(0, 2))
 const extraClassCount  = computed(() => Math.max(0, allClasses.value.length - 2))
 const classTagsSm      = computed(() => allClasses.value.slice(0, 4))

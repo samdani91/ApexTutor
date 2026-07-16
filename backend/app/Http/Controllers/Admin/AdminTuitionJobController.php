@@ -133,17 +133,32 @@ class AdminTuitionJobController extends Controller
 
         abort_if($job->status === 'closed', 422, 'This job is already closed.');
         abort_if(!in_array($app->status, ['appointed', 'confirm_requested'], true), 422, 'Only appointed or confirm-requested applicants can be confirmed.');
+        // reopen() has no guards, so a closed-by-confirm job can come back open
+        // with its connected row intact — without this, confirming again here
+        // would produce a second connected tutor on the same job.
+        abort_if(
+            TuitionJobApplication::where('tuition_job_id', $job->id)->where('status', 'connected')->exists(),
+            422, 'Another tutor is already confirmed for this job. Un-confirm them first.'
+        );
 
         $othersIds = DB::transaction(function () use ($job, $app) {
-            $app->update(['status' => 'connected']);
+            $app->update(['status' => 'connected', 'status_before_confirm' => null]);
             $job->update(['status' => 'closed']);
 
+            // Skip rows already not_selected: they were rejected for their own
+            // reasons, shouldn't be resurrected by an un-confirm, and re-updating
+            // them would send a duplicate rejection email below.
             $othersIds = TuitionJobApplication::where('tuition_job_id', $job->id)
                 ->where('id', '!=', $app->id)
-                ->whereNotIn('status', ['connected'])
+                ->whereNotIn('status', ['connected', 'not_selected'])
                 ->pluck('id');
 
-            TuitionJobApplication::whereIn('id', $othersIds)->update(['status' => 'not_selected']);
+            // status_before_confirm must be assigned before status: MySQL applies
+            // SET clauses left to right, so it captures the pre-overwrite value.
+            TuitionJobApplication::whereIn('id', $othersIds)->update([
+                'status_before_confirm' => DB::raw('status'),
+                'status'                => 'not_selected',
+            ]);
 
             return $othersIds;
         });
@@ -184,31 +199,107 @@ class AdminTuitionJobController extends Controller
         return response()->json(['success' => true, 'message' => 'Applicant not selected.']);
     }
 
+    /**
+     * Full admin override: any of the 7 statuses, at any time, on any job state.
+     * Maintains the job invariant — setting `connected` closes the job and
+     * rejects the others (remembering their statuses); moving a tutor off
+     * `connected` reopens the job and restores everyone exactly.
+     */
     public function changeStatus(Request $request, string $publicId, int $applicationId): JsonResponse
     {
         $data = $request->validate([
-            'status' => 'required|in:applied,shortlisted,demo_requested,appointed,confirm_requested',
+            'status' => 'required|in:applied,shortlisted,demo_requested,appointed,confirm_requested,connected,not_selected',
         ]);
 
-        $app = $this->getApplicationWithJob($publicId, $applicationId);
-        abort_if($app->tuitionJob->status !== 'open', 422, 'You can only change applicant statuses while the job is open.');
-        abort_if($app->status === 'connected', 422, 'Cannot change the status of a confirmed tutor.');
+        $app      = $this->getApplicationWithJob($publicId, $applicationId);
+        $job      = $app->tuitionJob;
+        $target   = $data['status'];
+        $previous = $app->status;
 
-        $target = $data['status'];
-
-        if ($target === $app->status) {
+        if ($target === $previous) {
             return response()->json(['success' => true, 'message' => 'No change made.']);
         }
 
-        $app->update(['status' => $target]);
-
-        // Notify the tutor for meaningful states (no notification for resetting to plain "applied" or request statuses)
-        if (in_array($target, ['shortlisted', 'appointed'], true)) {
-            $this->notifyTutor($app, $target);
+        // Only one confirmed tutor per job — nothing in the DB enforces it.
+        if ($target === 'connected') {
+            abort_if(
+                TuitionJobApplication::where('tuition_job_id', $job->id)
+                    ->where('id', '!=', $app->id)
+                    ->where('status', 'connected')
+                    ->exists(),
+                422, 'Another tutor is already confirmed for this job. Un-confirm them first.'
+            );
         }
 
+        $rejectedIds = DB::transaction(function () use ($app, $job, $target, $previous) {
+            if ($target === 'connected') {
+                // Same effects as confirm(): close the job, reject the rest,
+                // remembering each one's current status for a later un-confirm.
+                $app->update(['status' => 'connected', 'status_before_confirm' => null]);
+                $job->update(['status' => 'closed']);
+
+                $rejectedIds = TuitionJobApplication::where('tuition_job_id', $job->id)
+                    ->where('id', '!=', $app->id)
+                    ->whereNotIn('status', ['connected', 'not_selected'])
+                    ->pluck('id');
+
+                // SET order matters: status_before_confirm captures the value
+                // before the same statement overwrites it (MySQL, left to right).
+                TuitionJobApplication::whereIn('id', $rejectedIds)->update([
+                    'status_before_confirm' => DB::raw('status'),
+                    'status'                => 'not_selected',
+                ]);
+
+                return $rejectedIds;
+            }
+
+            $app->update(['status' => $target, 'status_before_confirm' => null]);
+
+            if ($previous === 'connected') {
+                // Un-confirm: reopen the job and put everyone the confirm
+                // rejected back to exactly where they were.
+                $job->update(['status' => 'open']);
+
+                TuitionJobApplication::where('tuition_job_id', $job->id)
+                    ->whereNotNull('status_before_confirm')
+                    ->update([
+                        'status'                => DB::raw('status_before_confirm'),
+                        'status_before_confirm' => null,
+                    ]);
+            }
+
+            return collect();
+        });
+
+        // ── Notifications (after commit) ──────────────────────────────────────
+        // Strict allowlist: the notification template only knows shortlisted /
+        // appointed / connected / not_selected — any other value silently falls
+        // back to the REJECTION email, so the rest must stay silent.
+        if ($target === 'connected') {
+            TuitionJobApplication::whereIn('id', $rejectedIds)
+                ->with('tutorProfile.user')
+                ->get()
+                ->each(fn ($other) => $this->notifyTutor($other, 'not_selected', $job));
+
+            $this->notifyTutor($app, 'connected', $job);
+            $this->notifyGuardian($job, 'confirmed', $app->tutorProfile->user->name ?? 'A tutor');
+            $this->smsTutor($app, 'confirmed', $job);
+        } else {
+            if (in_array($target, ['shortlisted', 'appointed', 'not_selected'], true)) {
+                $this->notifyTutor($app, $target, $job);
+            }
+            if ($previous === 'connected') {
+                // Restored applicants are deliberately not notified — their
+                // statuses include values the template cannot express.
+                $this->notifyGuardian($job, 'unconfirmed', $app->tutorProfile->user->name ?? 'A tutor');
+            }
+        }
+
+        $jobNote   = $target === 'connected' ? ' Job closed.' : ($previous === 'connected' ? ' Job reopened, other applicants restored.' : '');
+        $fromLabel = TuitionJobApplication::statusLabel($previous);
+        $toLabel   = TuitionJobApplication::statusLabel($target);
         $this->logActivity($request, 'tuition_job_applicant_status_changed', 'TuitionJobApplication', $app->id,
-            "Changed status of tutor '{$app->tutorProfile->user->name}' to '{$target}' for job '{$app->tuitionJob->title}' ({$app->tuitionJob->public_id})"
+            "Changed status of tutor '{$app->tutorProfile->user->name}' from '{$fromLabel}' to '{$toLabel}' for job '{$job->title}' ({$job->public_id}).{$jobNote}"
         );
 
         return response()->json(['success' => true, 'message' => 'Applicant status updated.']);
