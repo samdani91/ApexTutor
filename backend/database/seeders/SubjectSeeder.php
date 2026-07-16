@@ -70,6 +70,10 @@ class SubjectSeeder extends Seeder
             'Sanskrit'                                   => null,
         ];
 
+        // ->values() inside the flatMap is load-bearing: the rows are keyed by
+        // subject name here, and flatMap's collapse merges string keys with
+        // array_merge semantics — without re-indexing, the three class-level
+        // batches overwrite each other and only 'ssc' survives.
         return collect(['class_9', 'class_10', 'ssc'])
             ->flatMap(fn ($classLevel) => collect($subjects)->map(fn ($group, $subject) => [
                 'name' => $subject,
@@ -77,7 +81,7 @@ class SubjectSeeder extends Seeder
                 'class_level' => $classLevel,
                 'medium' => null,
                 'group' => $group,
-            ]))
+            ])->values())
             ->values()
             ->all();
     }
