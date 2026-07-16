@@ -109,7 +109,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed, watch } from 'vue'
+import { reactive, ref, computed, watch, nextTick } from 'vue'
 import { searchApi } from '@/api/search.js'
 import { MEDIUMS, classLevelsFor, hasGroups, GROUPS, PLACE_OF_TUTORING } from '@/utils/constants.js'
 import FilterSection from '@/components/search/FilterSection.vue'
@@ -255,10 +255,14 @@ watch(filters, () => {
 
 watch(() => props.modelValue, async (val) => {
   syncing.value = true
+  // Keep the existing array when its content is unchanged — every emit round-
+  // trips through here as a new object, and assigning a fresh [] each time is
+  // a reactive mutation that re-fires the deep watcher above for nothing.
+  const nextAreaIds = Array.isArray(val.area_ids) ? val.area_ids.map(Number) : []
   Object.assign(filters, {
     medium:            val.medium            || '',
     district_id:       val.district_id       ? Number(val.district_id) : '',
-    area_ids:          Array.isArray(val.area_ids) ? val.area_ids.map(Number) : [],
+    area_ids:          nextAreaIds.join(',') === filters.area_ids.join(',') ? filters.area_ids : nextAreaIds,
     class_level:       val.class_level       || '',
     group:             val.group             || '',
     subject_id:        val.subject_id        ? Number(val.subject_id)  : '',
@@ -277,6 +281,12 @@ watch(() => props.modelValue, async (val) => {
     try { const { data } = await searchApi.subjects({ class_level: filters.class_level, medium: filters.medium || undefined }); allSubjects.value = data.data || [] }
     finally { subjectsLoading.value = false }
   }
+  // Without an await above (no district/class picked) this line used to run
+  // synchronously — BEFORE Vue flushed the deep watcher queued by the assigns.
+  // The watcher then saw syncing=false and emitted again: an infinite emit →
+  // sync → emit loop hammering the backend. Hold the flag through a tick so
+  // every mutation from this sync flushes while still suppressed.
+  await nextTick()
   syncing.value = false
 }, { deep: true })
 

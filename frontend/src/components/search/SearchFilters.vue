@@ -115,7 +115,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed, watch } from 'vue'
+import { reactive, ref, computed, watch, nextTick } from 'vue'
 import { useSearchStore } from '@/stores/search.js'
 import { searchApi } from '@/api/search.js'
 import { MEDIUMS, classLevelsFor, hasGroups, GROUPS, PLACE_OF_TUTORING, TUTORING_STYLES } from '@/utils/constants.js'
@@ -336,6 +336,10 @@ async function syncFilters(value) {
     allUniversities.value = []
   }
   await loadSubjectsForClass(filters.class_level)
+  // Hold the flag through a tick so every watcher queued by the assigns above
+  // flushes while still suppressed — otherwise a sync with no awaits would
+  // re-emit and loop (this exact bug hit TuitionJobFilters).
+  await nextTick()
   syncingFromParent.value = false
 }
 
